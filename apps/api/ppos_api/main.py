@@ -25,7 +25,7 @@ from ppos.shared.errors import (
     PposError,
     ValidationError,
 )
-from ppos_api.routes import book, notes, planning, sprints, tasks
+from ppos_api.routes import book, documents, notes, planning, sprints, tasks
 from ppos_api.routes import time as time_routes
 from ppos_api.schemas import HealthOut
 
@@ -96,6 +96,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(planning.router)
     app.include_router(sprints.router)
     app.include_router(book.router)
+    app.include_router(documents.router)
     app.include_router(time_routes.router)
 
     dist = settings.web_dist_dir

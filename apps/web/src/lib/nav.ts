@@ -45,7 +45,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     items: [
       { id: "notes", label: "Notes", icon: NotebookPen, shortcut: "G N" },
       { id: "book", label: "Prompt Book", icon: BookOpenText, shortcut: "G K" },
-      { id: "knowledge", label: "Knowledge", icon: Library, phase: "Phase 4" },
+      { id: "knowledge", label: "Knowledge", icon: Library, shortcut: "G D" },
       { id: "ai", label: "Assistant", icon: Sparkles, phase: "Phase 5" },
     ],
   },
@@ -75,6 +75,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   p: "projects",
   n: "notes",
   k: "book",
+  d: "knowledge",
   s: "settings",
 };
 

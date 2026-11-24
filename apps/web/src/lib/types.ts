@@ -131,7 +131,7 @@ export interface Today {
 }
 
 export interface SearchHit {
-  entity_type: "task" | "note" | "project" | "day" | "page";
+  entity_type: "task" | "note" | "project" | "day" | "page" | "chunk";
   entity_id: string;
   title: string;
   snippet: string;
@@ -410,4 +410,47 @@ export interface AiStatus {
   model: string;
   reachable: boolean;
   local_only: boolean;
+}
+
+// ------------------------------------------------------------------ Knowledge
+export type DocStatus = "queued" | "processing" | "ready" | "needs_ocr" | "failed";
+
+export interface DocumentInfo {
+  id: string;
+  title: string;
+  filename: string;
+  mime: string;
+  sha256: string;
+  size_bytes: number;
+  kind: string;
+  status: DocStatus;
+  error: string | null;
+  pages: number | null;
+  chars: number | null;
+  extractor_version: string | null;
+  created_at: string;
+  processed_at: string | null;
+}
+
+export interface DocChunk {
+  id: string;
+  seq: number;
+  page_start: number | null;
+  page_end: number | null;
+  section: string | null;
+  text: string;
+}
+
+export interface DocumentDetail extends DocumentInfo {
+  chunks: DocChunk[];
+}
+
+export interface DocHit {
+  document_id: string;
+  document_title: string;
+  chunk_id: string;
+  page_start: number | null;
+  page_end: number | null;
+  section: string | null;
+  snippet: string;
 }

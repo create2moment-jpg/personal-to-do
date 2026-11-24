@@ -1,4 +1,7 @@
 import type {
+  DocHit,
+  DocumentDetail,
+  DocumentInfo,
   AiStatus,
   Book,
   BookNode,
@@ -163,6 +166,19 @@ export const api = {
   improvePage: (id: string, style: string, body?: string) => request<Improvement>("POST", `/api/book-nodes/${id}/improve`, { style, body }),
   acceptVersion: (id: string, v: number) => request<Page>("POST", `/api/book-nodes/${id}/versions/${v}/accept`),
   aiStatus: () => request<AiStatus>("GET", "/api/ai/status"),
+
+  documents: () => request<DocumentInfo[]>("GET", "/api/documents"),
+  document: (id: string) => request<DocumentDetail>("GET", `/api/documents/${id}`),
+  updateDocument: (id: string, changes: { title?: string; kind?: string }) => request<DocumentInfo>("PATCH", `/api/documents/${id}`, changes),
+  deleteDocument: (id: string) => request<void>("DELETE", `/api/documents/${id}`),
+  reindexDocument: (id: string) => request<{ queued: number }>("POST", `/api/documents/${id}/reindex`),
+  searchDocuments: (q: string) => request<DocHit[]>("GET", `/api/documents/search${qs({ q })}`),
+  uploadDocument: async (file: File, kind: string) => {
+    const res = await fetch(`/api/documents${qs({ filename: file.name, kind })}`, { method: "POST", body: file });
+    const data = (await res.json()) as { document?: DocumentInfo; duplicate?: boolean; detail?: string };
+    if (!res.ok) throw new ApiError(res.status, data.detail ?? res.statusText);
+    return data as { document: DocumentInfo; duplicate: boolean };
+  },
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
   capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),

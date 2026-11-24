@@ -1,10 +1,10 @@
 import { Command } from "cmdk";
-import { BookOpenText, FileText, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Search, SquareCheck, Sun } from "lucide-react";
+import { BookOpenText, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Search, SquareCheck, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
 import { DARK_PALETTES, type DarkPalette, loadAppearance, setAppearance } from "../lib/theme";
-import type { SearchHit } from "../lib/types";
+import type { DocHit, SearchHit } from "../lib/types";
 import { useUi } from "../lib/ui-store";
 import { Dialog, Keys, Kbd } from "./primitives";
 
@@ -20,13 +20,18 @@ function MenuBody({ onClose }: { onClose: () => void }) {
   const ui = useUi();
   const [q, setQ] = useState("");
   const [hits, setHits] = useState<SearchHit[]>([]);
+  const [docHits, setDocHits] = useState<DocHit[]>([]);
 
   useEffect(() => {
     if (q.trim().length < 2) {
       setHits([]);
+      setDocHits([]);
       return;
     }
-    const t = setTimeout(() => api.search(q).then(setHits).catch(() => setHits([])), 100);
+    const t = setTimeout(() => {
+      api.search(q).then((h) => setHits(h.filter((x) => x.entity_type !== "chunk"))).catch(() => setHits([]));
+      api.searchDocuments(q).then((h) => setDocHits(h.slice(0, 6))).catch(() => setDocHits([]));
+    }, 100);
     return () => clearTimeout(t);
   }, [q]);
 
@@ -59,6 +64,19 @@ function MenuBody({ onClose }: { onClose: () => void }) {
                 <span>{h.title}</span>
                 {h.entity_type === "note" && h.snippet.trim() && <span className="cmd-snippet">{h.snippet.replace(/[[\]]/g, "")}</span>}
                 <span className="cmd-hint">{h.entity_type}</span>
+              </Command.Item>
+            ))}
+          </Command.Group>
+        )}
+
+        {docHits.length > 0 && (
+          <Command.Group heading="Documents">
+            {docHits.map((h) => (
+              <Command.Item key={h.chunk_id} value={`${h.document_title} ${h.chunk_id} ${q}`} onSelect={run(() => ui.navigate("knowledge", `${h.document_id}~${h.chunk_id}`))}>
+                <Library />
+                <span>{h.document_title}</span>
+                <span className="cmd-snippet">{h.snippet.replace(/[[\]]/g, "")}</span>
+                <span className="cmd-hint">p. {h.page_start ?? "–"}</span>
               </Command.Item>
             ))}
           </Command.Group>

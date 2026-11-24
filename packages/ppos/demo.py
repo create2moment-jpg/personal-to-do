@@ -193,6 +193,7 @@ def seed_demo(c: Container, today: date | None = None) -> dict[str, int]:
     _seed_sprint_and_week(c, today)
     _seed_meetings(c, today)
     _seed_prompt_book(c)
+    _seed_documents(c)
 
     marker = c.settings.local_data_dir / DEMO_MARKER
     marker.write_text("Synthetic demo workspace created by `ppos demo`.\n", encoding="utf-8")
@@ -398,3 +399,28 @@ def _seed_prompt_book(c: Container) -> None:
         b.id, NodeKind.PAGE, "Explain this error", emoji="🐞",
         body="Explain this error and propose the smallest fix:\n\n{{error}}",
     )  # fmt: skip
+
+
+def _seed_documents(c: Container) -> None:
+    from ppos.infrastructure.config import REPO_ROOT
+
+    framework = (REPO_ROOT / "fixtures" / "documents" / "level-framework.md").read_bytes()
+    c.documents.ingest(
+        "level-framework.md", framework, kind="framework", title="Engineering level framework"
+    )
+    review = (
+        "MID-YEAR PERFORMANCE REVIEW (synthetic)\n\nSummary\n\nStrong ownership of the retrieval platform. "
+        "Communicates trade-offs clearly.\n\f2. Achievements\n\nLed the hybrid retrieval benchmark adopted by "
+        "two teams. Improved recall@10 by 11 percent.\n\f3. Development areas\n\nDelegate more; grow junior "
+        "engineers through structured pairing.\n"
+    )
+    c.documents.ingest(
+        "mid-year-review.txt", review.encode(), kind="performance_report", title="Mid-year review"
+    )
+    c.documents.ingest(
+        "retrieval-design.md",
+        b"# Hybrid retrieval design\n\n## Problem\n\nBM25 misses paraphrases; dense retrieval misses identifiers.\n\n"
+        b"## Decision\n\nReciprocal-rank fusion of BM25 and dense results, k = 60.\n",
+        kind="technical",
+    )
+    c.documents.jobs.wait_idle()

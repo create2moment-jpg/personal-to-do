@@ -18,6 +18,7 @@ from ppos.domain.projects import Project, ProjectStatus
 from ppos.domain.tasks import Priority, Task, TaskStatus
 from ppos.infrastructure.db import connect
 from ppos.infrastructure.sqlite_book import SqliteBookRepository
+from ppos.infrastructure.sqlite_documents import SqliteDocumentRepository
 from ppos.infrastructure.sqlite_planning import (
     SqliteMeetingRepository,
     SqlitePeopleRepository,
@@ -491,6 +492,7 @@ class SqliteUnitOfWork:
         self.topics = SqliteTopicRepository(conn)
         self.meetings = SqliteMeetingRepository(conn)
         self.books = SqliteBookRepository(conn)
+        self.documents = SqliteDocumentRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

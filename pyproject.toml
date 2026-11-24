@@ -17,6 +17,7 @@ dependencies = [
     "icalendar>=6,<7",
     "recurring-ical-events>=3,<4",
     "tzdata>=2024.1",
+    "pypdf>=4,<6",
 ]
 
 [project.optional-dependencies]
@@ -54,5 +55,5 @@ mypy_path = ["packages", "apps/api"]
 packages = ["ppos", "ppos_api"]
 
 [[tool.mypy.overrides]]
-module = ["icalendar", "icalendar.*", "recurring_ical_events"]
+module = ["icalendar", "icalendar.*", "recurring_ical_events", "pypdf", "pypdf.*"]
 ignore_missing_imports = true

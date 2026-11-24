@@ -12,6 +12,7 @@ from ppos.ai.provider import LLMProvider, build_provider
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.daily import DayService
+from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
@@ -21,7 +22,10 @@ from ppos.application.tasks import ProjectService, TaskService
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
+from ppos.infrastructure.document_store import DocumentStore
+from ppos.infrastructure.extract import EXTRACTOR_VERSION, extract_pages, pdf_title, sniff
 from ppos.infrastructure.ics import parse_ics
+from ppos.infrastructure.jobs import ThreadJobRunner
 from ppos.infrastructure.migrations import prepare_database
 from ppos.infrastructure.sqlite_repos import SqliteUnitOfWorkFactory
 from ppos.shared.clock import Clock, ZonedClock
@@ -46,6 +50,7 @@ class Container:
     weeks: WeekService
     book: BookService
     ai: LLMProvider
+    documents: DocumentService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -64,7 +69,9 @@ def init_database(settings: Settings) -> list[int]:
     return applied
 
 
-def build_container(settings: Settings, clock: Clock | None = None) -> Container:
+def build_container(
+    settings: Settings, clock: Clock | None = None, jobs: JobRunner | None = None
+) -> Container:
     init_database(settings)
     uow = SqliteUnitOfWorkFactory(settings.db_path)
     workspace = SettingsService(uow)
@@ -93,6 +100,15 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         )
         return clean_improved(r.text), r.model, improve_template.ref, r.latency_ms
 
+    documents = DocumentService(
+        uow,
+        clock,
+        DocumentStore(settings.local_data_dir),
+        Extractor(sniff=sniff, pages=extract_pages, title=pdf_title, version=EXTRACTOR_VERSION),
+        jobs or ThreadJobRunner(),
+    )
+    documents.resume_pending()
+
     return Container(
         settings=settings,
         clock=clock,
@@ -109,4 +125,5 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         weeks=WeekService(uow, clock, workspace, meetings, sprints),
         book=BookService(uow, clock, improver),
         ai=ai,
+        documents=documents,
     )
