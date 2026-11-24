@@ -36,7 +36,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
-| 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | **next** |
+| 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ core done — OCR, .docx and AI fact extraction queued (B-005…B-007) |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer, prompt templates and output validation shipped with the Prompt Book |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | |
@@ -163,6 +163,21 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 6. **Timeboxing**: drag tasks into free calendar slots (moved to 3b).
 7. Privacy: attendee data stays local, excluded from AI by default, deletable
    per person; tokens in the OS keychain.
+
+### Phase 4 delivered — Knowledge inbox (core)
+
+- Upload PDF / .txt / .md (drag anywhere onto Knowledge, up to 50 MB); type is
+  checked by content, not name; SHA-256 de-duplication.
+- Originals stored untouched and content-addressed in
+  `LOCAL_DATA_DIR/documents/` (`0600`), served back sandboxed.
+- Background pipeline (in-process worker, resumed after restarts):
+  checksum verify → per-page extraction (pypdf) → heading/section detection →
+  chunking that never spans pages → FTS index. Scanned PDFs are flagged
+  "Needs OCR"; failures are recorded on the document, never crash the app.
+- Every chunk carries provenance: document, page, section, character offsets,
+  extractor version. Re-index one or all documents when the extractor changes.
+- Search inside documents (Knowledge and ⌘K) with page citations; the reader
+  jumps to and highlights the cited passage.
 
 ### Next features requested by the owner (queued after the current target topics)
 

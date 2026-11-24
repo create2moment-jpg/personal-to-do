@@ -8,7 +8,7 @@
 PersonalProductivityData/
 ├── db/ppos.sqlite3      canonical database (+ -wal/-shm while running)
 ├── notes/               (Phase 4+) human-readable note mirror
-├── documents/           (Phase 4) original documents, content-hashed
+├── documents/           original documents, content-hashed (ab/abcdef….pdf), 0600
 ├── indexes/  cache/     derived, rebuildable
 ├── ai/                  (Phase 5) AI job history, model state
 ├── config/              private configuration
