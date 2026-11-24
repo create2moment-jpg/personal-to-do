@@ -35,7 +35,7 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 
 ## What works today
 
-- **Premium feel**: light/dark themes, six accent colours, compact mode,
+- **Premium feel**: light theme plus five dark palettes, six accent colours, compact mode,
   optimistic updates with undo, smooth animated drag and drop that also works
   from the keyboard, command menu, live capture preview, responsive to phone width.
 - **Today**: greeting, progress ring, daily objective, capacity stat that warns

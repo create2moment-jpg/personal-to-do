@@ -31,7 +31,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 1 | Tasks + Today + notes + local database | ✅ done |
 | **1.5** | **Premium experience foundation** (design system, interaction model, demo workspace, e2e tests) | ✅ done — see below |
 | 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | **next** |
-| 3 | Calendar import (ICS) / timeboxing, recurrence expansion, installable app (PWA) | |
+| 3 | **Calendar, meetings & time**: Outlook sync (Graph or ICS), attendance toggles, call logging, time per person/topic, meeting value ratings, automatic capacity, timeboxing, recurrence expansion, installable app (PWA) — [spec](specs/meetings-and-time.md) | planned |
 | 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
@@ -52,7 +52,8 @@ CI.
 
 ### Phase 1.5 delivered — premium experience foundation
 
-**Design system** — tokens for light/dark, six accent colours, comfortable and
+**Design system** — tokens for light/dark, five dark palettes (Graphite,
+Obsidian true-black, Midnight, Forest, Aubergine), six accent colours, comfortable and
 compact density, Inter variable font bundled locally (no font CDN, keeping the
 app fully offline), Lucide icon set, consistent primitives (buttons, chips,
 segmented controls, sheets, dialogs, empty states).
@@ -109,10 +110,31 @@ threaded regression test covers it.
 6. **Tests**: domain invariants, migration round trip, e2e for week drag/drop
    and the review flow; screenshots in both themes.
 
+### Phase 3 plan — Calendar, meetings & time
+
+Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
+
+1. **Calendar sources** behind one port: Microsoft Graph (Outlook, opt-in,
+   read-only, device-code sign-in, incremental sync), ICS subscription URL,
+   `.ics` file import, manual entries.
+2. **Attendance**: per-meeting *Attending / Not attending / Partial*, stored
+   separately from the synced mirror so re-sync never overwrites it.
+3. **Log a call** in seconds: dialog, quick capture (`call: Priya ~30m
+   #retrieval ADR review`) or an "In a call" timer — person, topic, time.
+4. **Automatic capacity**: working hours − attended meetings − buffer feeds the
+   Today meter.
+5. **Time insights**: meeting vs. focus hours, time per person, per topic, per
+   recurring series; value rating (1–5) after each meeting; "meetings to
+   reconsider". Basic charts ship in Phase 3; deeper trends in Phase 8.
+6. **Timeboxing**: drag tasks into free calendar slots.
+7. Privacy: attendee data stays local, excluded from AI by default, deletable
+   per person; tokens in the OS keychain.
+
 ### Premium items queued for later phases
 
 | Item | Phase |
 |---|---|
+| More dark palettes ✅ shipped (Graphite, Obsidian, Midnight, Forest, Aubergine); a theme editor for custom palettes | 8 |
 | Installable PWA (offline shell, app icon, standalone window) | 3 |
 | Calendar timeline with drag-to-timebox | 3 |
 | Natural-language dates in capture ("next Tuesday 3pm") | 3 |
@@ -135,9 +157,10 @@ threaded regression test covers it.
 2. **PostgreSQL as primary.** For a single-user local app SQLite is simpler
    and safer to operate; Postgres stays available behind the same ports
    (ADR-0001). Please confirm, or tell me if multi-device access is a near-term need.
-3. **Calendar source.** Which calendar(s)? ICS file/URL import is simple and
-   fully local; Google/Outlook need OAuth and network access, which conflicts
-   with the local-only posture. Needed before Phase 3.
+3. **Calendar source — answered: Outlook.** Still open: is it a company
+   Microsoft 365 tenant, and can a read-only app registration be approved
+   (admin consent)? If not, ICS publish/export is the fallback. See the
+   [meetings spec](specs/meetings-and-time.md#open-questions-for-the-product-owner).
 4. **Time zones and "day".** Days are the user's local calendar day; travel and
    late-night work need a rule (e.g. a configurable day-start hour).
 5. **Capacity definition.** Phase 1 uses a manually set focus capacity per

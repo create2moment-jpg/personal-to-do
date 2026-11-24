@@ -29,6 +29,11 @@ The visual and interaction language for Personal OS. Source of truth:
 | Radius | `--radius-xs` 5 · `--radius-sm` 7 · `--radius` 10 · `--radius-lg` 14 · `--radius-xl` 18 |
 | Rhythm | `--row` (nav/list row height), `--space` (density multiplier) |
 
+Dark palettes (`data-dark`): `graphite` (default), `obsidian` (true black for
+OLED), `midnight` (navy), `forest` (green-tinted), `aubergine` (plum). Each
+redefines surfaces, borders and text tint only; semantic colours and the accent
+are shared, so any accent works on any palette.
+
 Theme, accent (`indigo`, `violet`, `blue`, `teal`, `amber`, `rose`) and density
 (`comfortable`, `compact`) are attributes on `<html>`: `data-theme`,
 `data-accent`, `data-density`. They are UI preferences stored in the browser

@@ -15,10 +15,11 @@ journal, tasks and plans, AI histories, backups.
 | T7 | Corrupt or malicious backup archive on restore | Manifest SHA-256 verification ✅; path-traversal / non-regular members rejected ✅; existing data moved aside, never deleted ✅ |
 | T8 | Search query injection | User text is tokenised and quoted before FTS5 `MATCH` ✅; all SQL parameterised; dynamic SQL limited to whitelisted column names ✅ |
 | T9 | Sensitive content in logs | API logs never include request bodies ✅ |
-| T10 | Telemetry / cloud leakage | No telemetry; no cloud calls at all in Phase 1 ✅; cloud LLM fallback off unless explicitly enabled (Phase 5 design) |
+| T10 | Telemetry / cloud leakage | No telemetry; no cloud calls at all today ✅ (Phase 3 calendar sync will be the single opt-in exception, T14); cloud LLM fallback off unless explicitly enabled (Phase 5 design) |
 | T11 | Prompt injection from ingested documents (Phase 4+) | Design: documents are data, never instructions; AI output is a validated proposal requiring approval (ADR-0004); tools available to agents are allow-listed per workflow |
 | T12 | AI fabricates achievements / competencies | Design: provenance required on extracted facts; unsupported claims labelled as inference; evaluations measure groundedness |
 | T13 | Supply chain (npm / PyPI) | Lockfile for web deps ✅; minimal dependency set ✅; ⏳ pin Python deps with a lock (uv/pip-tools) in Phase 9 |
+| T14 | Calendar sync (Phase 3): token theft, over-broad access, leaking colleagues' data | Opt-in only; read-only `Calendars.Read` scope; single allow-listed host; refresh token / ICS URL in OS keychain (else encrypted), never logged or exported; attendee data local-only, excluded from AI context by default, "forget person" deletion; the tool never writes to Outlook |
 
 Residual risks to accept knowingly for now: no app-level authentication
 (loopback only), no encryption at rest beyond OS disk encryption.
