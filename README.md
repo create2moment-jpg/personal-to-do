@@ -67,8 +67,15 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Prompt Book** (`g k`): a book for the prompts you give AI assistants —
   chapters and sections nested freely, diary-style pages you flip with ← →,
   `{{variables}}` filled in when you **Copy for Copilot**, every version kept,
-  and **Improve with AI** using your *local* model (Ollama/vLLM; see
-  `.env.example`) with a side-by-side diff. The original is never overwritten.
+  and **Improve with AI** using your *local* model with a side-by-side diff.
+  The original is never overwritten.
+- **Local AI settings** (Settings → Local AI): point the app at any
+  OpenAI-compatible server on your machine — llama.cpp (`http://127.0.0.1:8080/v1`),
+  vLLM, Ollama, LM Studio. Model is optional (the served model is detected),
+  optional API key (kept in memory only, or read from an environment variable),
+  reasoning effort, temperature, output and context limits, timeout.
+  **Test connection** checks `/models` and a tiny chat; **Apply** takes effect
+  immediately, no restart.
 - **Knowledge** (`g d`): drop PDFs, text or Markdown — reviews, level
   frameworks, feedback. Originals stay untouched in your data folder; text is
   indexed per page so every search hit cites its page and section. Optionally

@@ -37,7 +37,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ core done — OCR, .docx and AI fact extraction queued (B-005…B-007) |
-| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer, prompt templates and output validation shipped with the Prompt Book |
+| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer (any OpenAI-compatible local server, configured live in Settings → Local AI, R-017), prompt templates and output validation shipped |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | started — Career view (framework levels × accepted evidence, B-009) done; goals and skills next |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | |

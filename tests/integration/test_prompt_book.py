@@ -194,7 +194,7 @@ def test_api_book_flow(client: object) -> None:
         == "Write tests for parse"
     )
     r = client.post(f"/api/book-nodes/{pg['id']}/improve", json={"style": "clearer"})
-    assert r.status_code == 503 and "not configured" in r.json()["detail"]
+    assert r.status_code == 503 and "Local AI is off" in r.json()["detail"]
     assert client.get("/api/ai/status").json()["enabled"] is False
     tree = client.get(f"/api/books/{b['id']}/tree").json()
     assert len(tree["nodes"]) == 2

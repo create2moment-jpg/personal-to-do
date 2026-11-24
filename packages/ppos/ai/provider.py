@@ -53,8 +53,8 @@ class DisabledProvider:
         self, system: str, prompt: str, *, temperature: float, max_tokens: int
     ) -> LLMResult:
         raise AIUnavailableError(
-            "Local AI is not configured. Start Ollama and set PPOS_LLM_PROVIDER=ollama "
-            "and PPOS_LLM_MODEL (see Settings → Local AI)."
+            "Local AI is off. Start your local model server (llama.cpp, vLLM, Ollama, "
+            "LM Studio) and turn it on in Settings → Local AI."
         )
 
     def reachable(self) -> bool:
@@ -74,38 +74,54 @@ class _HttpProvider:
     name = "http"
 
     def __init__(
-        self, base_url: str, model: str, timeout: float, allow_remote: bool = False
+        self,
+        base_url: str,
+        model: str,
+        timeout: float,
+        allow_remote: bool = False,
+        api_key: str | None = None,
     ) -> None:
         _check_local(base_url, allow_remote)
         self.base_url = base_url.rstrip("/")
         self.model = model
         self.timeout = timeout
+        self._api_key = api_key or None  # never logged, never persisted
 
-    def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+    def _headers(self) -> dict[str, str]:
+        h = {"Content-Type": "application/json"}
+        if self._api_key:
+            h["Authorization"] = f"Bearer {self._api_key}"
+        return h
+
+    def _request(self, path: str, payload: dict[str, Any] | None, timeout: float) -> Any:
         req = urllib.request.Request(  # noqa: S310 - scheme/host validated in __init__
             f"{self.base_url}{path}",
-            data=json.dumps(payload).encode(),
-            headers={"Content-Type": "application/json"},
-            method="POST",
+            data=json.dumps(payload).encode() if payload is not None else None,
+            headers=self._headers(),
+            method="POST" if payload is not None else "GET",
         )
         try:
-            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
-                data: dict[str, Any] = json.loads(resp.read())
-                return data
+            with urllib.request.urlopen(req, timeout=timeout) as resp:  # noqa: S310
+                return json.loads(resp.read())
         except urllib.error.HTTPError as exc:
+            hint = " — check the API key" if exc.code in (401, 403) else ""
             raise AIUnavailableError(
-                f"local model returned HTTP {exc.code}: {exc.read()[:200]!r}"
+                f"model server returned HTTP {exc.code}{hint}: {exc.read()[:200]!r}"
             ) from exc
         except (urllib.error.URLError, TimeoutError, OSError) as exc:
-            raise AIUnavailableError(
-                f"cannot reach the local model at {self.base_url}: {exc}"
-            ) from exc
+            raise AIUnavailableError(f"cannot reach the model at {self.base_url}: {exc}") from exc
+        except ValueError as exc:
+            raise AIUnavailableError(f"{self.base_url}{path} did not answer with JSON") from exc
+
+    def _post(self, path: str, payload: dict[str, Any]) -> dict[str, Any]:
+        data = self._request(path, payload, self.timeout)
+        return data if isinstance(data, dict) else {}
 
     def _get_ok(self, path: str) -> bool:
         try:
-            with urllib.request.urlopen(f"{self.base_url}{path}", timeout=2):  # noqa: S310
-                return True
-        except (urllib.error.URLError, TimeoutError, OSError):
+            self._request(path, None, 2)
+            return True
+        except AIUnavailableError:
             return False
 
 
@@ -135,44 +151,91 @@ class OllamaProvider(_HttpProvider):
         return self._get_ok("/api/tags")
 
 
+def normalize_openai_base(url: str) -> str:
+    """Accept '…:8080', '…:8080/v1' or a pasted '…/v1/chat/completions'; return '…/v1'."""
+    url = url.strip().rstrip("/")
+    for tail in ("/chat/completions", "/completions", "/models"):
+        if url.endswith(tail):
+            url = url[: -len(tail)]
+    return url if urlparse(url).path not in ("", "/") else url + "/v1"
+
+
 class OpenAICompatibleProvider(_HttpProvider):
-    """vLLM, llama.cpp server, LM Studio … (OpenAI chat completions API)."""
+    """llama.cpp server, vLLM, LM Studio, Ollama's /v1 … (OpenAI chat completions API).
+
+    ``base_url`` ends in /v1; requests go to {base_url}/chat/completions. An empty
+    model means "whatever the server serves" (the first entry of /models).
+    """
 
     name = "openai_compatible"
+
+    def __init__(
+        self,
+        base_url: str,
+        model: str,
+        timeout: float,
+        allow_remote: bool = False,
+        api_key: str | None = None,
+        reasoning_effort: str = "",
+    ) -> None:
+        super().__init__(normalize_openai_base(base_url), model, timeout, allow_remote, api_key)
+        self.reasoning_effort = reasoning_effort
+
+    def list_models(self) -> list[str]:
+        data = self._request("/models", None, min(self.timeout, 10))
+        items = data.get("data", []) if isinstance(data, dict) else []
+        return [str(m["id"]) for m in items if isinstance(m, dict) and m.get("id")]
+
+    def _resolve_model(self) -> str:
+        if not self.model:
+            models = self.list_models()
+            if not models:
+                raise AIUnavailableError("the server lists no models — set a model name")
+            self.model = models[0]
+        return self.model
 
     def generate(
         self, system: str, prompt: str, *, temperature: float, max_tokens: int
     ) -> LLMResult:
         start = time.perf_counter()
-        data = self._post(
-            "/v1/chat/completions",
-            {
-                "model": self.model,
-                "messages": [
-                    {"role": "system", "content": system},
-                    {"role": "user", "content": prompt},
-                ],
-                "temperature": temperature,
-                "max_tokens": max_tokens,
-            },
-        )
-        choices = data.get("choices") or [{}]
-        text = str(choices[0].get("message", {}).get("content", ""))
-        return LLMResult(text, self.model, int((time.perf_counter() - start) * 1000))
+        payload: dict[str, Any] = {
+            "model": self._resolve_model(),
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+        }
+        if self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
+        data = self._post("/chat/completions", payload)
+        choice = (data.get("choices") or [{}])[0]
+        message = choice.get("message") or {}
+        text = str(message.get("content") or "")
+        if not text.strip() and (
+            message.get("reasoning_content") or choice.get("finish_reason") == "length"
+        ):
+            raise AIOutputError(
+                "the model used all output tokens while reasoning and gave no answer — "
+                "raise Max output tokens or lower Reasoning effort in Settings → Local AI"
+            )
+        model = str(data.get("model") or self.model)
+        return LLMResult(text, model, int((time.perf_counter() - start) * 1000))
 
     def reachable(self) -> bool:
-        return self._get_ok("/v1/models")
+        return self._get_ok("/models")
 
 
 def build_provider(
     kind: str, base_url: str, model: str, timeout: float, allow_remote: bool
 ) -> LLMProvider:
-    if kind in ("", "none") or not model:
+    if kind in ("", "none") or (kind == "ollama" and not model):
         return DisabledProvider()
     if kind == "ollama":
         return OllamaProvider(base_url or "http://127.0.0.1:11434", model, timeout, allow_remote)
     if kind in ("vllm", "openai_compatible"):
         return OpenAICompatibleProvider(
-            base_url or "http://127.0.0.1:8000", model, timeout, allow_remote
+            base_url or "http://127.0.0.1:8080/v1", model, timeout, allow_remote
         )
     raise AIUnavailableError(f"unknown LLM provider {kind!r} (use ollama or openai_compatible)")

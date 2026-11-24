@@ -532,3 +532,37 @@ export interface EvidenceSuggestion {
   score: number;
   shared: string[];
 }
+
+export type LlmPreset = "llamacpp" | "vllm" | "ollama" | "lmstudio" | "custom";
+
+export interface LlmConfig {
+  enabled: boolean;
+  preset: LlmPreset;
+  base_url: string;
+  model: string;
+  api_key_env: string;
+  reasoning_effort: "" | "low" | "medium" | "high";
+  temperature: number;
+  max_tokens: number;
+  context_limit: number;
+  timeout_seconds: number;
+}
+
+export interface AiConfigState {
+  config: LlmConfig;
+  source: "app" | "env";
+  key_source: "session" | "env" | "none";
+  presets: Record<LlmPreset, string>;
+  local_only: boolean;
+  active: { provider: string; model: string };
+}
+
+export interface AiTestReport {
+  ok: boolean;
+  model: string;
+  latency_ms: number;
+  reply: string;
+  error: string;
+  models: string[];
+  checks: { name: string; ok: boolean; ms: number; detail: string }[];
+}

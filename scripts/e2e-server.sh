@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Start the app on a throwaway demo workspace for end-to-end tests.
 # Never touches your real LOCAL_DATA_DIR. A deterministic fake local LLM
-# (scripts/fake_llm.py, 127.0.0.1 only) backs the "Improve with AI" flow.
+# (scripts/fake_llm.py, 127.0.0.1 only) backs the "Improve with AI" flow
+# through the OpenAI-compatible API (model auto-detected from /v1/models).
 set -euo pipefail
 root="$(cd "$(dirname "$0")/.." && pwd)"
 ppos="${PPOS_BIN:-$root/.venv/bin/ppos}"
@@ -17,5 +18,5 @@ fi
 "$python" "$root/scripts/fake_llm.py" "$llm_port" &
 trap 'kill %1 2>/dev/null || true; rm -rf "$data"' EXIT
 "$ppos" --data-dir "$data" demo >/dev/null
-PPOS_LLM_PROVIDER=ollama PPOS_LLM_MODEL=fake-llm PPOS_LLM_BASE_URL="http://127.0.0.1:$llm_port" \
+PPOS_LLM_PROVIDER=openai_compatible PPOS_LLM_BASE_URL="http://127.0.0.1:$llm_port/v1" \
   "$ppos" --data-dir "$data" serve --port "${PPOS_E2E_PORT:-8799}"

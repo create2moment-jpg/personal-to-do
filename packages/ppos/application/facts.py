@@ -38,14 +38,16 @@ class FactService:
         clock: Clock,
         run_template: TemplateRunner | None,
         jobs: JobRunner,
+        enabled: Callable[[], bool] = lambda: True,
     ) -> None:
         self._uow = uow
         self._clock = clock
         self._run = run_template
         self._jobs = jobs
+        self._enabled = enabled  # AI can be switched on/off at runtime
 
     def start(self, document_id: str) -> FactRun:
-        if self._run is None:
+        if self._run is None or not self._enabled():
             from ppos.ai.provider import AIUnavailableError
 
             raise AIUnavailableError(

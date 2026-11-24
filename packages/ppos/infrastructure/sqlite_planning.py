@@ -45,6 +45,17 @@ class SqliteSettingsRepository:
                 (key, json.dumps(value), now),
             )
 
+    def ai_config(self) -> dict[str, Any] | None:
+        r = self._c.execute("SELECT value FROM ai_settings WHERE id = 1").fetchone()
+        return json.loads(r["value"]) if r else None
+
+    def set_ai_config(self, value: dict[str, Any]) -> None:
+        self._c.execute(
+            "INSERT INTO ai_settings (id, value, updated_at) VALUES (1, ?, ?)"
+            " ON CONFLICT (id) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+            (json.dumps(value), datetime.now(timezone.utc).isoformat()),
+        )
+
 
 class SqliteSprintRepository:
     def __init__(self, conn: sqlite3.Connection) -> None:

@@ -28,6 +28,7 @@ with a reason).
 | R-014 | Some effects and emojis to make it more interesting — don't overdo it | 2026-11-24 | done (confetti for 3 big wins, emoji greetings/toasts, Settings toggle) | Settings → Celebrations |
 | R-015 | Drag and drop of items from anywhere to anywhere | 2026-11-24 | done (boards, lists, sidebar, projects, Upcoming days, notes → Prompt Book; keyboard via task panel) | roadmap N4 |
 | R-016 | Keep track of the backlog so feature requests are not lost | 2026-11-24 | done (this file) | — |
+| R-017 | Configure the local LLM in the app (like Model Forensic): OpenAI-compatible endpoint e.g. `127.0.0.1:8080/v1`, model, key, reasoning effort, limits, Apply + Test connection | 2026-11-24 | done (presets, endpoint …/v1, auto-detected model, session or env-var key, reasoning effort, limits, Apply live, Test connection; local-only kept) | Settings → Local AI |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
@@ -37,6 +38,7 @@ with a reason).
 | B-009 | Career view: accepted facts mapped to framework levels and competencies | 2026-11-24 | done (levels from framework facts, user-confirmed evidence links, coverage as hypothesis, gap → task) | Career (`g c`) |
 | B-010 | Career suggestions that understand synonyms (semantic matching) | 2026-11-24 | idea (from B-009; needs B-008) | — |
 | B-011 | Goals hierarchy linked to career expectations; skills matrix | 2026-11-24 | planned (Phase 7) | — |
+| B-012 | Add career evidence by hand (statement + quote from a document, or your own note) so Career works without AI | 2026-11-24 | planned (from the readiness question) | — |
 | B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | planned (Phase 6) | Knowledge |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |
 

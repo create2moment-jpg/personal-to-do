@@ -229,14 +229,3 @@ def improve(node_id: str, body: ImproveIn, c: ContainerDep) -> dict[str, object]
 @router.post("/api/book-nodes/{node_id}/versions/{version}/accept", response_model=PageOut)
 def accept(node_id: str, version: int, c: ContainerDep) -> PageOut:
     return page_out(c.book.accept(node_id, version))
-
-
-@router.get("/api/ai/status")
-def ai_status(c: ContainerDep) -> dict[str, object]:
-    return {
-        "enabled": c.ai.name != "none",
-        "provider": c.ai.name,
-        "model": c.ai.model,
-        "reachable": c.ai.reachable() if c.ai.name != "none" else False,
-        "local_only": not c.settings.llm_allow_remote,
-    }

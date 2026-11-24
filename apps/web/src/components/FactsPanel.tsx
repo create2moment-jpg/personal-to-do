@@ -59,7 +59,7 @@ export function FactsPanel({ doc }: { doc: DocumentInfo }) {
       </div>
       {!ai?.enabled && (
         <p className="faint" style={{ fontSize: "0.9rem", margin: "0.3rem 0 0" }}>
-          Needs your local model (Ollama / vLLM) — see{" "}
+          Needs your local model (llama.cpp, vLLM, Ollama, LM Studio) — turn it on in{" "}
           <button className="link-btn" onClick={() => ui.navigate("settings")}>
             Settings → Local AI
           </button>

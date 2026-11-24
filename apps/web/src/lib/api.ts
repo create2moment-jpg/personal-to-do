@@ -1,4 +1,7 @@
 import type {
+  AiConfigState,
+  AiTestReport,
+  LlmConfig,
   CareerMatrix,
   EvidenceSuggestion,
   Expectation,
@@ -172,6 +175,9 @@ export const api = {
   improvePage: (id: string, style: string, body?: string) => request<Improvement>("POST", `/api/book-nodes/${id}/improve`, { style, body }),
   acceptVersion: (id: string, v: number) => request<Page>("POST", `/api/book-nodes/${id}/versions/${v}/accept`),
   aiStatus: () => request<AiStatus>("GET", "/api/ai/status"),
+  aiConfig: () => request<AiConfigState>("GET", "/api/ai/config"),
+  applyAiConfig: (body: LlmConfig & { api_key?: string | null; clear_key?: boolean }) => request<AiConfigState>("PUT", "/api/ai/config", body),
+  testAiConfig: (body: LlmConfig & { api_key?: string | null }) => request<AiTestReport>("POST", "/api/ai/test", body),
 
   documents: () => request<DocumentInfo[]>("GET", "/api/documents"),
   document: (id: string) => request<DocumentDetail>("GET", `/api/documents/${id}`),

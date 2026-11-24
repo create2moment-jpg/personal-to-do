@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic stand-in for a local Ollama server (tests and demos only).
 
-Implements /api/tags and /api/chat. The "improved" prompt restructures the
-original into Goal / Context / Ask so the UI flow can be exercised without a
-real model. Binds to 127.0.0.1 only.
+Implements Ollama's /api/tags and /api/chat, and the OpenAI-compatible
+/v1/models and /v1/chat/completions (llama.cpp server, vLLM, LM Studio).
+The "improved" prompt restructures the original into Goal / Context / Ask so
+the UI flow can be exercised without a real model. Binds to 127.0.0.1 only.
 """
 
 from __future__ import annotations
@@ -56,20 +57,34 @@ def extract_facts(user_message: str) -> str:
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
-        self._json({"models": [{"name": "fake-llm"}]})
+        if self.path.rstrip("/").endswith("/v1/models"):
+            self._json({"object": "list", "data": [{"id": "fake-llm", "object": "model"}]})
+        else:
+            self._json({"models": [{"name": "fake-llm"}]})
 
     def do_POST(self) -> None:
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
         user = next(
             (m["content"] for m in payload.get("messages", []) if m.get("role") == "user"), ""
         )
-        answer = extract_facts(user) if 'Allowed "kind" values' in user else improve(user)
-        self._json(
-            {
-                "model": payload.get("model", "fake-llm"),
-                "message": {"role": "assistant", "content": answer},
-            }
-        )
+        if "Reply with exactly: OK" in user:
+            answer = "OK"
+        elif 'Allowed "kind" values' in user:
+            answer = extract_facts(user)
+        else:
+            answer = improve(user)
+        model = payload.get("model") or "fake-llm"
+        message = {"role": "assistant", "content": answer}
+        if self.path.rstrip("/").endswith("/chat/completions"):
+            self._json(
+                {
+                    "object": "chat.completion",
+                    "model": model,
+                    "choices": [{"index": 0, "message": message, "finish_reason": "stop"}],
+                }
+            )
+        else:
+            self._json({"model": model, "message": message})
 
     def _json(self, data: dict[str, object]) -> None:
         body = json.dumps(data).encode()

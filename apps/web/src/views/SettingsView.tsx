@@ -1,10 +1,11 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Clock3, Sparkles, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Clock3, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import type { WorkspaceSettings } from "../lib/types";
 import { formatMinutes, setWorkspaceTimeZone } from "../lib/util";
+import { AiSettings } from "../components/AiSettings";
 import { Keys } from "../components/primitives";
 import { useHealth, useSettings } from "../lib/queries";
 import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
@@ -155,7 +156,7 @@ export function SettingsView() {
       </section>
 
       <WorkSettings />
-      <LocalAiSettings />
+      <AiSettings />
 
       <section className="card settings-section">
         <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -190,7 +191,6 @@ export function SettingsView() {
             <div className="s-label">Version</div>
             <div className="s-help">App {health?.version ?? "…"} · schema v{health?.schema_version ?? "…"}</div>
           </div>
-          <span className="chip">Local AI: Phase 5</span>
         </div>
       </section>
 
@@ -322,27 +322,3 @@ function WorkSettings() {
   );
 }
 
-function LocalAiSettings() {
-  const { data: s } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus });
-  return (
-    <section className="card settings-section">
-      <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
-        <Sparkles size={16} /> Local AI
-      </h3>
-      <p>Used by the Prompt Book to improve prompts. Runs only on this machine; non-local endpoints are refused.</p>
-      <div className="setting-row">
-        <div>
-          <div className="s-label">Status</div>
-          <div className="s-help">{s?.enabled ? `${s.provider} · ${s.model}` : "Not configured"}</div>
-        </div>
-        <span className={s?.reachable ? "chip green" : s?.enabled ? "chip orange" : "chip"}>{s?.reachable ? "Connected" : s?.enabled ? "Not reachable" : "Off"}</span>
-      </div>
-      <div className="setting-row" style={{ alignItems: "flex-start", flexDirection: "column", gap: 8 }}>
-        <div className="s-label">Enable with Ollama</div>
-        <div className="code-line" style={{ width: "100%" }}>ollama pull qwen3:8b</div>
-        <div className="code-line" style={{ width: "100%" }}>PPOS_LLM_PROVIDER=ollama PPOS_LLM_MODEL=qwen3:8b ppos serve</div>
-        <div className="s-help">vLLM / LM Studio: PPOS_LLM_PROVIDER=openai_compatible and PPOS_LLM_BASE_URL=http://127.0.0.1:8000</div>
-      </div>
-    </section>
-  );
-}

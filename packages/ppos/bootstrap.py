@@ -8,7 +8,8 @@ from datetime import date, timedelta
 
 from ppos.ai.output import clean_improved
 from ppos.ai.prompts import load_template
-from ppos.ai.provider import LLMProvider, build_provider
+from ppos.ai.provider import build_provider
+from ppos.ai.runtime import AIRuntime, env_config
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.career import CareerService
@@ -51,7 +52,7 @@ class Container:
     sprints: SprintService
     weeks: WeekService
     book: BookService
-    ai: LLMProvider
+    ai: AIRuntime
     documents: DocumentService
     facts: FactService
     career: CareerService
@@ -90,20 +91,27 @@ def build_container(
         found, series = meetings.between(day, day)
         return day_time(day, found, series, workspace.get()), found, series
 
-    ai = build_provider(
-        settings.llm_provider, settings.llm_base_url, settings.llm_model,
-        settings.llm_timeout_seconds, settings.llm_allow_remote,
+    ai = AIRuntime(
+        uow,
+        env_config(settings.llm_provider, settings.llm_base_url, settings.llm_model,
+                   settings.llm_timeout_seconds),
+        settings.llm_allow_remote,
+        # legacy .env Ollama setups keep the native API until settings are applied in the app
+        env_provider=build_provider(
+            settings.llm_provider, settings.llm_base_url, settings.llm_model,
+            settings.llm_timeout_seconds, settings.llm_allow_remote,
+        ) if settings.llm_provider == "ollama" else None,
     )  # fmt: skip
 
     def run_template(rel_path: str, values: dict[str, str]) -> tuple[str, str, str, int]:
         """Render a versioned prompt template and run it on the local model."""
         template = load_template(settings.prompts_dir, rel_path)
         system = template.meta.get("role", "You are a careful assistant.")
+        temperature, max_tokens = ai.generation_params(
+            settings.llm_temperature, settings.llm_max_tokens
+        )
         r = ai.generate(
-            system,
-            template.render(**values),
-            temperature=settings.llm_temperature,
-            max_tokens=settings.llm_max_tokens,
+            system, template.render(**values), temperature=temperature, max_tokens=max_tokens
         )
         return r.text, r.model, template.ref, r.latency_ms
 
@@ -142,6 +150,6 @@ def build_container(
         book=BookService(uow, clock, improver),
         ai=ai,
         documents=documents,
-        facts=FactService(uow, clock, run_template if ai.name != "none" else None, job_runner),
+        facts=FactService(uow, clock, run_template, job_runner, enabled=lambda: ai.name != "none"),
         career=CareerService(uow, clock, tasks),
     )
