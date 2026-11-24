@@ -84,6 +84,8 @@ export interface Project {
   area: string | null;
   status: "active" | "paused" | "archived";
   color: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface DailyReview {
@@ -135,4 +137,25 @@ export interface CaptureResult {
   task: Task | null;
   note: Note | null;
   warnings: string[];
+}
+
+export interface CapturePreview {
+  kind: "task" | "idea" | "note";
+  title: string;
+  tags: string[];
+  priority: number;
+  estimate_minutes: number | null;
+  scheduled_date: string | null;
+  due_date: string | null;
+  project_hint: string | null;
+  project_name: string | null;
+}
+
+export interface Health {
+  status: string;
+  version: string;
+  schema_version: number;
+  data_dir: string;
+  demo: boolean;
+  ai: { enabled: boolean; note: string };
 }

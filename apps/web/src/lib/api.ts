@@ -1,5 +1,7 @@
 import type {
+  CapturePreview,
   CaptureResult,
+  Health,
   DailyPlan,
   DailyReview,
   Note,
@@ -82,9 +84,12 @@ export const api = {
   restoreVersion: (id: string, v: number) => request<Note>("POST", `/api/notes/${id}/versions/${v}/restore`),
 
   projects: () => request<Project[]>("GET", "/api/projects"),
-  createProject: (data: { name: string; area?: string; description?: string }) =>
+  createProject: (data: { name: string; area?: string; description?: string; color?: string }) =>
     request<Project>("POST", "/api/projects", data),
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
+  capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),
+  health: () => request<Health>("GET", "/api/health"),
+  updateProject: (id: string, changes: Partial<Project>) => request<Project>("PATCH", `/api/projects/${id}`, changes),
   search: (q: string) => request<SearchHit[]>("GET", `/api/search${qs({ q })}`),
 };

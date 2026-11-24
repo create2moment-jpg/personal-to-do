@@ -53,3 +53,38 @@ export function isTypingTarget(el: EventTarget | null): boolean {
   if (!(el instanceof HTMLElement)) return false;
   return el.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName);
 }
+
+export function greeting(d: Date = new Date()): string {
+  const h = d.getHours();
+  if (h < 5) return "Working late";
+  if (h < 12) return "Good morning";
+  if (h < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+export function relativeDay(iso: string, today: string = isoDay()): string {
+  if (iso === today) return "Today";
+  if (iso === addDays(today, 1)) return "Tomorrow";
+  if (iso === addDays(today, -1)) return "Yesterday";
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+
+export function relativeTime(isoTs: string, now: number = Date.now()): string {
+  const diff = (now - new Date(isoTs).getTime()) / 1000;
+  if (diff < 45) return "just now";
+  if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.round(diff / 3600)}h ago`;
+  if (diff < 86400 * 7) return `${Math.round(diff / 86400)}d ago`;
+  return new Date(isoTs).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** Midpoint ordering so a drop never needs to renumber siblings. */
+export function positionBetween(before: number | undefined, after: number | undefined): number {
+  if (before === undefined && after === undefined) return 1;
+  if (before === undefined) return (after as number) - 1;
+  if (after === undefined) return before + 1;
+  return (before + after) / 2;
+}
+
+export const cx = (...parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" ");

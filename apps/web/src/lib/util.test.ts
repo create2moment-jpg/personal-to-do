@@ -27,3 +27,20 @@ describe("util", () => {
     vi.useRealTimers();
   });
 });
+
+describe("ordering and labels", () => {
+  it("computes midpoint positions", async () => {
+    const { positionBetween } = await import("./util");
+    expect(positionBetween(undefined, undefined)).toBe(1);
+    expect(positionBetween(1, 2)).toBe(1.5);
+    expect(positionBetween(undefined, 3)).toBe(2);
+    expect(positionBetween(4, undefined)).toBe(5);
+  });
+
+  it("labels relative days", async () => {
+    const { relativeDay } = await import("./util");
+    expect(relativeDay("2026-11-24", "2026-11-24")).toBe("Today");
+    expect(relativeDay("2026-11-25", "2026-11-24")).toBe("Tomorrow");
+    expect(relativeDay("2026-11-23", "2026-11-24")).toBe("Yesterday");
+  });
+});

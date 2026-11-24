@@ -1,114 +1,168 @@
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import Link from "@tiptap/extension-link";
+import Placeholder from "@tiptap/extension-placeholder";
+import Table from "@tiptap/extension-table";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
+import TableRow from "@tiptap/extension-table-row";
+import TaskItem from "@tiptap/extension-task-item";
+import TaskList from "@tiptap/extension-task-list";
+import Typography from "@tiptap/extension-typography";
+import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import { motion } from "framer-motion";
+import {
+  Bold,
+  BookOpen,
+  Briefcase,
+  Code,
+  FileText,
+  Heading1,
+  Heading2,
+  History,
+  Italic,
+  Lightbulb,
+  List,
+  ListChecks,
+  ListOrdered,
+  NotebookPen,
+  Plus,
+  Quote,
+  Search,
+  Trash2,
+  Users,
+  Wrench,
+  X,
+  FolderKanban,
+  GraduationCap,
+  type LucideIcon,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { api } from "../api";
-import type { Note, NoteKind, NoteSummary, NoteVersion } from "../types";
-import { NOTE_KINDS } from "../types";
-import { debounce } from "../util";
+import { Markdown } from "tiptap-markdown";
+import { toast } from "sonner";
+import { EmptyState, Sheet } from "../components/primitives";
+import { api } from "../lib/api";
+import { keys, useNotes, useUpdateNote } from "../lib/queries";
+import type { Note, NoteKind, NoteVersion } from "../lib/types";
+import { useUi } from "../lib/ui-store";
+import { cx, debounce, relativeTime } from "../lib/util";
 
-interface Props {
-  revision: number;
-  noteId?: string;
-  onSelect: (id: string) => void;
-}
+export const KIND_META: Record<NoteKind, { label: string; icon: LucideIcon }> = {
+  general: { label: "Note", icon: FileText },
+  journal: { label: "Journal", icon: BookOpen },
+  meeting: { label: "Meeting", icon: Users },
+  technical: { label: "Technical", icon: Wrench },
+  project: { label: "Project", icon: FolderKanban },
+  idea: { label: "Idea", icon: Lightbulb },
+  learning: { label: "Learning", icon: GraduationCap },
+  career_evidence: { label: "Career evidence", icon: Briefcase },
+};
 
-const KIND_LABEL = (k: string) => k.replace("_", " ");
+export function NotesView({ noteId }: { noteId?: string }) {
+  const ui = useUi();
+  const qc = useQueryClient();
+  const [kind, setKind] = useState<NoteKind | undefined>();
+  const [filter, setFilter] = useState("");
+  const { data: notes = [] } = useNotes(kind);
 
-export function NotesView({ revision, noteId, onSelect }: Props) {
-  const [notes, setNotes] = useState<NoteSummary[]>([]);
-  const [kind, setKind] = useState<NoteKind | "">("");
-  const [listVersion, setListVersion] = useState(0);
-
-  useEffect(() => {
-    api.notes(kind ? { kind } : {}).then(setNotes).catch(() => setNotes([]));
-  }, [kind, revision, listVersion]);
+  const shown = notes.filter((n) => !filter || n.title.toLowerCase().includes(filter.toLowerCase()));
 
   const create = async () => {
-    const n = await api.createNote({ title: "Untitled", kind: kind || "general" });
-    setListVersion((v) => v + 1);
-    onSelect(n.id);
+    const n = await api.createNote({ title: "", kind: kind ?? "general" });
+    void qc.invalidateQueries({ queryKey: ["notes"] });
+    ui.navigate("notes", n.id);
   };
 
   return (
-    <div className="view notes">
-      <div className="notes-list">
-        <div className="notes-list-head">
-          <select value={kind} onChange={(e) => setKind(e.target.value as NoteKind | "")} aria-label="Filter by kind">
-            <option value="">All notes</option>
-            {NOTE_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {k === "idea" ? "Ideas inbox" : KIND_LABEL(k)}
-              </option>
-            ))}
-          </select>
-          <button className="primary" onClick={create}>
-            New
-          </button>
+    <div className="notes-layout">
+      <aside className="notes-sidebar">
+        <div className="notes-sidebar-head">
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <h1 className="page-title" style={{ fontSize: 20 }}>
+              Notes
+            </h1>
+            <button className="btn sm primary" onClick={create}>
+              <Plus /> New
+            </button>
+          </div>
+          <div className="search-input" style={{ maxWidth: "none" }}>
+            <Search />
+            <input className="input" placeholder="Filter notes" value={filter} onChange={(e) => setFilter(e.target.value)} />
+          </div>
         </div>
-        <ul>
-          {notes.map((n) => (
-            <li key={n.id} className={n.id === noteId ? "active" : ""}>
-              <button className="note-item" onClick={() => onSelect(n.id)}>
-                <span className="note-title">{n.title}</span>
-                <span className="hint">
-                  {KIND_LABEL(n.kind)} · {new Date(n.updated_at).toLocaleDateString()}
+        <div className="notes-filter" role="group" aria-label="Filter by kind">
+          <button className="filter-chip" aria-pressed={!kind} onClick={() => setKind(undefined)}>
+            All
+          </button>
+          {(["idea", "journal", "meeting", "technical", "learning", "career_evidence"] as NoteKind[]).map((k) => {
+            const M = KIND_META[k];
+            return (
+              <button key={k} className="filter-chip" aria-pressed={kind === k} onClick={() => setKind(kind === k ? undefined : k)}>
+                <M.icon /> {k === "idea" ? "Ideas" : M.label}
+              </button>
+            );
+          })}
+        </div>
+        <div className="notes-items">
+          {shown.map((n) => {
+            const M = KIND_META[n.kind];
+            return (
+              <button key={n.id} className={cx("note-item", n.id === noteId && "active")} onClick={() => ui.navigate("notes", n.id)}>
+                <span className="n-title">{n.title}</span>
+                <span className="n-meta">
+                  <M.icon /> {M.label} · {relativeTime(n.updated_at)}
                 </span>
               </button>
-            </li>
-          ))}
-          {notes.length === 0 && <li className="empty">No notes yet.</li>}
-        </ul>
+            );
+          })}
+          {shown.length === 0 && <div className="faint" style={{ padding: 14, fontSize: 13 }}>No notes here yet.</div>}
+        </div>
+      </aside>
+      <div className="editor-wrap">
+        {noteId ? (
+          <NoteEditor key={noteId} noteId={noteId} />
+        ) : (
+          <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
+            <EmptyState icon={NotebookPen} title="Your second brain">
+              Pick a note on the left or create one. Markdown shortcuts work as you type — <code>#</code> heading, <code>-</code> list, <code>[ ]</code> checklist.
+            </EmptyState>
+          </div>
+        )}
       </div>
-      {noteId ? (
-        <NoteEditor key={noteId} noteId={noteId} onSaved={() => setListVersion((v) => v + 1)} />
-      ) : (
-        <div className="editor empty-editor">Select or create a note.</div>
-      )}
     </div>
   );
 }
 
 type SaveState = "saved" | "saving" | "dirty" | "error";
 
-function NoteEditor({ noteId, onSaved }: { noteId: string; onSaved: () => void }) {
-  const [note, setNote] = useState<Note | null>(null);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
+function NoteEditor({ noteId }: { noteId: string }) {
+  const ui = useUi();
+  const qc = useQueryClient();
+  const { data: note } = useQuery({ queryKey: keys.note(noteId), queryFn: () => api.note(noteId) });
+  const update = useUpdateNote(noteId);
+  const [title, setTitle] = useState<string | null>(null);
   const [state, setState] = useState<SaveState>("saved");
-  const [versions, setVersions] = useState<NoteVersion[] | null>(null);
-  const [preview, setPreview] = useState<NoteVersion | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const latest = useRef({ title: "", body: "" });
-
-  useEffect(() => {
-    api
-      .note(noteId)
-      .then((n) => {
-        setNote(n);
-        setTitle(n.title);
-        setBody(n.body);
-        latest.current = { title: n.title, body: n.body };
-      })
-      .catch((e: Error) => setError(e.message));
-  }, [noteId]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const pending = useRef<{ title?: string; body?: string }>({});
 
   const persist = useCallback(
-    async (changes: { title: string; body: string }, snapshot = false) => {
+    (snapshot = false) => {
+      const changes = pending.current;
+      pending.current = {};
+      if (!snapshot && changes.title === undefined && changes.body === undefined) return;
       setState("saving");
-      try {
-        const n = await api.updateNote(noteId, { ...changes, snapshot });
-        setNote(n);
-        setState(latest.current.title === changes.title && latest.current.body === changes.body ? "saved" : "dirty");
-        onSaved();
-      } catch (e) {
-        setState("error");
-        setError((e as Error).message);
-      }
+      update.mutate(
+        { ...changes, snapshot },
+        {
+          onSuccess: () => setState(Object.keys(pending.current).length ? "dirty" : "saved"),
+          onError: () => setState("error"),
+        },
+      );
     },
-    [noteId, onSaved],
+    [update],
   );
+  const autosave = useMemo(() => debounce(() => persist(false), 700), [persist]);
 
-  const autosave = useMemo(() => debounce((c: { title: string; body: string }) => void persist(c), 800), [persist]);
-
-  // Flush pending edits when leaving the note or the page.
   useEffect(() => {
     const flush = () => autosave.flush();
     window.addEventListener("beforeunload", flush);
@@ -118,100 +172,241 @@ function NoteEditor({ noteId, onSaved }: { noteId: string; onSaved: () => void }
     };
   }, [autosave]);
 
-  const change = (t: string, b: string) => {
-    setTitle(t);
-    setBody(b);
-    latest.current = { title: t, body: b };
-    setState("dirty");
-    autosave({ title: t, body: b });
-  };
+  const editor = useEditor(
+    {
+      extensions: [
+        StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+        Placeholder.configure({ placeholder: "Start writing… use # for headings, - for lists, [ ] for checklists" }),
+        TaskList,
+        TaskItem.configure({ nested: true }),
+        Link.configure({ openOnClick: false, autolink: true }),
+        Typography,
+        Table.configure({ resizable: false }),
+        TableRow,
+        TableHeader,
+        TableCell,
+        Markdown.configure({ html: false, transformPastedText: true, linkify: true }),
+      ],
+      content: note?.body ?? "",
+      editable: true,
+      onUpdate: ({ editor: ed }) => {
+        pending.current.body = (ed.storage as { markdown: { getMarkdown: () => string } }).markdown.getMarkdown();
+        setState("dirty");
+        autosave();
+      },
+    },
+    [note?.id],
+  );
 
-  if (!note) return <div className="editor">{error ?? "Loading…"}</div>;
+  useEffect(() => {
+    if (note && title === null) setTitle(note.title === "Untitled" ? "" : note.title);
+  }, [note, title]);
+
+  // ⌘S closes the current version window.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        autosave.flush();
+        persist(true);
+        toast.success("Version saved");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [autosave, persist]);
+
+  if (!note) return <div className="doc faint">Loading…</div>;
+  const M = KIND_META[note.kind];
 
   return (
-    <div className="editor">
-      <div className="editor-head">
-        <input className="title-input" value={title} onChange={(e) => change(e.target.value, body)} aria-label="Title" />
-        <select
-          value={note.kind}
-          aria-label="Kind"
-          onChange={async (e) => setNote(await api.updateNote(noteId, { kind: e.target.value as NoteKind }))}
-        >
-          {NOTE_KINDS.map((k) => (
-            <option key={k} value={k}>
-              {KIND_LABEL(k)}
-            </option>
-          ))}
-        </select>
-        <span className={`save-state ${state}`} aria-live="polite">
-          {state === "saved" ? `Saved · v${note.version}` : state === "saving" ? "Saving…" : state === "dirty" ? "Editing…" : "Save failed"}
+    <>
+      <div className="editor-top">
+        <div className="crumbs">
+          <M.icon /> {M.label}
+          {note.note_date && <span>· {note.note_date}</span>}
+        </div>
+        {editor && <FormatBar editor={editor} />}
+        <span className="save-indicator" aria-live="polite">
+          <span className="dot" style={{ background: state === "saved" ? "var(--green)" : state === "error" ? "var(--red)" : "var(--orange)" }} />
+          {state === "saved" ? `Saved · v${note.version}` : state === "saving" ? "Saving…" : state === "dirty" ? "Editing" : "Save failed"}
         </span>
-        <button
-          onClick={() => {
-            autosave.flush();
-            void persist({ title, body }, true);
-          }}
-          title="Close the current version and start a new one"
-        >
-          Save version
+        <button className="btn sm ghost" onClick={() => setHistoryOpen(true)} title="Version history">
+          <History /> History
         </button>
-        <button onClick={async () => setVersions(versions ? null : await api.versions(noteId))}>History</button>
         <button
-          className="danger"
+          className="btn icon sm ghost danger"
+          aria-label="Delete note"
           onClick={async () => {
-            if (!confirm("Delete this note and its history?")) return;
+            if (!confirm("Delete this note and its version history?")) return;
             await api.deleteNote(noteId);
-            window.location.hash = "/notes";
-            onSaved();
+            void qc.invalidateQueries({ queryKey: ["notes"] });
+            toast(`Deleted “${note.title}”`);
+            ui.navigate("notes");
           }}
         >
-          Delete
+          <Trash2 />
         </button>
       </div>
-      {error && <p className="error">{error}</p>}
-      <div className="editor-body">
-        <textarea
-          value={body}
-          onChange={(e) => change(title, e.target.value)}
-          placeholder="Markdown supported. Autosaves as you type; history is kept."
-          aria-label="Note body"
+      <motion.article className="doc" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+        <input
+          className="doc-title"
+          value={title ?? ""}
+          placeholder="Untitled"
+          aria-label="Title"
+          onChange={(e) => {
+            setTitle(e.target.value);
+            pending.current.title = e.target.value || "Untitled";
+            setState("dirty");
+            autosave();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              editor?.commands.focus("start");
+            }
+          }}
         />
-        {versions && (
-          <aside className="history">
-            <h3>Version history</h3>
-            <ul>
-              {versions.map((v) => (
-                <li key={v.version}>
-                  <button className={`link ${preview?.version === v.version ? "active" : ""}`} onClick={() => setPreview(v)}>
-                    v{v.version} · {new Date(v.created_at).toLocaleString()}
-                  </button>
-                </li>
-              ))}
-            </ul>
-            {preview && (
-              <div className="version-preview">
-                <strong>{preview.title}</strong>
-                <pre>{preview.body}</pre>
+        <div className="doc-props">
+          <select
+            className="prop-select"
+            value={note.kind}
+            aria-label="Kind"
+            onChange={(e) => update.mutate({ kind: e.target.value as NoteKind })}
+          >
+            {(Object.keys(KIND_META) as NoteKind[]).map((k) => (
+              <option key={k} value={k}>
+                {KIND_META[k].label}
+              </option>
+            ))}
+          </select>
+          {note.tags.map((t) => (
+            <span key={t} className="chip accent">
+              #{t}
+            </span>
+          ))}
+          <span className="faint" style={{ fontSize: 12 }}>
+            Edited {relativeTime(note.updated_at)}
+          </span>
+        </div>
+        <EditorContent editor={editor} />
+      </motion.article>
+      <HistorySheet
+        open={historyOpen}
+        note={note}
+        onClose={() => setHistoryOpen(false)}
+        onRestored={(n) => {
+          editor?.commands.setContent(n.body);
+          setTitle(n.title);
+        }}
+        beforeRestore={() => autosave.flush()}
+      />
+    </>
+  );
+}
+
+function FormatBar({ editor }: { editor: Editor }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const f = () => force((x) => x + 1);
+    editor.on("transaction", f);
+    return () => {
+      editor.off("transaction", f);
+    };
+  }, [editor]);
+  const b = (label: string, icon: LucideIcon, active: boolean, run: () => void) => {
+    const I = icon;
+    return (
+      <button key={label} className={cx(active && "on")} aria-label={label} title={label} onMouseDown={(e) => e.preventDefault()} onClick={run}>
+        <I />
+      </button>
+    );
+  };
+  const c = () => editor.chain().focus();
+  return (
+    <div className="format-bar" role="toolbar" aria-label="Formatting">
+      {b("Heading 1", Heading1, editor.isActive("heading", { level: 1 }), () => c().toggleHeading({ level: 1 }).run())}
+      {b("Heading 2", Heading2, editor.isActive("heading", { level: 2 }), () => c().toggleHeading({ level: 2 }).run())}
+      {b("Bold", Bold, editor.isActive("bold"), () => c().toggleBold().run())}
+      {b("Italic", Italic, editor.isActive("italic"), () => c().toggleItalic().run())}
+      {b("Bulleted list", List, editor.isActive("bulletList"), () => c().toggleBulletList().run())}
+      {b("Numbered list", ListOrdered, editor.isActive("orderedList"), () => c().toggleOrderedList().run())}
+      {b("Checklist", ListChecks, editor.isActive("taskList"), () => c().toggleTaskList().run())}
+      {b("Quote", Quote, editor.isActive("blockquote"), () => c().toggleBlockquote().run())}
+      {b("Code block", Code, editor.isActive("codeBlock"), () => c().toggleCodeBlock().run())}
+    </div>
+  );
+}
+
+function HistorySheet({
+  open,
+  note,
+  onClose,
+  onRestored,
+  beforeRestore,
+}: {
+  open: boolean;
+  note: Note;
+  onClose: () => void;
+  onRestored: (n: Note) => void;
+  beforeRestore: () => void;
+}) {
+  const qc = useQueryClient();
+  const { data: versions = [] } = useQuery({ queryKey: keys.versions(note.id), queryFn: () => api.versions(note.id), enabled: open });
+  const [selected, setSelected] = useState<NoteVersion | null>(null);
+  const current = selected ?? versions[0];
+
+  return (
+    <Sheet open={open} onClose={onClose} label="Version history">
+      <div className="sheet-head">
+        <History size={16} />
+        <strong style={{ fontWeight: 600 }}>Version history</strong>
+        <span className="faint" style={{ fontSize: 12 }}>
+          {versions.length} versions · restoring never deletes history
+        </span>
+        <button className="btn icon ghost" style={{ marginLeft: "auto" }} aria-label="Close" onClick={onClose}>
+          <X />
+        </button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", minHeight: 0, flex: 1 }}>
+        <div style={{ borderRight: "1px solid var(--border)", overflowY: "auto", padding: 8 }}>
+          {versions.map((v) => (
+            <button key={v.version} className={cx("note-item", current?.version === v.version && "active")} onClick={() => setSelected(v)}>
+              <span className="n-title">Version {v.version}</span>
+              <span className="n-meta">{relativeTime(v.created_at)}</span>
+            </button>
+          ))}
+        </div>
+        <div style={{ overflowY: "auto", padding: "16px 20px" }}>
+          {current && (
+            <>
+              <h3 style={{ fontSize: 18, fontWeight: 650 }}>{current.title}</h3>
+              <div className="faint" style={{ fontSize: 12, margin: "4px 0 14px" }}>
+                {new Date(current.created_at).toLocaleString()}
+              </div>
+              <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--mono)", fontSize: 12.5, lineHeight: 1.6, color: "var(--text-2)" }}>{current.body || "(empty)"}</pre>
+              {current.version !== note.version && (
                 <button
+                  className="btn primary"
                   onClick={async () => {
-                    autosave.flush();
-                    const n = await api.restoreVersion(noteId, preview.version);
-                    setNote(n);
-                    setTitle(n.title);
-                    setBody(n.body);
-                    latest.current = { title: n.title, body: n.body };
-                    setVersions(await api.versions(noteId));
-                    setPreview(null);
-                    onSaved();
+                    beforeRestore();
+                    const n = await api.restoreVersion(note.id, current.version);
+                    qc.setQueryData(keys.note(note.id), n);
+                    void qc.invalidateQueries({ queryKey: keys.versions(note.id) });
+                    void qc.invalidateQueries({ queryKey: ["notes"] });
+                    onRestored(n);
+                    toast.success(`Restored version ${current.version} as version ${n.version}`);
+                    setSelected(null);
+                    onClose();
                   }}
                 >
-                  Restore as new version
+                  <History /> Restore as new version
                 </button>
-              </div>
-            )}
-          </aside>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
-    </div>
+    </Sheet>
   );
 }

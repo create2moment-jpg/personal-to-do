@@ -1,73 +1,154 @@
-import type { DragEvent } from "react";
-import type { Task } from "../types";
-import { formatMinutes } from "../util";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { AlarmClock, CalendarClock, Clock, Flag, ListChecks, Star } from "lucide-react";
+import type { CSSProperties, KeyboardEvent } from "react";
+import type { Project, Task } from "../lib/types";
+import { cx, formatMinutes, isoDay, relativeDay } from "../lib/util";
 
-export const DRAG_MIME = "application/x-ppos-task";
-
-export function onTaskDragStart(e: DragEvent, task: Task) {
-  e.dataTransfer.setData(DRAG_MIME, task.id);
-  e.dataTransfer.setData("text/plain", task.title);
-  e.dataTransfer.effectAllowed = "move";
-}
-
-export function draggedTaskId(e: DragEvent): string | null {
-  return e.dataTransfer.getData(DRAG_MIME) || null;
-}
-
-interface Props {
+export interface TaskCardProps {
   task: Task;
+  project?: Project;
+  subtasks?: { done: number; total: number };
+  starred?: boolean;
   onOpen: (id: string) => void;
   onToggleDone?: (task: Task) => void;
-  highlight?: boolean;
-  today?: string;
+  onToggleStar?: (task: Task) => void;
+  showSchedule?: boolean;
+  overlay?: boolean;
+  dragging?: boolean;
+  style?: CSSProperties;
+  dragProps?: Record<string, unknown>;
+  innerRef?: (el: HTMLElement | null) => void;
 }
 
-export function TaskCard({ task, onOpen, onToggleDone, highlight, today }: Props) {
+export function TaskCard({
+  task,
+  project,
+  subtasks,
+  starred,
+  onOpen,
+  onToggleDone,
+  onToggleStar,
+  showSchedule,
+  overlay,
+  dragging,
+  style,
+  dragProps,
+  innerRef,
+}: TaskCardProps) {
   const done = task.status === "done";
-  const overdue = !!(today && task.due_date && task.due_date < today && !done);
+  const today = isoDay();
+  const { onKeyDown: dragKeyDown, ...restDrag } = (dragProps ?? {}) as { onKeyDown?: (e: KeyboardEvent<HTMLDivElement>) => void };
+  const late = !done && task.due_date !== null && task.due_date < today;
+  const dueSoon = !done && task.due_date !== null && task.due_date >= today;
+
   return (
     <div
-      className={`task-card p${task.priority} ${done ? "done" : ""} ${highlight ? "highlight" : ""}`}
-      draggable
-      onDragStart={(e) => onTaskDragStart(e, task)}
+      ref={innerRef}
+      style={style}
+      className={cx("task-card", done && "done", starred && "top", overlay && "overlay", dragging && "dragging")}
       onClick={() => onOpen(task.id)}
       onKeyDown={(e) => {
+        dragKeyDown?.(e); // Space picks the card up for keyboard drag/drop
         if (e.key === "Enter") onOpen(task.id);
-        if (e.key === " " && onToggleDone) {
+        if ((e.key === "x" || e.key === "X") && onToggleDone) {
           e.preventDefault();
           onToggleDone(task);
         }
       }}
       tabIndex={0}
       role="button"
-      aria-label={task.title}
+      aria-label={`${task.title}${done ? " (done)" : ""}`}
+      data-task-id={task.id}
+      {...restDrag}
     >
       {onToggleDone && (
         <input
           type="checkbox"
+          className={cx("check", `p${task.priority}`)}
           checked={done}
-          aria-label={done ? "Mark not done" : "Mark done"}
+          aria-label={done ? "Mark as not done" : "Mark as done"}
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => e.stopPropagation()}
           onChange={() => onToggleDone(task)}
         />
       )}
-      <div className="task-body">
-        <div className="task-title">
-          {highlight && <span className="star" aria-label="Top priority">★</span>}
-          {task.title}
-        </div>
-        <div className="task-meta">
-          {task.priority < 4 && <span className={`pill prio p${task.priority}`}>P{task.priority}</span>}
-          {task.estimate_minutes !== null && <span>{formatMinutes(task.estimate_minutes)}</span>}
-          {task.actual_minutes > 0 && <span title="Actual time">⏱ {formatMinutes(task.actual_minutes)}</span>}
-          {task.due_date && <span className={overdue ? "overdue" : ""}>due {task.due_date}</span>}
-          {task.tags.map((t) => (
-            <span key={t} className="tag">
+      <div className="t-main">
+        <div className="t-title">{task.title}</div>
+        <div className="t-meta">
+          {task.priority < 4 && (
+            <span className={`prio-flag p${task.priority}`} title={`Priority ${task.priority}`}>
+              <Flag fill="currentColor" /> P{task.priority}
+            </span>
+          )}
+          {task.estimate_minutes !== null && (
+            <span title="Estimate">
+              <Clock /> {task.actual_minutes > 0 ? `${formatMinutes(task.actual_minutes)} / ` : ""}
+              {formatMinutes(task.estimate_minutes)}
+            </span>
+          )}
+          {subtasks && subtasks.total > 0 && (
+            <span title="Subtasks">
+              <ListChecks /> {subtasks.done}/{subtasks.total}
+            </span>
+          )}
+          {showSchedule && task.scheduled_date && (
+            <span>
+              <CalendarClock /> {relativeDay(task.scheduled_date, today)}
+            </span>
+          )}
+          {(late || dueSoon) && (
+            <span className={cx(late && "late")} title="Due date">
+              <AlarmClock /> {late ? "Overdue · " : "Due "}
+              {relativeDay(task.due_date!, today)}
+            </span>
+          )}
+          {project && (
+            <span className="project-pill">
+              <span className="dot" style={{ background: project.color ?? "var(--text-3)" }} />
+              {project.name}
+            </span>
+          )}
+          {task.tags.slice(0, 3).map((t) => (
+            <span key={t} style={{ color: "var(--accent-text)" }}>
               #{t}
             </span>
           ))}
         </div>
       </div>
+      {onToggleStar && !done && (
+        <div className="t-actions">
+          <button
+            className={cx("btn icon sm ghost", starred && "starred")}
+            aria-label={starred ? "Remove from top priorities" : "Make top priority"}
+            title={starred ? "Remove from top priorities" : "Make top priority"}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStar(task);
+            }}
+          >
+            <Star fill={starred ? "currentColor" : "none"} />
+          </button>
+        </div>
+      )}
     </div>
+  );
+}
+
+/** Drag-and-drop wrapper (dnd-kit sortable: pointer, touch and keyboard). */
+export function SortableTaskCard(props: TaskCardProps & { containerId: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.task.id,
+    data: { container: props.containerId, task: props.task },
+  });
+  return (
+    <TaskCard
+      {...props}
+      innerRef={setNodeRef}
+      dragging={isDragging}
+      style={{ transform: CSS.Translate.toString(transform), transition }}
+      dragProps={{ ...attributes, ...listeners, tabIndex: 0, role: "button" }}
+    />
   );
 }

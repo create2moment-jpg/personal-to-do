@@ -1,84 +1,84 @@
+import { motion } from "framer-motion";
+import { ArrowRight, Pause, Play, RotateCcw, Sparkles, Star, Timer } from "lucide-react";
 import { useEffect, useState } from "react";
-import { api } from "../api";
-import type { Today } from "../types";
-import { formatMinutes, isoDay } from "../util";
+import { toast } from "sonner";
+import { useToday } from "../lib/queries";
+import { useUi } from "../lib/ui-store";
+import { cx, formatMinutes, isoDay } from "../lib/util";
 
-interface Props {
-  revision: number;
-  onCapture: () => void;
-  onOpenTask: (id: string) => void;
-}
-
-export function RightRail({ revision, onCapture, onOpenTask }: Props) {
+export function RightRail() {
+  const ui = useUi();
   const [now, setNow] = useState(new Date());
-  const [today, setToday] = useState<Today | null>(null);
+  const { data: today } = useToday(isoDay());
 
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 15_000);
+    const t = setInterval(() => setNow(new Date()), 10_000);
     return () => clearInterval(t);
   }, []);
 
-  useEffect(() => {
-    api.today(isoDay()).then(setToday).catch(() => setToday(null));
-  }, [revision]);
+  const minutes = now.getHours() * 60 + now.getMinutes();
+  const workday = Math.max(0, Math.min(1, (minutes - 8 * 60) / (10 * 60))); // 08:00–18:00
 
   const top = today
-    ? today.plan.top_priority_ids
-        .map((id) => today.tasks.find((t) => t.id === id))
-        .filter((t): t is NonNullable<typeof t> => t !== undefined)
+    ? today.plan.top_priority_ids.map((id) => today.tasks.find((t) => t.id === id)).filter((t) => t !== undefined)
     : [];
-  const next = today?.tasks.find((t) => t.status === "in_progress") ?? today?.tasks.find((t) => t.status === "planned");
+  const next =
+    today?.tasks.find((t) => t.status === "in_progress" && t.parent_id === null) ??
+    today?.tasks.find((t) => t.status === "planned" && t.parent_id === null && today.plan.top_priority_ids.includes(t.id)) ??
+    today?.tasks.find((t) => t.status === "planned" && t.parent_id === null);
 
   return (
     <aside className="rail" aria-label="Utilities">
-      <div className="clock">
-        <div className="time">{now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
-        <div className="date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
+      <div className="rail-card">
+        <div className="clock-time">{now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
+        <div className="clock-date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
+        <div className="day-progress" title="Workday progress (08:00–18:00)">
+          <motion.div initial={{ width: 0 }} animate={{ width: `${workday * 100}%` }} transition={{ duration: 0.8 }} />
+        </div>
       </div>
 
-      <button className="primary wide" onClick={onCapture}>
-        + Quick capture <kbd>c</kbd>
-      </button>
-
-      {today && (
-        <section>
-          <h3>Capacity</h3>
-          <div className={today.capacity.overcommitted ? "over-text" : ""}>
-            {formatMinutes(today.capacity.planned_minutes)} planned / {formatMinutes(today.capacity.capacity_minutes)}
-          </div>
-          <div className="hint">{formatMinutes(today.capacity.done_minutes)} done</div>
-        </section>
-      )}
-
-      <section>
-        <h3>Top priorities</h3>
-        {top.length === 0 && <div className="hint">Star up to three tasks on Today.</div>}
-        <ol className="top-list">
-          {top.map((t) => (
-            <li key={t.id} className={t.status === "done" ? "done" : ""}>
-              <button className="link" onClick={() => onOpenTask(t.id)}>
-                {t.title}
-              </button>
-            </li>
-          ))}
-        </ol>
-      </section>
-
       {next && (
-        <section>
-          <h3>What next?</h3>
-          <button className="link" onClick={() => onOpenTask(next.id)}>
+        <div className="rail-card">
+          <div className="section-label">
+            <ArrowRight /> Up next
+          </div>
+          <button className="btn ghost block" style={{ justifyContent: "flex-start", height: "auto", padding: "4px 0", whiteSpace: "normal", textAlign: "left", color: "var(--text)" }} onClick={() => ui.openTask(next.id)}>
             {next.title}
           </button>
-        </section>
+          {next.estimate_minutes !== null && <div className="faint" style={{ fontSize: 12 }}>{formatMinutes(next.estimate_minutes)} estimated</div>}
+        </div>
       )}
+
+      <div className="rail-card">
+        <div className="section-label">
+          <Star /> Top priorities
+        </div>
+        {top.length === 0 ? (
+          <div className="faint" style={{ fontSize: 12.5 }}>
+            Star up to three tasks on Today to keep them in view.
+          </div>
+        ) : (
+          <ol className="priority-list">
+            {top.map((t, i) => (
+              <li key={t.id} className={cx(t.status === "done" && "done")} onClick={() => ui.openTask(t.id)}>
+                <span className="p-num">{t.status === "done" ? "✓" : i + 1}</span>
+                <span className="p-title">{t.title}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
 
       <FocusTimer />
 
-      <section className="ai-slot">
-        <h3>AI assistant</h3>
-        <div className="hint">Local LLM (Ollama/vLLM) arrives in Phase 5. Everything here works without it.</div>
-      </section>
+      <div className="rail-card ai-card" style={{ marginTop: "auto" }}>
+        <div className="section-label">
+          <Sparkles /> Assistant
+        </div>
+        <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>
+          A private, on-device AI that drafts plans and reviews from your own records arrives in Phase 5. Everything works without it.
+        </div>
+      </div>
     </aside>
   );
 }
@@ -86,6 +86,7 @@ export function RightRail({ revision, onCapture, onOpenTask }: Props) {
 function FocusTimer() {
   const [length, setLength] = useState(25);
   const [endsAt, setEndsAt] = useState<number | null>(null);
+  const [pausedLeft, setPausedLeft] = useState<number | null>(null);
   const [, tick] = useState(0);
 
   useEffect(() => {
@@ -94,47 +95,61 @@ function FocusTimer() {
       tick((x) => x + 1);
       if (Date.now() >= endsAt) {
         setEndsAt(null);
+        toast.success("Focus block complete", { description: "Take a short break." });
         try {
-          new Notification("Focus block finished");
+          if (Notification.permission === "granted") new Notification("Focus block complete");
         } catch {
           /* notifications unavailable */
         }
       }
-    }, 1000);
+    }, 500);
     return () => clearInterval(t);
   }, [endsAt]);
 
-  const remaining = endsAt ? Math.max(0, Math.round((endsAt - Date.now()) / 1000)) : length * 60;
-  const mm = String(Math.floor(remaining / 60)).padStart(2, "0");
-  const ss = String(remaining % 60).padStart(2, "0");
+  const total = length * 60;
+  const left = endsAt ? Math.max(0, Math.round((endsAt - Date.now()) / 1000)) : (pausedLeft ?? total);
+  const mm = String(Math.floor(left / 60)).padStart(2, "0");
+  const ss = String(left % 60).padStart(2, "0");
+  const running = endsAt !== null;
 
   return (
-    <section>
-      <h3>Focus timer</h3>
-      <div className="timer">
-        {mm}:{ss}
+    <div className="rail-card">
+      <div className="section-label">
+        <Timer /> Focus
       </div>
-      <div className="timer-actions">
-        {endsAt ? (
-          <button onClick={() => setEndsAt(null)}>Stop</button>
-        ) : (
-          <>
-            {[25, 50, 90].map((m) => (
-              <button key={m} className={m === length ? "primary" : ""} onClick={() => setLength(m)}>
-                {m}
-              </button>
-            ))}
-            <button
-              onClick={() => {
+      <div className="timer-row">
+        <div className="timer-face" style={{ color: running ? "var(--accent-text)" : undefined }}>
+          {mm}:{ss}
+        </div>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button
+            className="btn icon primary"
+            aria-label={running ? "Pause" : "Start"}
+            onClick={() => {
+              if (running) {
+                setPausedLeft(left);
+                setEndsAt(null);
+              } else {
                 if ("Notification" in window && Notification.permission === "default") void Notification.requestPermission();
-                setEndsAt(Date.now() + length * 60_000);
-              }}
-            >
-              Start
-            </button>
-          </>
-        )}
+                setEndsAt(Date.now() + (pausedLeft ?? total) * 1000);
+                setPausedLeft(null);
+              }
+            }}
+          >
+            {running ? <Pause /> : <Play />}
+          </button>
+          <button className="btn icon" aria-label="Reset" onClick={() => { setEndsAt(null); setPausedLeft(null); }}>
+            <RotateCcw />
+          </button>
+        </div>
       </div>
-    </section>
+      <div className="segmented" style={{ marginTop: 10 }}>
+        {[25, 50, 90].map((m) => (
+          <button key={m} aria-pressed={m === length} disabled={running} onClick={() => { setLength(m); setPausedLeft(null); }}>
+            {m} min
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
