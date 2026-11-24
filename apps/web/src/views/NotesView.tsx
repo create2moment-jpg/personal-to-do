@@ -42,6 +42,7 @@ import { Markdown } from "tiptap-markdown";
 import { toast } from "sonner";
 import { EmptyState, Sheet } from "../components/primitives";
 import { api } from "../lib/api";
+import { startNoteDrag } from "../lib/drop";
 import { keys, useNotes, useUpdateNote } from "../lib/queries";
 import type { Note, NoteKind, NoteVersion } from "../lib/types";
 import { useUi } from "../lib/ui-store";
@@ -107,7 +108,14 @@ export function NotesView({ noteId }: { noteId?: string }) {
           {shown.map((n) => {
             const M = KIND_META[n.kind];
             return (
-              <button key={n.id} className={cx("note-item", n.id === noteId && "active")} onClick={() => ui.navigate("notes", n.id)}>
+              <button
+                key={n.id}
+                className={cx("note-item", n.id === noteId && "active")}
+                onClick={() => ui.navigate("notes", n.id)}
+                draggable
+                onDragStart={(e) => startNoteDrag(e, n.id, n.title)}
+                title="Drag onto Prompt Book in the sidebar to turn it into a prompt page"
+              >
                 <span className="n-title">{n.title}</span>
                 <span className="n-meta">
                   <M.icon /> {M.label} · {relativeTime(n.updated_at)}

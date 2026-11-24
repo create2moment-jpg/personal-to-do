@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { EmptyState } from "../components/primitives";
 import { TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
+import { dropProps } from "../lib/drop";
 import { keys, useProjects, useTasks } from "../lib/queries";
 import { useUi } from "../lib/ui-store";
 
@@ -21,6 +22,7 @@ export function ProjectsView() {
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [color, setColor] = useState(COLORS[0]!);
+  const [overProject, setOverProject] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const m = new Map<string, { open: number; done: number }>();
@@ -105,7 +107,13 @@ export function ProjectsView() {
                   const total = s.open + s.done;
                   const color = p.color ?? "#64748b";
                   return (
-                    <button key={p.id} className={`card project-card ${selected === p.id ? "active" : ""}`} onClick={() => setSelected(selected === p.id ? null : p.id)}>
+                    <button
+                      key={p.id}
+                      className={`card project-card ${selected === p.id ? "active" : ""} ${overProject === p.id ? "drop-over-zone" : ""}`}
+                      onClick={() => setSelected(selected === p.id ? null : p.id)}
+                      {...dropProps(`project:${p.id}`, (o) => setOverProject(o ? p.id : null))}
+                      title="Drop a task here to move it into this project"
+                    >
                       <div className="project-icon" style={{ background: color }}>
                         {p.name[0]}
                       </div>

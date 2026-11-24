@@ -37,6 +37,7 @@ import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
+import { dropOutsideBoard } from "../lib/drop";
 import { invalidateTasks, queryClient, useCreateTask, useMoveTask, useProjects, useTasks, useToday } from "../lib/queries";
 import { STATUS_LABEL, type DailyReview, type Meeting, type Task, type TaskStatus } from "../lib/types";
 import { useUi } from "../lib/ui-store";
@@ -146,6 +147,7 @@ export function TodayView() {
     setActiveTask(null);
     setOverContainer(null);
     const { active, over } = e;
+    if (dropOutsideBoard(e)) return; // released on a sidebar target (Backlog, Sprint …)
     if (!over) return;
     const from = containerOf(String(active.id));
     const to = containerOf(String(over.id));

@@ -1,13 +1,18 @@
 import { motion } from "framer-motion";
 import { FlaskConical, Plus, Search, Zap } from "lucide-react";
 import { NAV_GROUPS, SETTINGS_ITEM, type NavItem } from "../lib/nav";
+import { useState } from "react";
+import { type DropTarget, dropProps } from "../lib/drop";
 import { useHealth, useTasks, useToday } from "../lib/queries";
 import { useUi, type ViewId } from "../lib/ui-store";
 import { cx, isoDay } from "../lib/util";
 import { Kbd, spring } from "./primitives";
 
+const DROP_TARGETS: Partial<Record<ViewId, DropTarget>> = { today: "today", backlog: "backlog", sprint: "sprint", book: "book" };
+
 export function Sidebar({ view }: { view: ViewId }) {
   const ui = useUi();
+  const [over, setOver] = useState<string | null>(null);
   const health = useHealth();
   const today = useToday(isoDay());
   const backlog = useTasks({ status: "backlog", top_level: true });
@@ -20,10 +25,12 @@ export function Sidebar({ view }: { view: ViewId }) {
   const item = (n: NavItem) => {
     const active = n.id === view;
     const Icon = n.icon;
+    const target = DROP_TARGETS[n.id];
     return (
       <button
         key={n.id}
-        className={cx("nav-item", active && "active", n.phase && "later")}
+        {...(target ? dropProps(target, (o) => setOver(o ? n.id : null), (pageId) => pageId && ui.navigate("book", pageId)) : {})}
+        className={cx("nav-item", active && "active", n.phase && "later", over === n.id && "drop-over")}
         onClick={() => ui.navigate(n.id)}
         title={n.phase ? `Coming in ${n.phase}` : n.shortcut ? `${n.label} · ${n.shortcut}` : n.label}
         aria-current={active ? "page" : undefined}

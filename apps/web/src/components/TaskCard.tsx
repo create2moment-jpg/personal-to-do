@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { AlarmClock, CalendarClock, Clock, Flag, ListChecks, Star } from "lucide-react";
 import type { CSSProperties, KeyboardEvent } from "react";
 import type { Project, Task } from "../lib/types";
+import { startTaskDrag } from "../lib/drop";
 import { cx, formatMinutes, isoDay, relativeDay } from "../lib/util";
 
 export interface TaskCardProps {
@@ -60,6 +61,7 @@ export function TaskCard({
       role="button"
       aria-label={`${task.title}${done ? " (done)" : ""}`}
       data-task-id={task.id}
+      {...(dragProps ? {} : { draggable: true, onDragStart: (e: React.DragEvent) => startTaskDrag(e, task.id, task.title) })}
       {...restDrag}
     >
       {onToggleDone && (

@@ -8,6 +8,7 @@ import { api } from "../lib/api";
 import { keys, useCreateTask, useMoveTask, useProjects, useTasks } from "../lib/queries";
 import type { Task } from "../lib/types";
 import { useUi } from "../lib/ui-store";
+import { dropProps } from "../lib/drop";
 import { addDays, formatMinutes, isoDay, relativeDay } from "../lib/util";
 import { AddRow } from "./TodayView";
 
@@ -121,7 +122,7 @@ export function UpcomingView() {
         const tasks: Task[] = (data?.tasks ?? []).filter((t) => t.parent_id === null);
         const mins = data?.capacity.planned_minutes ?? 0;
         return (
-          <section key={d} className="upcoming-day">
+          <DayDrop key={d} day={d}>
             <div className="group-head">
               <h3>{relativeDay(d, today)}</h3>
               <span className="faint">{new Date(`${d}T12:00:00`).toLocaleDateString(undefined, { month: "long", day: "numeric" })}</span>
@@ -137,7 +138,7 @@ export function UpcomingView() {
               ))}
               <AddRow placeholder={`Add to ${relativeDay(d, today)}`} onAdd={(title) => create.mutateAsync({ title, scheduled_date: d })} />
             </div>
-          </section>
+          </DayDrop>
         );
       })}
       {results.every((r) => r.data && r.data.tasks.length === 0) && (
@@ -146,5 +147,14 @@ export function UpcomingView() {
         </EmptyState>
       )}
     </div>
+  );
+}
+
+function DayDrop({ day, children }: { day: string; children: React.ReactNode }) {
+  const [over, setOver] = useState(false);
+  return (
+    <section className={over ? "upcoming-day drop-over-zone" : "upcoming-day"} {...dropProps(`day:${day}`, setOver)}>
+      {children}
+    </section>
   );
 }

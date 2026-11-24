@@ -19,6 +19,7 @@ import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
+import { dropOutsideBoard } from "../lib/drop";
 import { invalidateTasks, queryClient, useMoveTask, useProjects, useWeek } from "../lib/queries";
 import type { Task, Week, WeeklyObjective } from "../lib/types";
 import { useUi } from "../lib/ui-store";
@@ -143,6 +144,7 @@ function WeekPlan({ week }: { week: Week }) {
   const onDragEnd = (e: DragEndEvent) => {
     setActive(null);
     setOver(null);
+    if (dropOutsideBoard(e)) return;
     if (!e.over) return;
     const to = containerOf(String(e.over.id));
     const from = containerOf(String(e.active.id));

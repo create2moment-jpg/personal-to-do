@@ -224,7 +224,7 @@ product bar above.
   input, respects `prefers-reduced-motion`, and a Settings toggle
   ("Celebrations: on / subtle / off").
 
-**N4 — Drag and drop everywhere**
+**N4 — Drag and drop everywhere** · ✅ done
 - Today: drag between board, backlog and overdue already works; Week: between
   days and sprint backlog; Sprint: lanes via buttons.
 - Extend to: drag tasks onto projects (sidebar or project cards), onto the
