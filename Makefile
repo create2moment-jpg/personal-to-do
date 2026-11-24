@@ -1,4 +1,4 @@
-.PHONY: setup dev api web check test lint typecheck build backup doctor
+.PHONY: setup dev api web check test lint typecheck build backup doctor demo e2e
 
 PY ?= .venv/bin/python
 BIN := .venv/bin
@@ -31,6 +31,13 @@ test:
 
 check: lint typecheck test   ## everything CI runs
 	python3 scripts/check_repo_safety.py --all
+
+demo:             ## synthetic showcase workspace in ~/PersonalProductivityDemo, then serve it
+	$(BIN)/ppos --data-dir $(HOME)/PersonalProductivityDemo demo || true
+	$(BIN)/ppos --data-dir $(HOME)/PersonalProductivityDemo serve
+
+e2e:              ## browser tests against a throwaway demo workspace
+	cd apps/web && npm run build && npx playwright test --trace off
 
 backup:
 	$(BIN)/ppos backup

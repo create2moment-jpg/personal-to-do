@@ -4,9 +4,22 @@ A local-first personal work operating system: plan the day, run the week and
 sprint, capture notes and ideas, and — in later phases — use a **local** LLM
 over your own private data to write, review and track career evidence.
 
-> **Status:** Phase 1 (tasks, Today, notes, local database) is implemented and
-> tested. Week/Sprint, calendar, documents, local AI, goals/skills and reviews
-> follow — see [docs/roadmap.md](docs/roadmap.md).
+> **Status:** Phase 1 (tasks, Today, notes, local database) and Phase 1.5
+> (premium experience: design system, optimistic UI, keyboard drag and drop,
+> rich-text notes, demo workspace) are implemented and tested. Week/Sprint,
+> calendar, documents, local AI, goals/skills and reviews follow — see
+> [docs/roadmap.md](docs/roadmap.md).
+
+## Show it to someone
+
+```bash
+make setup && make build
+make demo          # separate workspace with realistic, synthetic data
+```
+
+Open http://127.0.0.1:8765. A "Demo data" badge makes it clear nothing is real;
+your own workspace is never touched. Try: drag a backlog card onto the board,
+press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Notes.
 
 ## Principles
 
@@ -22,21 +35,27 @@ over your own private data to write, review and track career evidence.
 
 ## What works today
 
-- **Today**: daily objective, capacity meter that warns when you overcommit,
-  drag/drop board (Planned → In progress → Blocked/Waiting → Done), top-3
-  priorities, overdue and due-but-unscheduled lists, roll unfinished work to
+- **Premium feel**: light/dark themes, six accent colours, compact mode,
+  optimistic updates with undo, smooth animated drag and drop that also works
+  from the keyboard, command menu, live capture preview, responsive to phone width.
+- **Today**: greeting, progress ring, daily objective, capacity stat that warns
+  when you overcommit, drag/drop board (Planned → In progress → Blocked → Done),
+  top-3 priorities, overdue and due-but-unscheduled lists, roll unfinished work to
   tomorrow, end-of-day review, daily journal.
+- **Upcoming**: the next seven days with per-day load.
 - **Tasks**: priority, estimate vs actual, due date, project/area, tags,
   subtasks, dependencies (completion blocked until they're done), recurrence
   rule stored.
 - **Backlog** and **Projects & Areas** views.
-- **Notes**: Markdown notes with autosave and version history (restore is
+- **Notes**: a rich-text editor (headings, lists, checklists, tables, code)
+  that stores plain Markdown, with autosave and version history (restore is
   non-destructive), kinds incl. journal, meeting, technical, learning,
   career evidence and an **ideas inbox**; links between notes, tasks and projects.
 - **Quick capture** from anywhere (`c`):
   `Review PR #code !2 ~1h30m @tomorrow due:fri +ml-platform` · `idea: …` · `note: …`
-- **Command palette** (`Ctrl/⌘+K`) with full-text search across tasks and notes.
-- **CLI**: `ppos serve | migrate | backup | restore | export | doctor`.
+- **Command menu** (`Ctrl/⌘+K`) with full-text search, navigation and theme
+  switching; `g t` / `g b` / `g n` navigation; `?` shows all shortcuts.
+- **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.
 
 ## Quick start
 
@@ -78,7 +97,11 @@ Details: [docs/data-and-backups.md](docs/data-and-backups.md).
 
 ```bash
 make check      # ruff, mypy --strict, pytest, tsc, vitest, repo safety guard
+make e2e        # Playwright end-to-end tests against a throwaway demo workspace
 ```
+
+UI stack: React 18 + TypeScript + Vite, TanStack Query, dnd-kit, cmdk, TipTap,
+Framer Motion, Lucide, Sonner. Design rules: [docs/design-system.md](docs/design-system.md).
 
 | Path | Contents |
 |---|---|
@@ -100,6 +123,7 @@ Commit rules: small logical commits, imperative messages, author `Jimmy`
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Design system](docs/design-system.md)
 - [Decisions (ADRs)](docs/adr/)
 - [Threat model](docs/threat-model.md)
 - [Data, backups and upgrades](docs/data-and-backups.md)

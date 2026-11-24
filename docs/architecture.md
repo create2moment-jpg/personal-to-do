@@ -124,3 +124,33 @@ canonical tables apart from FTS5, which is a derived index).
 - List endpoints are paginated (`limit`/`offset`); history is loaded on demand.
 - Nothing expensive runs in a request today; Phase 4 introduces the job queue
   before any extraction/embedding work exists.
+
+## 8. Frontend architecture
+
+```
+apps/web/src
+├── main.tsx            providers: QueryClient, MotionConfig (reduced motion), Toaster, theme bootstrap
+├── App.tsx             shell, hash routing, global shortcuts (⌘K, c, ?, g-chords), overlays
+├── lib/
+│   ├── api.ts          typed fetch client (mirrors apps/api schemas)
+│   ├── queries.ts      TanStack Query keys, hooks, optimistic task moves with rollback
+│   ├── theme.ts        theme / accent / density (browser-local preference)
+│   ├── nav.ts          navigation model; unbuilt areas carry their roadmap phase
+│   └── util.ts         dates, formatting, midpoint ordering, debounce with flush
+├── components/         Sidebar, RightRail, TaskCard (+ sortable), TaskSheet,
+│                       QuickCapture, CommandMenu, ShortcutsDialog, primitives
+└── views/              Today, Upcoming/Backlog, Projects, Notes (lazy), Settings, ComingSoon
+```
+
+- **Server state** lives only in the TanStack Query cache; mutations invalidate
+  the affected keys (`today`, `tasks`, `task`, `notes` …). Task moves are applied
+  optimistically to the visible day and rolled back on error.
+- **Ordering** uses fractional `position` values (midpoint between neighbours),
+  so a drop writes one row.
+- **Drag and drop** is dnd-kit with pointer, touch and keyboard sensors; a custom
+  keyboard coordinate getter moves a picked-up card between columns.
+- **Notes** use TipTap with `tiptap-markdown`: the editor is rich text, the
+  stored format stays portable Markdown. The editor bundle is code-split.
+- **No third-party network calls**: fonts and icons are bundled.
+- **Tests**: Vitest for pure logic; Playwright (`apps/web/e2e`) drives the real
+  app against a throwaway `ppos demo` workspace.
