@@ -1,0 +1,1 @@
+# Globs of reviewed exceptions to scripts/check_repo_safety.py (one per line).
