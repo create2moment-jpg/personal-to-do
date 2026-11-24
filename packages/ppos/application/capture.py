@@ -35,6 +35,19 @@ class CaptureService:
         self._tasks = tasks
         self._notes = notes
 
+    def preview(self, text: str) -> tuple[ParsedCapture, str | None]:
+        """Parse without saving (live preview in the capture bar).
+
+        Returns the parsed capture and the resolved project name, if any.
+        """
+        parsed = parse_capture(text, self._clock.today())
+        project_name = None
+        if parsed.project_hint:
+            with self._uow() as uow:
+                project = uow.projects.find_by_name(parsed.project_hint)
+            project_name = project.name if project else None
+        return parsed, project_name
+
     def capture(self, text: str) -> CaptureResult:
         if not text.strip():
             raise ValidationError("nothing to capture")

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -91,6 +92,19 @@ def cmd_export(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_demo(args: argparse.Namespace) -> int:
+    from ppos.bootstrap import build_container
+    from ppos.demo import seed_demo
+
+    settings = _settings(args)
+    if not getattr(args, "data_dir", None) and "PPOS_LOCAL_DATA_DIR" not in os.environ:
+        settings = Settings(local_data_dir=Path.home() / "PersonalProductivityDemo")
+    counts = seed_demo(build_container(settings))
+    print(f"demo workspace ready in {settings.local_data_dir}: {counts}")
+    print(f"run it with: ppos --data-dir {settings.local_data_dir} serve")
+    return 0
+
+
 def cmd_doctor(args: argparse.Namespace) -> int:
     settings = _settings(args)
     print(f"ppos {__version__}")
@@ -144,6 +158,9 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("export", help="export all data as JSON")
     p.add_argument("--dest")
     p.set_defaults(func=cmd_export)
+
+    p = sub.add_parser("demo", help="create a synthetic showcase workspace (separate data dir)")
+    p.set_defaults(func=cmd_demo)
 
     p = sub.add_parser("doctor", help="check configuration, data boundary and DB integrity")
     p.set_defaults(func=cmd_doctor)

@@ -41,6 +41,7 @@ ignore = ["S101", "S608"]  # asserts in tests; SQL built only from whitelisted c
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "PTH"]
+"packages/ppos/demo.py" = ["E501"]  # long synthetic content strings
 
 [tool.mypy]
 python_version = "3.10"

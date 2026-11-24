@@ -12,6 +12,7 @@ from ppos_api.deps import ContainerDep
 from ppos_api.schemas import (
     CapacityOut,
     CaptureOut,
+    CapturePreviewOut,
     CaptureRequest,
     DailyPlanOut,
     DailyPlanUpdate,
@@ -82,6 +83,22 @@ def journal(day: date, c: ContainerDep) -> NoteOut:
     note = c.notes.journal_for(day, create=True)
     assert note is not None
     return NoteOut.model_validate(note)
+
+
+@router.post("/api/capture/preview", response_model=CapturePreviewOut)
+def capture_preview(body: CaptureRequest, c: ContainerDep) -> CapturePreviewOut:
+    parsed, project_name = c.capture.preview(body.text)
+    return CapturePreviewOut(
+        kind=parsed.kind.value,
+        title=parsed.title,
+        tags=parsed.tags,
+        priority=int(parsed.priority),
+        estimate_minutes=parsed.estimate_minutes,
+        scheduled_date=parsed.scheduled_date,
+        due_date=parsed.due_date,
+        project_hint=parsed.project_hint,
+        project_name=project_name,
+    )
 
 
 @router.post("/api/capture", response_model=CaptureOut, status_code=status.HTTP_201_CREATED)

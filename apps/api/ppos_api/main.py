@@ -82,7 +82,8 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
             status="ok",
             version=__version__,
             schema_version=version,
-            data_dir_configured=True,
+            data_dir=str(settings.local_data_dir),
+            demo=(settings.local_data_dir / "DEMO").exists(),
             ai={"enabled": False, "note": "local LLM integration arrives in Phase 5"},
         )
 

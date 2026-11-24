@@ -130,7 +130,8 @@ class NoteService:
             existing = uow.notes.find_daily_journal(day)
         if existing is not None or not create:
             return existing
-        return self.create(title=f"Journal {day.isoformat()}", kind=NoteKind.JOURNAL, note_date=day)
+        title = f"Journal · {day.strftime('%A')}, {day.strftime('%B')} {day.day}"
+        return self.create(title=title, kind=NoteKind.JOURNAL, note_date=day)
 
 
 class LinkService:

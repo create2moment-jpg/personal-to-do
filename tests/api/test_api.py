@@ -70,3 +70,18 @@ def test_projects(client: TestClient) -> None:
 
 def test_unknown_api_route_is_404(client: TestClient) -> None:
     assert client.get("/api/nope").status_code == 404
+
+
+def test_capture_preview_does_not_save(client: TestClient) -> None:
+    client.post("/api/projects", json={"name": "ML Platform"})
+    r = client.post(
+        "/api/capture/preview", json={"text": "Ship it #release !1 ~2h @tomorrow +ml-platform"}
+    )
+    body = r.json()
+    assert body["title"] == "Ship it" and body["priority"] == 1 and body["estimate_minutes"] == 120
+    assert body["scheduled_date"] == "2026-11-25" and body["project_name"] == "ML Platform"
+    assert client.get("/api/tasks").json() == []
+
+
+def test_health_reports_demo_flag(client: TestClient) -> None:
+    assert client.get("/api/health").json()["demo"] is False

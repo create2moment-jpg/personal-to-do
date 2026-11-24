@@ -230,6 +230,18 @@ class CaptureRequest(BaseModel):
     text: str = Field(min_length=1, max_length=10_000)
 
 
+class CapturePreviewOut(BaseModel):
+    kind: str
+    title: str
+    tags: list[str]
+    priority: int
+    estimate_minutes: int | None
+    scheduled_date: date | None
+    due_date: date | None
+    project_hint: str | None
+    project_name: str | None
+
+
 class CaptureOut(BaseModel):
     kind: str
     task: TaskOut | None
@@ -249,5 +261,6 @@ class HealthOut(BaseModel):
     status: str
     version: str
     schema_version: int
-    data_dir_configured: bool
+    data_dir: str
+    demo: bool
     ai: dict[str, Any]
