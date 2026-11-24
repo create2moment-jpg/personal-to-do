@@ -1,5 +1,6 @@
 import {
   BarChart3,
+  BookOpenText,
   Brain,
   CalendarDays,
   CalendarRange,
@@ -43,6 +44,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Think",
     items: [
       { id: "notes", label: "Notes", icon: NotebookPen, shortcut: "G N" },
+      { id: "book", label: "Prompt Book", icon: BookOpenText, shortcut: "G K" },
       { id: "knowledge", label: "Knowledge", icon: Library, phase: "Phase 4" },
       { id: "ai", label: "Assistant", icon: Sparkles, phase: "Phase 5" },
     ],
@@ -72,6 +74,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   b: "backlog",
   p: "projects",
   n: "notes",
+  k: "book",
   s: "settings",
 };
 

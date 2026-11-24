@@ -6,6 +6,7 @@ import { BurndownChart } from "../components/charts";
 import { Dialog, EmptyState } from "../components/primitives";
 import { TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
+import { celebrate } from "../lib/celebrate";
 import { invalidateTasks, useProjects, useSettings, useSprints, useSprintSummary, useTasks } from "../lib/queries";
 import type { Sprint, Task } from "../lib/types";
 import { useUi } from "../lib/ui-store";
@@ -299,7 +300,8 @@ function CompleteDialog({ open, sprint, openCount, onClose, onDone }: { open: bo
         onSubmit={async (e) => {
           e.preventDefault();
           const r = await api.completeSprint(sprint.id, { rollover, summary, lessons });
-          toast.success(`${sprint.name} completed`, { description: r.rolled_over ? `${r.rolled_over} open task(s) moved to ${r.next_sprint ? r.next_sprint.name : "the backlog"}` : "Everything was finished. Impressive." });
+          celebrate("sprint");
+          toast.success(`🏁 ${sprint.name} completed`, { description: r.rolled_over ? `${r.rolled_over} open task(s) moved to ${r.next_sprint ? r.next_sprint.name : "the backlog"}` : "Everything was finished. Impressive." });
           onClose();
           onDone(r.next_sprint?.id);
         }}

@@ -1,5 +1,5 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { Check, Clock3, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Check, Clock3, Sparkles, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
@@ -122,6 +122,25 @@ export function SettingsView() {
         </div>
         <div className="setting-row">
           <div>
+            <div className="s-label">Celebrations</div>
+            <div className="s-help">A short confetti moment for big wins (top 3 done, sprint completed, week reviewed).</div>
+          </div>
+          <div className="segmented" role="group" aria-label="Celebrations">
+            {(
+              [
+                ["on", "🎉 On"],
+                ["subtle", "Subtle"],
+                ["off", "Off"],
+              ] as const
+            ).map(([v, label]) => (
+              <button key={v} aria-pressed={appearance.celebrations === v} onClick={() => set({ celebrations: v })}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="setting-row">
+          <div>
             <div className="s-label">Density</div>
             <div className="s-help">Compact fits more on screen.</div>
           </div>
@@ -136,6 +155,7 @@ export function SettingsView() {
       </section>
 
       <WorkSettings />
+      <LocalAiSettings />
 
       <section className="card settings-section">
         <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -297,6 +317,31 @@ function WorkSettings() {
             </button>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function LocalAiSettings() {
+  const { data: s } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus });
+  return (
+    <section className="card settings-section">
+      <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Sparkles size={16} /> Local AI
+      </h3>
+      <p>Used by the Prompt Book to improve prompts. Runs only on this machine; non-local endpoints are refused.</p>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Status</div>
+          <div className="s-help">{s?.enabled ? `${s.provider} · ${s.model}` : "Not configured"}</div>
+        </div>
+        <span className={s?.reachable ? "chip green" : s?.enabled ? "chip orange" : "chip"}>{s?.reachable ? "Connected" : s?.enabled ? "Not reachable" : "Off"}</span>
+      </div>
+      <div className="setting-row" style={{ alignItems: "flex-start", flexDirection: "column", gap: 8 }}>
+        <div className="s-label">Enable with Ollama</div>
+        <div className="code-line" style={{ width: "100%" }}>ollama pull qwen3:8b</div>
+        <div className="code-line" style={{ width: "100%" }}>PPOS_LLM_PROVIDER=ollama PPOS_LLM_MODEL=qwen3:8b ppos serve</div>
+        <div className="s-help">vLLM / LM Studio: PPOS_LLM_PROVIDER=openai_compatible and PPOS_LLM_BASE_URL=http://127.0.0.1:8000</div>
       </div>
     </section>
   );

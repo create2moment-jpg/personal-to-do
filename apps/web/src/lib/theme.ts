@@ -4,6 +4,7 @@ export type ThemeMode = "system" | "light" | "dark";
 export type Accent = "indigo" | "violet" | "blue" | "teal" | "amber" | "rose";
 export type Density = "comfortable" | "compact";
 export type DisplaySize = "auto" | "compact" | "comfortable" | "large" | "xl";
+export type Celebrations = "on" | "subtle" | "off";
 export type DarkPalette = "graphite" | "obsidian" | "midnight" | "forest" | "aubergine";
 
 /** Dark palettes: [name, description, background, surface] for previews. */
@@ -21,6 +22,7 @@ export interface Appearance {
   density: Density;
   dark: DarkPalette;
   display: DisplaySize;
+  celebrations: Celebrations;
 }
 
 export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
@@ -33,7 +35,7 @@ export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
 };
 
 const KEY = "ppos.appearance";
-const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable", dark: "graphite", display: "auto" };
+const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable", dark: "graphite", display: "auto", celebrations: "on" };
 
 // UI preferences only (per browser). Never personal content.
 export function loadAppearance(): Appearance {

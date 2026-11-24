@@ -1,4 +1,11 @@
 import type {
+  AiStatus,
+  Book,
+  BookNode,
+  Improvement,
+  NodeKind,
+  Page,
+  PromptVersion,
   IcsImportResult,
   Meeting,
   MeetingSeries,
@@ -134,6 +141,28 @@ export const api = {
   people: () => request<Named[]>("GET", "/api/people"),
   topics: () => request<Named[]>("GET", "/api/topics"),
   insights: (days: number) => request<TimeInsights>("GET", `/api/insights/time${qs({ days })}`),
+
+  books: () => request<Book[]>("GET", "/api/books"),
+  createBook: (data: { title: string; emoji?: string | null }) => request<Book>("POST", "/api/books", data),
+  updateBook: (id: string, changes: Partial<Book>) => request<Book>("PATCH", `/api/books/${id}`, changes),
+  deleteBook: (id: string) => request<void>("DELETE", `/api/books/${id}`),
+  bookTree: (id: string) => request<{ book: Book; nodes: BookNode[] }>("GET", `/api/books/${id}/tree`),
+  createNode: (data: { book_id: string; kind: NodeKind; title?: string; parent_id?: string | null; body?: string; emoji?: string | null }) =>
+    request<Page>("POST", "/api/book-nodes", data),
+  node: (id: string) => request<Page>("GET", `/api/book-nodes/${id}`),
+  updateNode: (id: string, changes: Partial<Pick<Page, "title" | "emoji" | "body" | "tags" | "rating">>) =>
+    request<Page>("PATCH", `/api/book-nodes/${id}`, changes),
+  moveNode: (id: string, parent_id: string | null, position?: number) =>
+    request<Page>("POST", `/api/book-nodes/${id}/move`, { parent_id, position }),
+  deleteNode: (id: string) => request<void>("DELETE", `/api/book-nodes/${id}`),
+  pageVersions: (id: string) => request<PromptVersion[]>("GET", `/api/book-nodes/${id}/versions`),
+  snapshotPage: (id: string) => request<PromptVersion>("POST", `/api/book-nodes/${id}/snapshot`),
+  restorePage: (id: string, v: number) => request<Page>("POST", `/api/book-nodes/${id}/versions/${v}/restore`),
+  usePage: (id: string, values: Record<string, string>, body?: string) =>
+    request<{ text: string }>("POST", `/api/book-nodes/${id}/use`, { values, body }),
+  improvePage: (id: string, style: string, body?: string) => request<Improvement>("POST", `/api/book-nodes/${id}/improve`, { style, body }),
+  acceptVersion: (id: string, v: number) => request<Page>("POST", `/api/book-nodes/${id}/versions/${v}/accept`),
+  aiStatus: () => request<AiStatus>("GET", "/api/ai/status"),
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
   capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),

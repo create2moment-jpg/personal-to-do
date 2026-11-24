@@ -13,6 +13,7 @@ import { cx, isTypingTarget } from "./lib/util";
 import { ComingSoonView } from "./views/ComingSoonView";
 import { BacklogView, UpcomingView } from "./views/ListViews";
 import { MeetingsView } from "./views/MeetingsView";
+import { PromptBookView } from "./views/PromptBookView";
 import { SprintView } from "./views/SprintView";
 import { WeekView } from "./views/WeekView";
 import { LogCallDialog, type CallDraft } from "./components/meetings";
@@ -107,12 +108,13 @@ export function App() {
   else if (view === "week") page = <WeekView initialTab={arg === "review" ? "review" : "plan"} />;
   else if (view === "sprint") page = <SprintView />;
   else if (view === "meetings") page = <MeetingsView />;
+  else if (view === "book") page = <PromptBookView pageId={arg} />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;
   else page = <SettingsView />;
 
-  const showRail = !["notes", "settings", "week"].includes(view);
+  const showRail = !["notes", "settings", "week", "book"].includes(view);
 
   return (
     <UiContext.Provider value={ui}>

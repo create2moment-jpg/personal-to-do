@@ -4,6 +4,7 @@ export type ViewId =
   | "today"
   | "upcoming"
   | "meetings"
+  | "book"
   | "week"
   | "sprint"
   | "backlog"

@@ -131,7 +131,7 @@ export interface Today {
 }
 
 export interface SearchHit {
-  entity_type: "task" | "note" | "project" | "day";
+  entity_type: "task" | "note" | "project" | "day" | "page";
   entity_id: string;
   title: string;
   snippet: string;
@@ -350,4 +350,64 @@ export interface IcsImportResult {
   updated: number;
   cancelled: number;
   series: number;
+}
+
+// ------------------------------------------------------------------ Prompt Book
+export type NodeKind = "chapter" | "section" | "page";
+
+export interface Book {
+  id: string;
+  title: string;
+  emoji: string | null;
+  description: string;
+}
+
+export interface BookNode {
+  id: string;
+  book_id: string;
+  parent_id: string | null;
+  kind: NodeKind;
+  title: string;
+  emoji: string | null;
+  position: number;
+  updated_at: string;
+  use_count: number;
+  variables: string[];
+}
+
+export interface Page extends BookNode {
+  body: string;
+  tags: string[];
+  version: number;
+  last_used_at: string | null;
+  rating: number | null;
+  created_at: string;
+}
+
+export interface PromptVersion {
+  version: number;
+  body: string;
+  source: "original" | "edited" | "ai" | "used" | "restored";
+  model: string | null;
+  prompt_template: string | null;
+  note: string;
+  created_at: string;
+}
+
+export interface Improvement {
+  original: string;
+  improved: string;
+  style: string;
+  model: string;
+  template: string;
+  latency_ms: number;
+  version: number;
+}
+
+export interface AiStatus {
+  enabled: boolean;
+  provider: string;
+  model: string;
+  reachable: boolean;
+  local_only: boolean;
 }

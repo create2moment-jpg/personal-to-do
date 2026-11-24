@@ -35,11 +35,12 @@ import { MeetingRow } from "../components/meetings";
 import { ProgressRing, StatusDot } from "../components/primitives";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
+import { celebrate } from "../lib/celebrate";
 import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
 import { invalidateTasks, queryClient, useCreateTask, useMoveTask, useProjects, useTasks, useToday } from "../lib/queries";
 import { STATUS_LABEL, type DailyReview, type Meeting, type Task, type TaskStatus } from "../lib/types";
 import { useUi } from "../lib/ui-store";
-import { addDays, cx, formatMinutes, greeting, isoDay, positionBetween, prettyDay } from "../lib/util";
+import { addDays, cx, formatMinutes, greeting, greetingEmoji, isoDay, positionBetween, prettyDay } from "../lib/util";
 
 const COLUMNS: TaskStatus[] = ["planned", "in_progress", "blocked", "done"];
 const COLUMN_LABEL: Record<string, string> = { planned: "Planned", in_progress: "In progress", blocked: "Blocked", done: "Done" };
@@ -125,7 +126,9 @@ export function TodayView() {
         onSuccess: () => {
           if (next !== "done") return;
           const remainingTop = plan.top_priority_ids.filter((id) => id !== t.id && topLevel.find((x) => x.id === id)?.status !== "done");
-          toast.success(remainingTop.length === 0 && plan.top_priority_ids.includes(t.id) ? "All top priorities done" : "Completed", {
+          const allTop = remainingTop.length === 0 && plan.top_priority_ids.includes(t.id);
+          if (allTop) celebrate("top3");
+          toast.success(allTop ? "🎉 All top priorities done" : "Completed", {
             description: t.title,
             action: { label: "Undo", onClick: () => move.mutate({ id: t.id, status: prev }) },
           });
@@ -184,7 +187,7 @@ export function TodayView() {
       <header className="hero">
         <div>
           <div className="hero-greeting">
-            {isToday ? greeting() : "Planning"}
+            {isToday ? `${greetingEmoji()} ${greeting()}` : "Planning"}
             <span className="faint">·</span>
             <div style={{ display: "inline-flex", gap: 2 }}>
               <button className="btn icon sm ghost" aria-label="Previous day" onClick={() => setDay(addDays(day, -1))}>
@@ -471,7 +474,7 @@ function ReviewCard({ day, review, tasks }: { day: string; review: DailyReview; 
   const save = async (complete: boolean) => {
     await api.saveReview(day, { ...form, complete });
     void queryClient.invalidateQueries({ queryKey: ["today"] });
-    toast.success(complete ? "Day closed. See you tomorrow." : "Review saved");
+    toast.success(complete ? "🌙 Day closed. See you tomorrow." : "Review saved");
   };
 
   return (

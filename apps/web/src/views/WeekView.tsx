@@ -17,6 +17,7 @@ import { DayTimeChart } from "../components/charts";
 import { EmptyState } from "../components/primitives";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
+import { celebrate } from "../lib/celebrate";
 import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
 import { invalidateTasks, queryClient, useMoveTask, useProjects, useWeek } from "../lib/queries";
 import type { Task, Week, WeeklyObjective } from "../lib/types";
@@ -340,7 +341,8 @@ function WeekReviewPanel({ week, onPlanNext }: { week: Week; onPlanNext: () => v
             onClick={async () => {
               await api.updateWeek(week.week_start, { ...form, complete_review: true });
               void queryClient.invalidateQueries({ queryKey: ["week"] });
-              toast.success("Week reviewed", { description: "Now set next week's objectives." });
+              celebrate("week");
+              toast.success("✨ Week reviewed", { description: "Now set next week's objectives." });
               onPlanNext();
             }}
           >

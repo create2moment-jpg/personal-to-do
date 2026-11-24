@@ -56,3 +56,12 @@ describe("workspace time zone", () => {
     u.setWorkspaceTimeZone(undefined);
   });
 });
+
+describe("wordDiff", () => {
+  it("marks additions and deletions", async () => {
+    const { wordDiff } = await import("./util");
+    const d = wordDiff("fix the bug", "fix the flaky bug now");
+    expect(d.filter((p) => p.kind === "add").map((p) => p.text.trim()).join(" ")).toContain("flaky");
+    expect(d.map((p) => (p.kind === "del" ? "" : p.text)).join("")).toBe("fix the flaky bug now");
+  });
+});
