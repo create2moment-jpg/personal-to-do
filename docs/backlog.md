@@ -28,7 +28,7 @@ with a reason).
 | R-014 | Some effects and emojis to make it more interesting — don't overdo it | 2026-11-24 | done (confetti for 3 big wins, emoji greetings/toasts, Settings toggle) | Settings → Celebrations |
 | R-015 | Drag and drop of items from anywhere to anywhere | 2026-11-24 | done (boards, lists, sidebar, projects, Upcoming days, notes → Prompt Book; keyboard via task panel) | roadmap N4 |
 | R-016 | Keep track of the backlog so feature requests are not lost | 2026-11-24 | done (this file) | — |
-| B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | idea (from R-012) | — |
+| B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |

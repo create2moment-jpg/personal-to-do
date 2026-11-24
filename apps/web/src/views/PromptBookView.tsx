@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  BookOpen,
   BookOpenText,
   ChevronDown,
   ChevronLeft,
@@ -33,6 +34,18 @@ const STYLES: { id: string; label: string; hint: string }[] = [
   { id: "concise", label: "Concise", hint: "Shorter, nothing lost" },
 ];
 const LAST_BOOK = "ppos.lastBook";
+const SPREAD_KEY = "ppos.bookSpread";
+
+function useMediaQuery(q: string): boolean {
+  const [m, setM] = useState(() => window.matchMedia(q).matches);
+  useEffect(() => {
+    const mq = window.matchMedia(q);
+    const on = () => setM(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [q]);
+  return m;
+}
 
 /** Depth-first reading order of pages = the book's page numbering. */
 function readingOrder(nodes: BookNode[]): BookNode[] {
@@ -92,6 +105,16 @@ export function PromptBookView({ pageId }: { pageId?: string }) {
   const currentId = pageId && (nodes.some((n) => n.id === pageId) || pageForRoute?.id === pageId) ? pageId : pages[0]?.id;
   const index = pages.findIndex((p) => p.id === currentId);
   const [direction, setDirection] = useState(1);
+  const wide = useMediaQuery("(min-width: 1900px)");
+  const [spreadPref, setSpreadPref] = useState(() => {
+    try {
+      return localStorage.getItem(SPREAD_KEY) !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const spread = wide && spreadPref && index >= 0 && index < pages.length - 1;
+  const nextPage = spread ? pages[index + 1] : undefined;
   const refreshTree = useCallback(() => qc.invalidateQueries({ queryKey: ["book-tree"] }), [qc]);
 
   const go = useCallback(
@@ -172,13 +195,33 @@ export function PromptBookView({ pageId }: { pageId?: string }) {
           <button className="btn sm ghost" onClick={() => void create("chapter", null)}>
             <FolderPlus /> Chapter
           </button>
+          {wide && (
+            <button
+              className="btn sm ghost"
+              aria-pressed={spreadPref}
+              title="Show two pages side by side"
+              style={{ marginLeft: "auto" }}
+              onClick={() => {
+                setSpreadPref((v) => {
+                  try {
+                    localStorage.setItem(SPREAD_KEY, v ? "off" : "on");
+                  } catch {
+                    /* per-browser preference only */
+                  }
+                  return !v;
+                });
+              }}
+            >
+              <BookOpen /> {spreadPref ? "Spread" : "Single"}
+            </button>
+          )}
         </div>
         <Toc nodes={nodes} currentId={currentId} onOpen={(id) => ui.navigate("book", id)} onCreate={create} onChanged={() => void refreshTree()} pageNumbers={pages} />
       </aside>
 
       <main className="book-desk">
         {currentId ? (
-          <div className="book-stage">
+          <div className={cx("book-stage", spread && "spread")}>
             <button className="page-turn left" aria-label="Previous page" disabled={index <= 0} onClick={() => go(-1)}>
               <ChevronLeft />
             </button>
@@ -208,6 +251,13 @@ export function PromptBookView({ pageId }: { pageId?: string }) {
                 />
               </motion.div>
             </AnimatePresence>
+            {nextPage && (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div key={nextPage.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                  <FacingPage id={nextPage.id} number={index + 2} total={pages.length} onOpen={() => go(1)} />
+                </motion.div>
+              </AnimatePresence>
+            )}
             <button className="page-turn right" aria-label="Next page" disabled={index >= pages.length - 1} onClick={() => go(1)}>
               <ChevronRight />
             </button>
@@ -731,3 +781,26 @@ function HistorySheet({ open, pageId, onClose, onRestored }: { open: boolean; pa
   );
 }
 
+
+/** Read-only right-hand page of the spread; click to turn to it. */
+function FacingPage({ id, number, total, onOpen }: { id: string; number: number; total: number; onOpen: () => void }) {
+  const { data: page } = useQuery({ queryKey: ["page", id], queryFn: () => api.node(id) });
+  return (
+    <button className="page-sheet facing" onClick={onOpen} aria-label={`Open page ${number}: ${page?.title ?? ""}`}>
+      <header className="sheet-top">
+        <span />
+        <span className="page-no">
+          Page {number} of {total}
+        </span>
+      </header>
+      {page && (
+        <>
+          <div className="page-date">{new Date(page.created_at).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</div>
+          <div className="page-title">{page.title}</div>
+          <div className="page-body facing-body">{page.body || "—"}</div>
+        </>
+      )}
+      <span className="facing-hint">Click to turn the page →</span>
+    </button>
+  );
+}
