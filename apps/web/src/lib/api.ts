@@ -1,4 +1,7 @@
 import type {
+  Fact,
+  FactRun,
+  FactStatus,
   DocHit,
   DocumentDetail,
   DocumentInfo,
@@ -179,6 +182,11 @@ export const api = {
     if (!res.ok) throw new ApiError(res.status, data.detail ?? res.statusText);
     return data as { document: DocumentInfo; duplicate: boolean };
   },
+
+  extractFacts: (docId: string) => request<FactRun>("POST", `/api/documents/${docId}/facts/extract`),
+  documentFacts: (docId: string) => request<{ run: FactRun | null; facts: Fact[] }>("GET", `/api/documents/${docId}/facts`),
+  facts: (params: { kind?: string; status?: string } = {}) => request<Fact[]>("GET", `/api/facts${qs(params)}`),
+  reviewFact: (id: string, changes: { status?: FactStatus; statement?: string; note?: string }) => request<Fact>("PATCH", `/api/facts/${id}`, changes),
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
   capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),

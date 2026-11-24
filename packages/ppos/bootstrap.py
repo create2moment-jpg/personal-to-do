@@ -13,6 +13,7 @@ from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
+from ppos.application.facts import FactService
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
@@ -51,6 +52,7 @@ class Container:
     book: BookService
     ai: LLMProvider
     documents: DocumentService
+    facts: FactService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -90,22 +92,34 @@ def build_container(
         settings.llm_provider, settings.llm_base_url, settings.llm_model,
         settings.llm_timeout_seconds, settings.llm_allow_remote,
     )  # fmt: skip
-    improve_template = load_template(settings.prompts_dir, "02_writing/improve_prompt/v1.md")
+
+    def run_template(rel_path: str, values: dict[str, str]) -> tuple[str, str, str, int]:
+        """Render a versioned prompt template and run it on the local model."""
+        template = load_template(settings.prompts_dir, rel_path)
+        system = template.meta.get("role", "You are a careful assistant.")
+        r = ai.generate(
+            system,
+            template.render(**values),
+            temperature=settings.llm_temperature,
+            max_tokens=settings.llm_max_tokens,
+        )
+        return r.text, r.model, template.ref, r.latency_ms
 
     def improver(original: str, style_instruction: str) -> tuple[str, str, str, int]:
-        prompt = improve_template.render(style_instruction=style_instruction, prompt=original)
-        system = improve_template.meta.get("role", "You improve prompts.")
-        r = ai.generate(
-            system, prompt, temperature=settings.llm_temperature, max_tokens=settings.llm_max_tokens
+        text, model, ref, latency = run_template(
+            "02_writing/improve_prompt/v1.md",
+            {"style_instruction": style_instruction, "prompt": original},
         )
-        return clean_improved(r.text), r.model, improve_template.ref, r.latency_ms
+        return clean_improved(text), model, ref, latency
+
+    job_runner: JobRunner = jobs or ThreadJobRunner()
 
     documents = DocumentService(
         uow,
         clock,
         DocumentStore(settings.local_data_dir),
         Extractor(sniff=sniff, pages=extract_pages, title=pdf_title, version=EXTRACTOR_VERSION),
-        jobs or ThreadJobRunner(),
+        job_runner,
     )
     documents.resume_pending()
 
@@ -126,4 +140,5 @@ def build_container(
         book=BookService(uow, clock, improver),
         ai=ai,
         documents=documents,
+        facts=FactService(uow, clock, run_template if ai.name != "none" else None, job_runner),
     )

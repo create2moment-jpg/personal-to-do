@@ -8,7 +8,7 @@ import logging
 from ppos.domain.documents import ExtractedPage
 from ppos.shared.errors import ValidationError
 
-EXTRACTOR_VERSION = "extract:v1(pypdf5,text)+chunk:v1"
+EXTRACTOR_VERSION = "extract:v1(pypdf5,text)+chunk:v2"
 log = logging.getLogger("ppos.extract")
 
 TEXT_EXTENSIONS = {".txt": "text/plain", ".md": "text/markdown", ".markdown": "text/markdown"}

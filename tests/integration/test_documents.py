@@ -82,6 +82,15 @@ def test_text_and_markdown_and_type_checks(docs: Container) -> None:
     assert doc.mime == "text/markdown" and doc.status.value == "ready" and chunks
     assert doc.title == "Engineering levels"  # first Markdown heading
     assert chunks[0]["section"] in ("Engineering levels", "L4")
+    big = (
+        b"# Levels\n\n## L4\n\n"
+        + b"Owns features end to end. " * 6
+        + b"\n\n## L5\n\n"
+        + b"Leads projects. " * 6
+    )
+    d2 = docs.documents.ingest("levels2.md", big).document
+    sections = [c["section"] for c in docs.documents.get(d2.id)[1]]
+    assert "L4" in sections and "L5" in sections  # each heading starts its own citable chunk
     with pytest.raises(ValidationError):
         docs.documents.ingest("evil.exe", b"MZ\x90\x00\x03\x00\x00\x00binary")
     with pytest.raises(ValidationError):

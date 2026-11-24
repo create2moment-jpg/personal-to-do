@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, ExternalLink, FileText, Library, Loader2, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { FactsPanel } from "../components/FactsPanel";
 import { EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import type { DocChunk, DocStatus, DocumentInfo } from "../lib/types";
@@ -240,6 +241,7 @@ function DocumentReader({ doc, chunkId }: { doc: DocumentInfo; chunkId?: string 
             <AlertTriangle /> {doc.error}
           </div>
         )}
+        {doc.status === "ready" && <FactsPanel doc={doc} />}
         {(doc.status === "queued" || doc.status === "processing") && (
           <div className="faint" style={{ display: "flex", gap: 8, alignItems: "center", margin: "18px 0" }}>
             <Loader2 className="spin" size={16} /> Extracting text and building the index…
@@ -250,13 +252,30 @@ function DocumentReader({ doc, chunkId }: { doc: DocumentInfo; chunkId?: string 
             <div className="doc-page-label">Page {page || "–"}</div>
             {chunks.map((c) => (
               <div key={c.id} ref={c.id === chunkId ? target : undefined} className={cx("doc-chunk", c.id === chunkId && "hit")} id={`chunk-${c.id}`}>
-                {c.section && !c.text.startsWith(c.section) && <div className="doc-section">{c.section}</div>}
-                <p>{c.text.startsWith(c.section ?? "\u0000") ? <><strong>{c.section}</strong>{c.text.slice((c.section ?? "").length)}</> : c.text}</p>
+                <ChunkText text={c.text} />
               </div>
             ))}
           </section>
         ))}
       </article>
+    </>
+  );
+}
+
+/** Render passage text; Markdown heading lines become bold headings without the # marks. */
+function ChunkText({ text }: { text: string }) {
+  return (
+    <>
+      {text.split("\n\n").map((para, i) => {
+        const m = /^#{1,6}\s+(.*)$/.exec(para.trim());
+        return m ? (
+          <div key={i} className="doc-section">
+            {m[1]}
+          </div>
+        ) : (
+          <p key={i}>{para}</p>
+        )}
+      )}
     </>
   );
 }

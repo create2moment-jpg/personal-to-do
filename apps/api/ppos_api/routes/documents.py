@@ -149,3 +149,82 @@ def reindex(doc_id: str, c: ContainerDep) -> dict[str, int]:
 def delete(doc_id: str, c: ContainerDep) -> Response:
     c.documents.delete(doc_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+# ---------------------------------------------------------------- AI fact extraction
+
+
+class FactOut(BaseModel):
+    id: str
+    document_id: str
+    chunk_id: str | None
+    page: int | None
+    section: str | None
+    kind: str
+    statement: str
+    quote: str
+    confidence: float
+    epistemic: str
+    status: str
+    model: str
+    prompt_template: str
+    note: str
+
+
+class FactRunOut(BaseModel):
+    id: str
+    status: str
+    model: str | None
+    prompt_template: str | None
+    chunks_total: int
+    chunks_done: int
+    facts_found: int
+    facts_dropped: int
+    error: str | None
+    started_at: datetime
+    finished_at: datetime | None
+
+
+class FactsOut(BaseModel):
+    run: FactRunOut | None
+    facts: list[FactOut]
+
+
+class FactPatch(BaseModel):
+    status: str | None = Field(default=None, pattern="^(proposed|accepted|rejected)$")
+    statement: str | None = Field(default=None, max_length=400)
+    note: str | None = None
+
+
+def _fact(f: object) -> FactOut:
+    return FactOut.model_validate(f, from_attributes=True)
+
+
+@router.post(
+    "/api/documents/{doc_id}/facts/extract",
+    response_model=FactRunOut,
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def extract_facts(doc_id: str, c: ContainerDep) -> FactRunOut:
+    return FactRunOut.model_validate(c.facts.start(doc_id), from_attributes=True)
+
+
+@router.get("/api/documents/{doc_id}/facts", response_model=FactsOut)
+def document_facts(doc_id: str, c: ContainerDep) -> FactsOut:
+    s = c.facts.summary(doc_id)
+    run = FactRunOut.model_validate(s.run, from_attributes=True) if s.run else None
+    return FactsOut(run=run, facts=[_fact(f) for f in s.facts])
+
+
+@router.get("/api/facts", response_model=list[FactOut])
+def list_facts(
+    c: ContainerDep,
+    kind: str | None = None,
+    status_: str | None = Query(default=None, alias="status"),
+) -> list[FactOut]:
+    return [_fact(f) for f in c.facts.find(kind, status_)]
+
+
+@router.patch("/api/facts/{fact_id}", response_model=FactOut)
+def review_fact(fact_id: str, body: FactPatch, c: ContainerDep) -> FactOut:
+    return _fact(c.facts.review(fact_id, body.status, body.statement, body.note))

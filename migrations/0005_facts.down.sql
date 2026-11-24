@@ -1,0 +1,3 @@
+-- Reverts 0005.
+DROP TABLE IF EXISTS facts;
+DROP TABLE IF EXISTS fact_runs;

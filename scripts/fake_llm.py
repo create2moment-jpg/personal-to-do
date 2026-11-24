@@ -26,6 +26,34 @@ def improve(user_message: str) -> str:
     )
 
 
+def extract_facts(user_message: str) -> str:
+    """Return one grounded fact (first sentence, verbatim) and one ungrounded one."""
+    m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
+    passage = (m.group(1) if m else "").strip()
+    sentences = [s for s in re.split(r"(?<=[.!?])\s+", " ".join(passage.split())) if len(s) > 12]
+    if not sentences:
+        return "[]"
+    first = sentences[0]
+    kind = "development_area" if re.search(r"delegate|improve|grow", first, re.I) else "achievement"
+    if (
+        re.search(r"\bleads?\b|owns?|sets technical direction", first, re.I)
+        and "level" in user_message.lower()
+    ):
+        kind = "level_expectation"
+    return json.dumps(
+        [
+            {"kind": kind, "statement": first[:120], "quote": first, "confidence": 0.82},
+            # deliberately ungrounded — the app must drop it
+            {
+                "kind": "achievement",
+                "statement": "Won a company award",
+                "quote": "won the 2026 company award",
+                "confidence": 0.9,
+            },
+        ]
+    )
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         self._json({"models": [{"name": "fake-llm"}]})
@@ -35,10 +63,11 @@ class Handler(BaseHTTPRequestHandler):
         user = next(
             (m["content"] for m in payload.get("messages", []) if m.get("role") == "user"), ""
         )
+        answer = extract_facts(user) if 'Allowed "kind" values' in user else improve(user)
         self._json(
             {
                 "model": payload.get("model", "fake-llm"),
-                "message": {"role": "assistant", "content": improve(user)},
+                "message": {"role": "assistant", "content": answer},
             }
         )
 

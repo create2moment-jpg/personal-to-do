@@ -792,3 +792,21 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .spin { width: 0.85rem; height: 0.85rem; animation: spin 0.9s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 @media (max-width: 860px) { .knowledge-layout { grid-template-columns: 1fr; } }
+
+/* ---------- extracted facts ---------- */
+.facts-panel { padding: 1rem 1.2rem; margin: 0.6rem 0 1.4rem; }
+.facts-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.facts-head h3 { font-size: 1.05rem; font-weight: 620; display: flex; gap: 8px; align-items: center; }
+.facts-run { display: flex; flex-direction: column; gap: 6px; margin-top: 0.7rem; font-size: 0.84rem; color: var(--text-2); }
+.facts-run span { display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.red-text { color: var(--red); }
+.fact-group { margin-top: 1rem; }
+.fact-group .section-label { margin-bottom: 0.4rem; }
+.fact { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 0.55rem 0.7rem; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface-2); margin-bottom: 6px; }
+.fact.accepted { border-color: color-mix(in srgb, var(--green) 40%, var(--border)); }
+.fact-statement { font-weight: 550; }
+.fact-quote { display: block; border: 0; background: none; padding: 0; margin-top: 2px; text-align: left; font-size: 0.84rem; color: var(--text-2); font-style: italic; cursor: pointer; }
+.fact-quote:hover { color: var(--accent-text); }
+.link-btn { border: 0; background: none; padding: 0; color: var(--accent-text); cursor: pointer; font: inherit; text-decoration: underline; }
+.doc-chunk p + p, .doc-section + p { margin-top: 0.5rem; }
+.doc-chunk .doc-section { margin-top: 0.6rem; }

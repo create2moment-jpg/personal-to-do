@@ -454,3 +454,36 @@ export interface DocHit {
   section: string | null;
   snippet: string;
 }
+
+export type FactStatus = "proposed" | "accepted" | "rejected";
+
+export interface Fact {
+  id: string;
+  document_id: string;
+  chunk_id: string | null;
+  page: number | null;
+  section: string | null;
+  kind: string;
+  statement: string;
+  quote: string;
+  confidence: number;
+  epistemic: string;
+  status: FactStatus;
+  model: string;
+  prompt_template: string;
+  note: string;
+}
+
+export interface FactRun {
+  id: string;
+  status: "queued" | "running" | "done" | "failed";
+  model: string | null;
+  prompt_template: string | null;
+  chunks_total: number;
+  chunks_done: number;
+  facts_found: number;
+  facts_dropped: number;
+  error: string | null;
+  started_at: string;
+  finished_at: string | null;
+}

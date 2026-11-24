@@ -122,6 +122,7 @@ def chunk_pages(
     Offsets refer to the document text formed by joining pages with "\\n\\n".
     """
     paras: list[tuple[int, int, str, str | None]] = []  # (page, offset, text, section)
+    starts_section: set[int] = set()  # indexes of paragraphs that open a new section
     offset = 0
     section: str | None = None
     for page in pages:
@@ -132,6 +133,7 @@ def chunk_pages(
                 h = heading_text(first_line)
                 if h:
                     section = h
+                    starts_section.add(len(paras))
                 idx = page.text.find(block.strip()[:30])
                 paras.append((page.number, offset + max(idx, 0), text, section))
         offset += len(page.text) + 2
@@ -150,7 +152,7 @@ def chunk_pages(
                 seq=len(chunks),
                 page_start=buf[0][0],
                 page_end=buf[-1][0],
-                section=buf[0][3],
+                section=buf[-1][3],  # the section the chunk's content belongs to
                 text=text,
                 char_start=buf[0][1],
                 char_end=buf[-1][1] + len(buf[-1][2]),
@@ -159,8 +161,14 @@ def chunk_pages(
         tail = buf[-1]
         buf, size = ([tail], len(tail[2])) if overlap and len(tail[2]) <= overlap else ([], 0)
 
-    for para in paras:
+    buf_has_body = False
+    for idx, para in enumerate(paras):
         text = para[2]
+        if idx in starts_section and buf_has_body:
+            # a new heading starts a new chunk, so sections can be cited separately
+            flush()
+            buf, size = [], 0
+            buf_has_body = False
         if len(text) > target:  # split very long paragraphs on sentence boundaries
             flush()
             sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -184,6 +192,7 @@ def chunk_pages(
             flush()
         buf.append(para)
         size += len(text) + 2
+        buf_has_body = buf_has_body or idx not in starts_section
     # Emit the remainder unless it is only the overlap tail of the previous chunk.
     only_tail = len(buf) == 1 and bool(chunks) and buf[0][2] in chunks[-1].text
     if buf and not only_tail:

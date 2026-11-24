@@ -50,3 +50,17 @@ test("command menu finds passages inside documents", async ({ page }) => {
   await item.click();
   await expect(page.locator(".doc-chunk.hit")).toContainText("Reciprocal-rank fusion");
 });
+
+test("extract facts with local AI: grounded only, accept, jump to source", async ({ page }) => {
+  await open(page, "knowledge");
+  await page.locator(".note-item", { hasText: "Mid-year review" }).click();
+  await page.getByRole("button", { name: "Extract facts with AI" }).click();
+  await expect(page.locator(".facts-run")).toContainText("dropped (no verbatim quote", { timeout: 15_000 });
+  const fact = page.locator(".fact").first();
+  await expect(fact).toBeVisible();
+  await expect(page.locator(".facts-panel")).not.toContainText("Won a company award"); // ungrounded fake fact dropped
+  await fact.getByRole("button", { name: "Accept fact" }).click();
+  await expect(fact.locator(".chip", { hasText: "Accepted" })).toBeVisible();
+  await fact.locator(".fact-quote").click();
+  await expect(page.locator(".doc-chunk.hit")).toBeVisible();
+});
