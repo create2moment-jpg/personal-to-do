@@ -64,6 +64,13 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   `Review PR #code !2 ~1h30m @tomorrow due:fri +ml-platform` · `idea: …` · `note: …`
 - **Command menu** (`Ctrl/⌘+K`) with full-text search, navigation and theme
   switching; `g t` / `g b` / `g n` navigation; `?` shows all shortcuts.
+- **Prompt Book** (`g k`): a book for the prompts you give AI assistants —
+  chapters and sections nested freely, diary-style pages you flip with ← →,
+  `{{variables}}` filled in when you **Copy for Copilot**, every version kept,
+  and **Improve with AI** using your *local* model (Ollama/vLLM; see
+  `.env.example`) with a side-by-side diff. The original is never overwritten.
+- **Scales to your monitor**: comfortable text on 24″ and 32″ screens
+  (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.
 
 ### Importing your Outlook calendar

@@ -1,5 +1,7 @@
 # Roadmap, open questions and technical debt
 
+> All feature requests and their status are tracked in [backlog.md](backlog.md).
+
 ## Product bar
 
 This is meant to be shown and shared. Every phase ships at a **premium
@@ -35,7 +37,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
 | 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | **next** |
-| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | |
+| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer, prompt templates and output validation shipped with the Prompt Book |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | |
@@ -188,7 +190,7 @@ product bar above.
   above 1800 px; Display size override S / M / L / XL. Verified at 1600,
   1920×1080, 2560×1440, 3840×2160 @1× and @2× with no horizontal overflow.
 
-**N2 — Prompt Book (writing desk for AI prompts)**
+**N2 — Prompt Book (writing desk for AI prompts)** · ✅ done (spread view → backlog B-001)
 - A book-like tool for notes and messages you give to AI assistants: every
   prompt you write is stored, versioned and searchable.
 - **Multi-level hierarchy**: Book → Chapter → Section → Page (arbitrary
@@ -211,7 +213,7 @@ product bar above.
 - Before Phase 5 lands, the book is fully usable without AI; the "Improve"
   button explains that it activates with the local model.
 
-**N3 — Delight, in moderation**
+**N3 — Delight, in moderation** · ✅ done (project/objective emoji → backlog B-003)
 - Small, meaningful moments: a light confetti burst when all three top
   priorities are done or a sprint completes; a "day closed" animation after
   the end-of-day review; subtle springy drop on drag and drop.
