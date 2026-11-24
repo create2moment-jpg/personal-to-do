@@ -125,3 +125,19 @@ def test_concurrent_runs_rejected(c: Container, clock: FixedClock) -> None:
     svc.start(doc.id)
     with pytest.raises(ConflictError):
         svc.start(doc.id)
+
+
+def test_rerun_never_reproposes_decided_facts(c: Container, clock: FixedClock) -> None:
+    doc = c.documents.ingest("review.pdf", make_pdf(REVIEW), kind="performance_report").document
+    svc = FactService(c.uow, clock, fake_runner([]), InlineJobRunner())
+    svc.start(doc.id)
+    first = svc.summary(doc.id).facts
+    svc.review(first[0].id, status="accepted")
+    svc.review(first[1].id, status="rejected")
+    svc.start(doc.id)
+    again = svc.summary(doc.id).facts
+    assert len(again) == len(first)  # no duplicates of decided facts
+    assert {f.status for f in again if f.id in (first[0].id, first[1].id)} == {
+        "accepted",
+        "rejected",
+    }

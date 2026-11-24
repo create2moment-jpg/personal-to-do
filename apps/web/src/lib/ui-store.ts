@@ -14,6 +14,7 @@ export type ViewId =
   | "skills"
   | "reviews"
   | "knowledge"
+  | "career"
   | "ai"
   | "analytics"
   | "settings";

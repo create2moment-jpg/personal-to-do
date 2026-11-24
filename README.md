@@ -69,6 +69,16 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   `{{variables}}` filled in when you **Copy for Copilot**, every version kept,
   and **Improve with AI** using your *local* model (Ollama/vLLM; see
   `.env.example`) with a side-by-side diff. The original is never overwritten.
+- **Knowledge** (`g d`): drop PDFs, text or Markdown — reviews, level
+  frameworks, feedback. Originals stay untouched in your data folder; text is
+  indexed per page so every search hit cites its page and section. Optionally
+  **extract facts** with your local model: each fact must quote its source
+  verbatim or it is dropped, and nothing counts until you accept it.
+- **Career** (`g c`): your level framework (L4, L5, …) from accepted
+  expectations, with the accepted achievements and strengths you link as
+  evidence. Suggestions show the words they share; you confirm every link.
+  Coverage per level is a hypothesis to guide what to collect next, never a
+  promotion verdict. Gaps turn into tasks with one click.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.

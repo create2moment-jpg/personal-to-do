@@ -21,6 +21,10 @@ TemplateRunner = Callable[[str, dict[str, str]], tuple[str, str, str, int]]
 EXTRACT_TEMPLATE = "10_documents/extract_facts/v1.md"
 
 
+def _norm(quote: str) -> str:
+    return " ".join(quote.lower().split())
+
+
 @dataclass
 class FactSummary:
     run: FactRun | None
@@ -73,6 +77,10 @@ class FactService:
             run.status = "running"
             uow.facts.update_run(run)
             uow.facts.delete_proposed(run.document_id)  # re-run replaces earlier proposals
+            # Facts the user already accepted or rejected are never proposed again.
+            decided = {
+                (f.kind, _norm(f.quote)) for f in uow.facts.find(document_id=run.document_id)
+            }
             uow.commit()
         if doc is None:
             return
@@ -95,6 +103,9 @@ class FactService:
                         if not is_grounded(cand.quote, str(ch["text"])):
                             dropped += 1  # quote not in the source: never stored
                             continue
+                        if (cand.kind, _norm(cand.quote)) in decided:
+                            continue
+                        decided.add((cand.kind, _norm(cand.quote)))
                         found += 1
                         uow.facts.add(
                             Fact(

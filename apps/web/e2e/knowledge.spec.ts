@@ -56,8 +56,11 @@ test("extract facts with local AI: grounded only, accept, jump to source", async
   await page.locator(".note-item", { hasText: "Mid-year review" }).click();
   await page.getByRole("button", { name: "Extract facts with AI" }).click();
   await expect(page.locator(".facts-run")).toContainText("dropped (no verbatim quote", { timeout: 15_000 });
-  const fact = page.locator(".fact").first();
-  await expect(fact).toBeVisible();
+  // the demo already holds accepted facts for this review; pick a fresh proposal
+  const proposal = page.locator(".fact").filter({ has: page.getByRole("button", { name: "Accept fact" }) }).first();
+  await expect(proposal).toBeVisible();
+  const statement = (await proposal.locator(".fact-statement").textContent()) ?? "";
+  const fact = page.locator(".fact", { hasText: statement }).first();
   await expect(page.locator(".facts-panel")).not.toContainText("Won a company award"); // ungrounded fake fact dropped
   await fact.getByRole("button", { name: "Accept fact" }).click();
   await expect(fact.locator(".chip", { hasText: "Accepted" })).toBeVisible();

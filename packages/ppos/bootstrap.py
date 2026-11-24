@@ -11,6 +11,7 @@ from ppos.ai.prompts import load_template
 from ppos.ai.provider import LLMProvider, build_provider
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
+from ppos.application.career import CareerService
 from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
@@ -53,6 +54,7 @@ class Container:
     ai: LLMProvider
     documents: DocumentService
     facts: FactService
+    career: CareerService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -141,4 +143,5 @@ def build_container(
         ai=ai,
         documents=documents,
         facts=FactService(uow, clock, run_template if ai.name != "none" else None, job_runner),
+        career=CareerService(uow, clock, tasks),
     )

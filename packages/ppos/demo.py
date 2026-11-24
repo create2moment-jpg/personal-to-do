@@ -424,3 +424,69 @@ def _seed_documents(c: Container) -> None:
         kind="technical",
     )
     c.documents.jobs.wait_idle()
+    _seed_career(c)
+
+
+# (document title, kind, quote, statement or None to reuse the quote)
+_DEMO_FACTS = [
+    ("Engineering level framework", "level_expectation", "Delivers well-scoped features end to end with light guidance.", None),
+    ("Engineering level framework", "level_expectation", "Writes tests and\nreviews code within the team.", "Writes tests and reviews code within the team."),
+    ("Engineering level framework", "level_expectation", "Leads projects across a team.", None),
+    ("Engineering level framework", "level_expectation", "Breaks down ambiguous problems, mentors others and\nimproves engineering practices.", "Breaks down ambiguous problems, mentors others and improves engineering practices."),
+    ("Engineering level framework", "level_expectation", "Sets technical direction across several teams.", None),
+    ("Engineering level framework", "level_expectation", "Drives architecture decisions with\nmeasurable impact on reliability, cost or velocity.", "Drives architecture decisions with measurable impact on reliability, cost or velocity."),
+    ("Mid-year review", "strength", "Strong ownership of the retrieval platform.", None),
+    ("Mid-year review", "strength", "Communicates trade-offs clearly.", None),
+    ("Mid-year review", "achievement", "Led the hybrid retrieval benchmark adopted by two teams.", None),
+    ("Mid-year review", "achievement", "Improved recall@10 by 11 percent.", None),
+    ("Mid-year review", "development_area", "Delegate more; grow junior engineers through structured pairing.", None),
+]  # fmt: skip
+
+
+def _seed_career(c: Container) -> None:
+    """Hand-curated, accepted facts (quotes verified against the demo documents) and two links,
+    so the Career view is populated without a local model."""
+    from ppos.domain.facts import Fact, is_grounded
+    from ppos.shared.clock import new_id
+
+    docs = {d.title: d for d in c.documents.find()}
+    now = c.clock.now()
+    with c.uow() as uow:
+        for title, kind, quote, statement in _DEMO_FACTS:
+            doc = docs[title]
+            chunk = next(
+                ch for ch in uow.documents.chunks(doc.id) if is_grounded(quote, str(ch["text"]))
+            )
+            page = chunk.get("page_start")
+            section = chunk.get("section")
+            uow.facts.add(
+                Fact(
+                    id=new_id(),
+                    document_id=doc.id,
+                    kind=kind,
+                    statement=statement or quote,
+                    quote=quote,
+                    confidence=0.9,
+                    model="demo (hand-curated)",
+                    prompt_template="demo",
+                    created_at=now,
+                    updated_at=now,
+                    chunk_id=str(chunk["id"]),
+                    page=page if isinstance(page, int) else None,
+                    section=str(section) if section else None,
+                    status="accepted",
+                    extractor_version=str(chunk.get("extractor_version") or ""),
+                )
+            )
+        uow.commit()
+    c.career.sync()
+    facts = {f.statement: f for f in c.facts.find(status="accepted")}
+    rows = {r.expectation.text: r.expectation for g in c.career.matrix().levels for r in g.rows}
+    c.career.link(
+        rows["Delivers well-scoped features end to end with light guidance."].id,
+        facts["Strong ownership of the retrieval platform."].id,
+    )
+    c.career.link(
+        rows["Sets technical direction across several teams."].id,
+        facts["Led the hybrid retrieval benchmark adopted by two teams."].id,
+    )

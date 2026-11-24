@@ -15,7 +15,7 @@ if "$python" -c "import socket,sys; s=socket.socket(); sys.exit(s.connect_ex(('1
   exit 1
 fi
 "$python" "$root/scripts/fake_llm.py" "$llm_port" &
-trap 'kill %1 2>/dev/null || true' EXIT
+trap 'kill %1 2>/dev/null || true; rm -rf "$data"' EXIT
 "$ppos" --data-dir "$data" demo >/dev/null
 PPOS_LLM_PROVIDER=ollama PPOS_LLM_MODEL=fake-llm PPOS_LLM_BASE_URL="http://127.0.0.1:$llm_port" \
   "$ppos" --data-dir "$data" serve --port "${PPOS_E2E_PORT:-8799}"

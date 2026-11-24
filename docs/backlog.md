@@ -34,7 +34,9 @@ with a reason).
 | B-005 | OCR for scanned PDFs (detected today as “Needs OCR”) — needs Tesseract on the machine | 2026-11-24 | planned (Phase 4b) | Knowledge |
 | B-006 | Word (.docx) import | 2026-11-24 | planned (Phase 4b) | Knowledge |
 | B-007 | Extract facts (responsibilities, achievements, competencies) with provenance using the local model | 2026-11-24 | done (verbatim-quote grounding, accept/reject) | Knowledge → Facts from this document |
-| B-009 | Career view: accepted facts mapped to framework levels and competencies | 2026-11-24 | planned (Phase 7) | — |
+| B-009 | Career view: accepted facts mapped to framework levels and competencies | 2026-11-24 | done (levels from framework facts, user-confirmed evidence links, coverage as hypothesis, gap → task) | Career (`g c`) |
+| B-010 | Career suggestions that understand synonyms (semantic matching) | 2026-11-24 | idea (from B-009; needs B-008) | — |
+| B-011 | Goals hierarchy linked to career expectations; skills matrix | 2026-11-24 | planned (Phase 7) | — |
 | B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | planned (Phase 6) | Knowledge |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |
 

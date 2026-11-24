@@ -1,4 +1,7 @@
 import type {
+  CareerMatrix,
+  EvidenceSuggestion,
+  Expectation,
   Fact,
   FactRun,
   FactStatus,
@@ -187,6 +190,14 @@ export const api = {
   documentFacts: (docId: string) => request<{ run: FactRun | null; facts: Fact[] }>("GET", `/api/documents/${docId}/facts`),
   facts: (params: { kind?: string; status?: string } = {}) => request<Fact[]>("GET", `/api/facts${qs(params)}`),
   reviewFact: (id: string, changes: { status?: FactStatus; statement?: string; note?: string }) => request<Fact>("PATCH", `/api/facts/${id}`, changes),
+  career: () => request<CareerMatrix>("GET", "/api/career"),
+  addExpectation: (body: { level: string; text: string; competency?: string | null }) => request<Expectation>("POST", "/api/career/expectations", body),
+  updateExpectation: (id: string, changes: { level?: string; text?: string; competency?: string }) => request<Expectation>("PATCH", `/api/career/expectations/${id}`, changes),
+  deleteExpectation: (id: string) => request<void>("DELETE", `/api/career/expectations/${id}`),
+  evidenceSuggestions: (id: string) => request<EvidenceSuggestion[]>("GET", `/api/career/expectations/${id}/suggestions`),
+  linkEvidence: (id: string, factId: string) => request<{ id: string; origin: string }>("POST", `/api/career/expectations/${id}/evidence`, { fact_id: factId }),
+  unlinkEvidence: (id: string, factId: string) => request<void>("DELETE", `/api/career/expectations/${id}/evidence/${factId}`),
+  gapTask: (id: string) => request<Task>("POST", `/api/career/expectations/${id}/gap-task`),
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
   capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),

@@ -39,7 +39,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ core done — OCR, .docx and AI fact extraction queued (B-005…B-007) |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer, prompt templates and output validation shipped with the Prompt Book |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
-| 7 | Goals hierarchy, skills, performance frameworks, career evidence | |
+| 7 | Goals hierarchy, skills, performance frameworks, career evidence | started — Career view (framework levels × accepted evidence, B-009) done; goals and skills next |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | |
 | 10 | Advanced agentic workflows and integrations | |
@@ -190,11 +190,36 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
   cannot introduce achievements that are not in the document.
 - Provenance on every fact: document, chunk, page, section, model, prompt
   template, extractor version. Bounded runs (≤ 60 passages) in the background
-  with live progress; re-runs replace only unreviewed proposals.
+  with live progress; re-runs replace only unreviewed proposals and never
+  re-propose a fact you already accepted or rejected.
 - Facts are proposals: accept / reject in the document; only accepted facts
-  will feed career evidence (Phase 7, B-009). The quote can never be edited.
+  feed career evidence (Phase 7, B-009). The quote can never be edited.
 - Chunking now starts a new passage at every heading (chunk:v2) so framework
   levels and review sections are cited separately.
+
+### Phase 7 started — Career view (B-009)
+
+- **Framework:** accepted *level expectation* facts from a framework document
+  become rows grouped by level (L4, L5, …; the level is read from the
+  passage's section heading). Expectations can also be added by hand.
+  Removing a framework row rejects its fact so it does not come back.
+- **Evidence:** only *accepted* achievements, responsibilities,
+  competencies and strengths. Development areas and goals are never
+  evidence. Every evidence item shows its verbatim quote and opens the
+  source passage.
+- **Linking is always the user's act.** Suggestions are explainable word
+  overlap (a small, predictable stemmer; at least two shared terms), shown
+  with the shared words. Nothing is linked automatically and no model is
+  involved, so it works with AI off.
+- **Coverage per level is labelled as a hypothesis** ("Evidence covers 1 of 2
+  expectations") and is never presented as readiness or a promotion verdict.
+  Evidence that is later rejected stops counting immediately.
+- **Gaps → action:** an expectation without evidence has *Create a task to
+  build evidence* (tagged `career`).
+- Demo workspace ships hand-curated accepted facts, with quotes checked
+  against the demo documents, so the view is populated without a local model.
+- Next in Phase 7: goals hierarchy linked to expectations; skills matrix;
+  AI-drafted (grounded, user-approved) mapping suggestions as an option.
 
 ### Next features requested by the owner (queued after the current target topics)
 
@@ -327,3 +352,5 @@ product bar above.
 - No local auth token; API must stay on loopback (threat model T4/T5).
 - Search ranks with bm25 only; no recency boost.
 - The `ui` vendor chunk is ~140 KB gzipped; revisit if first load grows.
+- Career suggestions use word overlap only; synonyms ("mentored" vs "coached")
+  are missed until semantic search (B-008) is available.

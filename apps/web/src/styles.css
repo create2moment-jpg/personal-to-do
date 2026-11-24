@@ -810,3 +810,34 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .link-btn { border: 0; background: none; padding: 0; color: var(--accent-text); cursor: pointer; font: inherit; text-decoration: underline; }
 .doc-chunk p + p, .doc-section + p { margin-top: 0.5rem; }
 .doc-chunk .doc-section { margin-top: 0.6rem; }
+
+/* ---------- Career ---------- */
+.career-note { display: flex; gap: 0.6rem; align-items: flex-start; padding: 0.7rem 0.9rem; border-radius: var(--radius); background: var(--accent-soft); color: var(--text-2); font-size: 0.88rem; margin-bottom: 1.1rem; max-width: 60rem; }
+.career-note svg { width: 1rem; height: 1rem; flex: none; margin-top: 2px; color: var(--accent-text); }
+.level-overview { display: grid; grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 0.75rem; margin-bottom: 1.8rem; }
+.level-card { padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.level-card .faint { font-size: 0.82rem; margin-top: 0.3rem; }
+.level-num { font-size: 2rem; font-weight: 650; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.level-num small { font-size: 1rem; color: var(--text-3); margin-left: 1px; }
+.level-card.pool { background: var(--bg-sunken); box-shadow: none; }
+.level-section { margin-bottom: 1.8rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.level-head { display: flex; align-items: center; gap: 0.7rem; font-size: 0.95rem; font-weight: 500; margin-bottom: 0.1rem; }
+.level-badge { font-weight: 680; font-size: 1.15rem; letter-spacing: -0.02em; color: var(--text); }
+.expectation { padding: 0.8rem 1rem; display: flex; flex-direction: column; gap: 0.55rem; }
+.expectation.gap { border-style: dashed; }
+.exp-top { display: flex; align-items: flex-start; gap: 0.6rem; }
+.exp-dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; border: 2px solid var(--border-strong); margin-top: 0.45rem; flex: none; }
+.exp-dot.on { background: var(--green); border-color: var(--green); }
+.exp-text { flex: 1; text-align: left; background: none; border: 0; padding: 0; font: inherit; font-weight: 560; color: var(--text); cursor: text; line-height: 1.45; }
+.exp-edit { flex: 1; }
+.exp-tags { display: flex; gap: 0.35rem; align-items: center; flex: none; }
+.evidence, .fact-pick { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.55rem 0.7rem; margin-left: 1.2rem; border-radius: var(--radius); background: var(--bg-sunken); }
+.fact-pick { margin-left: 0; margin-top: 0.4rem; }
+.evidence-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.exp-actions { display: flex; align-items: center; gap: 0.5rem; margin-left: 1.2rem; flex-wrap: wrap; }
+.gap-label { font-size: 0.85rem; margin-right: 0.3rem; }
+.add-expectation { display: flex; gap: 0.5rem; padding: 0.7rem; margin-bottom: 1.2rem; flex-wrap: wrap; }
+.link-dialog { padding: 1.1rem 1.2rem 1.2rem; max-height: min(80vh, 46rem); overflow: auto; }
+.link-dialog-title { font-size: 1.1rem; font-weight: 600; margin-top: 0.2rem; line-height: 1.4; }
+.link-dialog .why { font-size: 0.8rem; color: var(--text-3); margin-top: 3px; display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
+.link-dialog .why mark { background: var(--accent-soft); color: var(--accent-text); border-radius: 4px; padding: 0 4px; }

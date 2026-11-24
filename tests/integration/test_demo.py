@@ -14,3 +14,13 @@ def test_demo_seed_builds_a_believable_workspace(container: Container) -> None:
     assert (container.settings.local_data_dir / DEMO_MARKER).exists()
     with pytest.raises(ValidationError):
         seed_demo(container)  # never mixes into a non-empty workspace
+
+
+def test_demo_career_view_is_populated_and_grounded(container: Container) -> None:
+    seed_demo(container)
+    m = container.career.matrix()
+    assert [g.level for g in m.levels] == ["L4", "L5", "L6"]
+    assert sum(g.covered for g in m.levels) == 2 and sum(g.total for g in m.levels) == 6
+    assert m.evidence_pool == 4  # development areas are not evidence
+    lead = next(r for r in m.levels[1].rows if r.expectation.text.startswith("Leads projects"))
+    assert lead.suggestion_count >= 1  # waiting for the user to confirm

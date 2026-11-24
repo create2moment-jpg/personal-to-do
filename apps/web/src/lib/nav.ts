@@ -16,6 +16,7 @@ import {
   Sparkles,
   Sun,
   Target,
+  TrendingUp,
 } from "lucide-react";
 import type { ViewId } from "./ui-store";
 
@@ -52,6 +53,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Grow",
     items: [
+      { id: "career", label: "Career", icon: TrendingUp, shortcut: "G C" },
       { id: "goals", label: "Goals", icon: Target, phase: "Phase 7" },
       { id: "skills", label: "Skills", icon: Brain, phase: "Phase 7" },
       { id: "reviews", label: "Reviews", icon: FileText, phase: "Phase 8" },
@@ -76,6 +78,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   n: "notes",
   k: "book",
   d: "knowledge",
+  c: "career",
   s: "settings",
 };
 

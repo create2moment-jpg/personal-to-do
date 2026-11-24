@@ -487,3 +487,48 @@ export interface FactRun {
   started_at: string;
   finished_at: string | null;
 }
+
+export interface Expectation {
+  id: string;
+  level: string;
+  text: string;
+  competency: string | null;
+  source_fact_id: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Evidence {
+  fact: Fact;
+  document_title: string;
+  origin: "user" | "suggestion";
+  score: number | null;
+  note: string;
+}
+
+export interface CareerRow {
+  expectation: Expectation;
+  evidence: Evidence[];
+  suggestion_count: number;
+}
+
+export interface CareerLevel {
+  level: string;
+  total: number;
+  covered: number;
+  rows: CareerRow[];
+}
+
+export interface CareerMatrix {
+  levels: CareerLevel[];
+  evidence_pool: number;
+  disclaimer: string;
+}
+
+export interface EvidenceSuggestion {
+  fact: Fact;
+  document_title: string;
+  score: number;
+  shared: string[];
+}
