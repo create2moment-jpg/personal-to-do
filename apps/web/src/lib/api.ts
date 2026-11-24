@@ -1,4 +1,15 @@
 import type {
+  IcsImportResult,
+  Meeting,
+  MeetingSeries,
+  Named,
+  Sprint,
+  SprintSummary,
+  TimeInsights,
+  Week,
+  WeeklyPlan,
+  WeekReview,
+  WorkspaceSettings,
   CapturePreview,
   CaptureResult,
   Health,
@@ -53,7 +64,7 @@ const qs = (params: Record<string, string | number | boolean | undefined | null>
 
 export const api = {
   today: (day?: string) => request<Today>("GET", `/api/today${qs({ day })}`),
-  updateDay: (day: string, changes: Partial<Pick<DailyPlan, "objective" | "capacity_minutes" | "top_priority_ids">>) =>
+  updateDay: (day: string, changes: Partial<Pick<DailyPlan, "objective" | "capacity_minutes" | "top_priority_ids" | "capacity_mode">>) =>
     request<DailyPlan>("PATCH", `/api/days/${day}`, changes),
   saveReview: (day: string, changes: Partial<DailyReview> & { complete?: boolean }) =>
     request<DailyPlan>("PUT", `/api/days/${day}/review`, changes),
@@ -86,6 +97,43 @@ export const api = {
   projects: () => request<Project[]>("GET", "/api/projects"),
   createProject: (data: { name: string; area?: string; description?: string; color?: string }) =>
     request<Project>("POST", "/api/projects", data),
+
+  settings: () => request<WorkspaceSettings>("GET", "/api/settings"),
+  updateSettings: (changes: Partial<WorkspaceSettings>) => request<WorkspaceSettings>("PATCH", "/api/settings", changes),
+
+  sprints: () => request<Sprint[]>("GET", "/api/sprints"),
+  currentSprint: () => request<Sprint | null>("GET", "/api/sprints/current"),
+  createSprint: (data: Partial<Sprint>) => request<Sprint>("POST", "/api/sprints", data),
+  updateSprint: (id: string, changes: Partial<Sprint>) => request<Sprint>("PATCH", `/api/sprints/${id}`, changes),
+  deleteSprint: (id: string) => request<void>("DELETE", `/api/sprints/${id}`),
+  startSprint: (id: string) => request<Sprint>("POST", `/api/sprints/${id}/start`),
+  sprintSummary: (id: string) => request<SprintSummary>("GET", `/api/sprints/${id}/summary`),
+  addToSprint: (id: string, task_ids: string[], commitment: "committed" | "stretch" = "committed") =>
+    request<Task[]>("POST", `/api/sprints/${id}/tasks`, { task_ids, commitment }),
+  removeFromSprint: (taskId: string) => request<Task>("DELETE", `/api/sprints/tasks/${taskId}`),
+  completeSprint: (id: string, body: { rollover: "next" | "backlog"; summary?: string; lessons?: string }) =>
+    request<{ sprint: Sprint; next_sprint: Sprint | null; rolled_over: number }>("POST", `/api/sprints/${id}/complete`, body),
+
+  week: (day: string) => request<Week>("GET", `/api/weeks/${day}`),
+  updateWeek: (day: string, changes: Partial<WeeklyPlan> & { complete_review?: boolean }) =>
+    request<WeeklyPlan>("PATCH", `/api/weeks/${day}`, changes),
+  weekReview: (day: string) => request<WeekReview>("GET", `/api/weeks/${day}/review`),
+  rollOverWeek: (day: string) => request<{ moved: number }>("POST", `/api/weeks/${day}/roll-over`),
+
+  meetings: (start: string, end: string) => request<Meeting[]>("GET", `/api/meetings${qs({ start, end })}`),
+  logCall: (data: { title?: string; people: string[]; topic?: string | null; start_at: string; minutes: number; note?: string; rating?: number | null; kind?: "call" | "meeting" }) =>
+    request<Meeting>("POST", "/api/meetings", data),
+  updateMeeting: (id: string, changes: Partial<Omit<Meeting, "people">> & { people?: string[]; minutes?: number; clear_status?: boolean }) =>
+    request<Meeting>("PATCH", `/api/meetings/${id}`, changes),
+  deleteMeeting: (id: string) => request<void>("DELETE", `/api/meetings/${id}`),
+  meetingSeries: () => request<MeetingSeries[]>("GET", "/api/meeting-series"),
+  updateSeries: (key: string, changes: Partial<Pick<MeetingSeries, "default_status" | "rating" | "notes">> & { topic?: string | null }) =>
+    request<unknown>("PATCH", `/api/meeting-series/${encodeURIComponent(key)}`, changes),
+  importCalendar: (filename: string, content: string) => request<IcsImportResult>("POST", "/api/calendar/import", { filename, content }),
+  lastImport: () => request<{ filename: string; imported_at: string; events: number; series: number } | null>("GET", "/api/calendar/last-import"),
+  people: () => request<Named[]>("GET", "/api/people"),
+  topics: () => request<Named[]>("GET", "/api/topics"),
+  insights: (days: number) => request<TimeInsights>("GET", `/api/insights/time${qs({ days })}`),
 
   capture: (text: string) => request<CaptureResult>("POST", "/api/capture", { text }),
   capturePreview: (text: string) => request<CapturePreview>("POST", "/api/capture/preview", { text }),

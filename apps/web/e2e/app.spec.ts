@@ -36,12 +36,13 @@ test("drag a backlog task onto the board with the mouse", async ({ page }) => {
   await open(page, "today");
   const card = page.locator(".tray-panel .task-card", { hasText: "Refactor ingestion pipeline" });
   const target = column(page, "Planned");
+  await card.scrollIntoViewIfNeeded();
   const from = (await card.boundingBox())!;
   const to = (await target.boundingBox())!;
   await page.mouse.move(from.x + 30, from.y + 12);
   await page.mouse.down();
   for (let i = 1; i <= 10; i++) {
-    await page.mouse.move(from.x + 30 + ((to.x + 40 - from.x - 30) * i) / 10, from.y + 12 + ((to.y + to.height - 50 - from.y - 12) * i) / 10);
+    await page.mouse.move(from.x + 30 + ((to.x + 40 - from.x - 30) * i) / 10, from.y + 12 + ((to.y + 60 - from.y - 12) * i) / 10);
   }
   await page.mouse.up();
   await expect(target.getByText("Refactor ingestion pipeline")).toBeVisible();
@@ -53,6 +54,8 @@ test("move a task between columns with the keyboard", async ({ page }) => {
   const title = (await card.locator(".t-title").innerText()).trim();
   await card.focus();
   await page.keyboard.press("Space");
+  await expect(page.locator(".task-card.overlay")).toBeVisible(); // drag started and columns measured
+  await page.waitForTimeout(150);
   await page.keyboard.press("ArrowRight");
   await expect(column(page, "In progress")).toHaveClass(/drop-active/); // wait for the keyboard move to land
   await page.keyboard.press("Space");

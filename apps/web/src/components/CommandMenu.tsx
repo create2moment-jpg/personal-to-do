@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { FileText, Keyboard, Monitor, Moon, NotebookPen, Plus, Search, SquareCheck, Sun } from "lucide-react";
+import { FileText, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Search, SquareCheck, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
@@ -65,6 +65,9 @@ function MenuBody({ onClose }: { onClose: () => void }) {
         <Command.Group heading="Actions">
           <Command.Item value="new task capture" onSelect={run(() => ui.openCapture())}>
             <Plus /> New task or capture <span className="cmd-hint"><Kbd>C</Kbd></span>
+          </Command.Item>
+          <Command.Item value="log a call meeting" onSelect={run(() => ui.openLogCall())}>
+            <Phone /> Log a call
           </Command.Item>
           <Command.Item value="new idea inbox" onSelect={run(() => ui.openCapture("idea: "))}>
             <NotebookPen /> New idea

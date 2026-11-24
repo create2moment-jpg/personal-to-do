@@ -122,7 +122,8 @@ def burndown(
     for ev in sorted(scope_events, key=lambda e: e.at):
         d = ev.at.date()
         if ev.action == "add":
-            added[ev.task_id] = d
+            # Planned before the start counts from day one; later adds are scope changes.
+            added[ev.task_id] = d if ev.after_start else min(d, sprint.start_date)
             removed.pop(ev.task_id, None)
         else:
             removed[ev.task_id] = d

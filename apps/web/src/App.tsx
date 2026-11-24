@@ -12,6 +12,12 @@ import { UiContext, type UiActions, type ViewId } from "./lib/ui-store";
 import { cx, isTypingTarget } from "./lib/util";
 import { ComingSoonView } from "./views/ComingSoonView";
 import { BacklogView, UpcomingView } from "./views/ListViews";
+import { MeetingsView } from "./views/MeetingsView";
+import { SprintView } from "./views/SprintView";
+import { WeekView } from "./views/WeekView";
+import { LogCallDialog, type CallDraft } from "./components/meetings";
+import { useSettings } from "./lib/queries";
+import { setWorkspaceTimeZone } from "./lib/util";
 import { ProjectsView } from "./views/ProjectsView";
 import { SettingsView } from "./views/SettingsView";
 import { TodayView } from "./views/TodayView";
@@ -31,6 +37,9 @@ export function App() {
   const [capture, setCapture] = useState<{ open: boolean; initial?: string }>({ open: false });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [callDraft, setCallDraft] = useState<CallDraft | null>(null);
+  const { data: settings } = useSettings();
+  if (settings) setWorkspaceTimeZone(settings.timezone);
   const gPressed = useRef(0);
 
   const navigate = useCallback((v: ViewId, a?: string) => {
@@ -44,6 +53,7 @@ export function App() {
       openCapture: (initial) => setCapture({ open: true, initial }),
       openPalette: () => setPaletteOpen(true),
       openShortcuts: () => setShortcutsOpen(true),
+      openLogCall: (draft) => setCallDraft(draft ?? {}),
     }),
     [navigate],
   );
@@ -61,7 +71,7 @@ export function App() {
         setPaletteOpen((o) => !o);
         return;
       }
-      const overlayOpen = capture.open || paletteOpen || shortcutsOpen || taskId !== null;
+      const overlayOpen = capture.open || paletteOpen || shortcutsOpen || taskId !== null || callDraft !== null;
       if (overlayOpen || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       if (Date.now() - gPressed.current < 900) {
         const target = GOTO_KEYS[e.key.toLowerCase()];
@@ -87,19 +97,22 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate, capture.open, paletteOpen, shortcutsOpen, taskId]);
+  }, [navigate, capture.open, paletteOpen, shortcutsOpen, taskId, callDraft]);
 
   const current = ALL_NAV.find((n) => n.id === view)!;
   let page: JSX.Element;
   if (current.phase) page = <ComingSoonView view={view} />;
   else if (view === "today") page = <TodayView />;
   else if (view === "upcoming") page = <UpcomingView />;
+  else if (view === "week") page = <WeekView initialTab={arg === "review" ? "review" : "plan"} />;
+  else if (view === "sprint") page = <SprintView />;
+  else if (view === "meetings") page = <MeetingsView />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;
   else page = <SettingsView />;
 
-  const showRail = view !== "notes" && view !== "settings";
+  const showRail = !["notes", "settings", "week"].includes(view);
 
   return (
     <UiContext.Provider value={ui}>
@@ -138,6 +151,7 @@ export function App() {
       <QuickCapture open={capture.open} initial={capture.initial} onClose={() => setCapture({ open: false })} />
       <CommandMenu open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+      <LogCallDialog open={callDraft !== null} draft={callDraft ?? undefined} onClose={() => setCallDraft(null)} />
       <TaskSheet taskId={taskId} onClose={() => setTaskId(null)} onOpenTask={setTaskId} />
     </UiContext.Provider>
   );

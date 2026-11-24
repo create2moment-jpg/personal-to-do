@@ -3,6 +3,7 @@ import { createContext, useContext } from "react";
 export type ViewId =
   | "today"
   | "upcoming"
+  | "meetings"
   | "week"
   | "sprint"
   | "backlog"
@@ -23,6 +24,7 @@ export interface UiActions {
   openCapture: (initial?: string) => void;
   openPalette: () => void;
   openShortcuts: () => void;
+  openLogCall: (draft?: { start?: string; minutes?: number }) => void;
 }
 
 export const UiContext = createContext<UiActions | null>(null);

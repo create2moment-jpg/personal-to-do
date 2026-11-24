@@ -1,6 +1,12 @@
-import { Check, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check, Clock3, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { api } from "../lib/api";
+import type { WorkspaceSettings } from "../lib/types";
+import { formatMinutes, setWorkspaceTimeZone } from "../lib/util";
 import { Keys } from "../components/primitives";
-import { useHealth } from "../lib/queries";
+import { useHealth, useSettings } from "../lib/queries";
 import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
 import { useUi } from "../lib/ui-store";
 
@@ -108,6 +114,8 @@ export function SettingsView() {
         </div>
       </section>
 
+      <WorkSettings />
+
       <section className="card settings-section">
         <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <ShieldCheck size={16} /> Privacy & data
@@ -166,5 +174,109 @@ export function SettingsView() {
         </div>
       </section>
     </div>
+  );
+}
+
+const DAY_NAMES = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+
+function WorkSettings() {
+  const { data: s } = useSettings();
+  const qc = useQueryClient();
+  const zones = useMemo(() => {
+    try {
+      return (Intl as unknown as { supportedValuesOf: (k: string) => string[] }).supportedValuesOf("timeZone");
+    } catch {
+      return ["Europe/Berlin", "Europe/London", "America/New_York", "Asia/Kolkata", "UTC"];
+    }
+  }, []);
+  if (!s) return null;
+  const save = async (changes: Partial<WorkspaceSettings>) => {
+    try {
+      const updated = await api.updateSettings(changes);
+      qc.setQueryData(["settings"], updated);
+      setWorkspaceTimeZone(updated.timezone);
+      void qc.invalidateQueries();
+      toast.success("Settings saved");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+  return (
+    <section className="card settings-section">
+      <h3 style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <Clock3 size={16} /> Work & time
+      </h3>
+      <p>Used for “today”, meeting times and automatic capacity (working hours − meetings − buffer).</p>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Time zone</div>
+          <div className="s-help">Default: Central European Time (Europe/Berlin)</div>
+        </div>
+        <select className="select" style={{ width: 240 }} value={s.timezone} aria-label="Time zone" onChange={(e) => void save({ timezone: e.target.value })}>
+          {zones.map((z) => (
+            <option key={z} value={z}>
+              {z.replace(/_/g, " ")}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Working hours</div>
+          <div className="s-help">{formatMinutes(s.work_minutes)} per workday</div>
+        </div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <input className="input" type="time" style={{ width: 110 }} defaultValue={s.work_start} key={`ws-${s.work_start}`} aria-label="Work starts" onBlur={(e) => e.target.value !== s.work_start && void save({ work_start: e.target.value })} />
+          <span className="faint">to</span>
+          <input className="input" type="time" style={{ width: 110 }} defaultValue={s.work_end} key={`we-${s.work_end}`} aria-label="Work ends" onBlur={(e) => e.target.value !== s.work_end && void save({ work_end: e.target.value })} />
+        </div>
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Workdays</div>
+          <div className="s-help">Days without working hours have no capacity.</div>
+        </div>
+        <div className="segmented" role="group" aria-label="Workdays">
+          {DAY_NAMES.map((d, i) => (
+            <button
+              key={d}
+              aria-pressed={s.workdays.includes(i)}
+              onClick={() => {
+                const next = s.workdays.includes(i) ? s.workdays.filter((x) => x !== i) : [...s.workdays, i];
+                if (next.length) void save({ workdays: next });
+              }}
+            >
+              {d}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Focus buffer</div>
+          <div className="s-help">Kept free for interruptions, email and breaks.</div>
+        </div>
+        <div className="segmented" role="group" aria-label="Buffer">
+          {[0, 10, 15, 20, 30].map((b) => (
+            <button key={b} aria-pressed={s.buffer_percent === b} onClick={() => void save({ buffer_percent: b })}>
+              {b}%
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Sprint length</div>
+          <div className="s-help">Default for new sprints.</div>
+        </div>
+        <div className="segmented" role="group" aria-label="Sprint length">
+          {[7, 14, 21].map((d) => (
+            <button key={d} aria-pressed={s.sprint_length_days === d} onClick={() => void save({ sprint_length_days: d })}>
+              {d / 7} week{d > 7 ? "s" : ""}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }

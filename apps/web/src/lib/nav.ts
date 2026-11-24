@@ -3,6 +3,7 @@ import {
   Brain,
   CalendarDays,
   CalendarRange,
+  Clock3,
   FileText,
   FolderKanban,
   Inbox,
@@ -30,11 +31,12 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Plan",
     items: [
       { id: "today", label: "Today", icon: Sun, shortcut: "G T" },
+      { id: "week", label: "Week", icon: CalendarRange, shortcut: "G W" },
+      { id: "sprint", label: "Sprint", icon: Rocket, shortcut: "G R" },
       { id: "upcoming", label: "Upcoming", icon: CalendarDays, shortcut: "G U" },
       { id: "backlog", label: "Backlog", icon: Inbox, shortcut: "G B" },
       { id: "projects", label: "Projects", icon: FolderKanban, shortcut: "G P" },
-      { id: "week", label: "Week", icon: CalendarRange, phase: "Phase 2" },
-      { id: "sprint", label: "Sprint", icon: Rocket, phase: "Phase 2" },
+      { id: "meetings", label: "Meetings & time", icon: Clock3, shortcut: "G M" },
     ],
   },
   {
@@ -63,6 +65,9 @@ export const ALL_NAV: NavItem[] = [...NAV_GROUPS.flatMap((g) => g.items), SETTIN
 /** Second key of the "g <key>" navigation chords. */
 export const GOTO_KEYS: Record<string, ViewId> = {
   t: "today",
+  w: "week",
+  r: "sprint",
+  m: "meetings",
   u: "upcoming",
   b: "backlog",
   p: "projects",

@@ -1,10 +1,10 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlarmClock, CalendarClock, CheckCircle2, Clock, Flag, FolderKanban, Hash, Lightbulb, NotebookPen, Sparkles, SquareCheck } from "lucide-react";
+import { AlarmClock, CalendarClock, CheckCircle2, Clock, Flag, FolderKanban, Hash, Lightbulb, NotebookPen, Phone, Sparkles, SquareCheck, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
-import { invalidateTasks } from "../lib/queries";
+import { invalidateTasks, invalidateTime } from "../lib/queries";
 import type { CapturePreview } from "../lib/types";
 import { formatMinutes, relativeDay } from "../lib/util";
 import { Dialog, Kbd } from "./primitives";
@@ -42,9 +42,12 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
     if (!text.trim()) return;
     try {
       const r = await api.capture(text);
-      const label = r.task
-        ? `${r.task.title} → ${r.task.scheduled_date ? relativeDay(r.task.scheduled_date) : "Backlog"}`
-        : `${r.kind === "idea" ? "Idea" : "Note"} saved`;
+      const label = r.meeting
+        ? `Call logged · ${r.meeting.people.join(", ") || r.meeting.title} · ${formatMinutes(r.meeting.duration_minutes)}`
+        : r.task
+          ? `${r.task.title} → ${r.task.scheduled_date ? relativeDay(r.task.scheduled_date) : "Backlog"}`
+          : `${r.kind === "idea" ? "Idea" : "Note"} saved`;
+      if (r.meeting) invalidateTime(qc);
       r.warnings.forEach((w) => toast.warning(w));
       invalidateTasks(qc);
       void qc.invalidateQueries({ queryKey: ["notes"] });
@@ -59,7 +62,7 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
     }
   };
 
-  const kindIcon = preview?.kind === "idea" ? Lightbulb : preview?.kind === "note" ? NotebookPen : SquareCheck;
+  const kindIcon = preview?.kind === "idea" ? Lightbulb : preview?.kind === "note" ? NotebookPen : preview?.kind === "call" ? Phone : SquareCheck;
   const KindIcon = text ? kindIcon : Sparkles;
 
   return (
@@ -70,7 +73,7 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
           ref={ref}
           className="capture-input"
           value={text}
-          placeholder="Capture a task, an idea: or a note: …"
+          placeholder="Capture a task, idea:, note: or call: …"
           aria-label="Capture text"
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -108,6 +111,7 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
         <span><code>+project</code> project</span>
         <span><code>idea:</code> ideas inbox</span>
         <span><code>note:</code> quick note</span>
+        <span><code>call: Priya / topic ~30m</code> log a call</span>
         <span><Kbd>⌘</Kbd><Kbd>↵</Kbd> save &amp; keep open</span>
       </div>
     </div>
@@ -116,6 +120,23 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
 
 function PreviewChips({ p }: { p: CapturePreview }) {
   const chips: { icon: typeof Flag; text: string; tone?: string }[] = [];
+  if (p.kind === "call") {
+    chips.push({ icon: Phone, text: "Call", tone: "accent" });
+    (p.people ?? []).forEach((n) => chips.push({ icon: UserRound, text: n }));
+    if (p.title) chips.push({ icon: NotebookPen, text: p.title });
+    chips.push({ icon: Clock, text: formatMinutes(p.estimate_minutes ?? 30) });
+    chips.push({ icon: CalendarClock, text: p.start_time ? `at ${p.start_time}` : "just ended", tone: "green" });
+    p.tags.slice(0, 1).forEach((t) => chips.push({ icon: Hash, text: `topic: ${t}` }));
+    return (
+      <motion.div style={{ display: "flex", gap: 6, flexWrap: "wrap" }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+        {chips.map((c, i) => (
+          <motion.span key={`${c.text}-${i}`} layout className={`chip ${c.tone ?? ""}`} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+            <c.icon /> {c.text}
+          </motion.span>
+        ))}
+      </motion.div>
+    );
+  }
   if (p.kind !== "task") chips.push({ icon: p.kind === "idea" ? Lightbulb : NotebookPen, text: p.kind === "idea" ? "Ideas inbox" : "Note", tone: "accent" });
   else chips.push({ icon: SquareCheck, text: p.scheduled_date ? "Task" : "Task → Backlog", tone: "accent" });
   if (p.priority < 4) chips.push({ icon: Flag, text: `P${p.priority}`, tone: p.priority === 1 ? "red" : "orange" });

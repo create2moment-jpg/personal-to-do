@@ -11,13 +11,14 @@ import {
   MapPin,
   Plus,
   Repeat,
+  Rocket,
   Trash2,
   X,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
-import { invalidateTasks, keys, useMoveTask, useProjects, useTask, useTasks, useUpdateTask } from "../lib/queries";
+import { invalidateTasks, keys, useMoveTask, useProjects, useSprints, useTask, useTasks, useUpdateTask } from "../lib/queries";
 import { STATUS_LABEL, type Task, type TaskStatus } from "../lib/types";
 import { relativeTime } from "../lib/util";
 import { Sheet, StatusDot } from "./primitives";
@@ -37,6 +38,7 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
   const { data: task } = useTask(taskId);
   const { data: subtasks = [] } = useTasks({ parent_id: taskId });
   const { data: projects = [] } = useProjects();
+  const { data: sprints = [] } = useSprints();
   const update = useUpdateTask();
   const move = useMoveTask();
   const [title, setTitle] = useState("");
@@ -160,6 +162,34 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
                 {p.name}
               </option>
             ))}
+          </select>
+
+          <Label icon={Rocket} text="Sprint" />
+          <select
+            className="select"
+            value={task.sprint_id ? `${task.sprint_id}|${task.commitment ?? "committed"}` : ""}
+            aria-label="Sprint"
+            onChange={async (e) => {
+              const v = e.target.value;
+              if (!v) await api.removeFromSprint(task.id);
+              else {
+                const [sid, c] = v.split("|") as [string, "committed" | "stretch"];
+                await api.addToSprint(sid, [task.id], c);
+              }
+              invalidateTasks(qc);
+            }}
+          >
+            <option value="">Not in a sprint</option>
+            {sprints
+              .filter((s) => s.status !== "completed" || s.id === task.sprint_id)
+              .flatMap((s) => [
+                <option key={`${s.id}c`} value={`${s.id}|committed`}>
+                  {s.name} · committed
+                </option>,
+                <option key={`${s.id}s`} value={`${s.id}|stretch`}>
+                  {s.name} · stretch
+                </option>,
+              ])}
           </select>
 
           <Label icon={MapPin} text="Area" />

@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Pause, Play, RotateCcw, Sparkles, Star, Timer } from "lucide-react";
+import { ArrowRight, Pause, Phone, Play, RotateCcw, Sparkles, Square, Star, Timer, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useToday } from "../lib/queries";
 import { useUi } from "../lib/ui-store";
-import { cx, formatMinutes, isoDay } from "../lib/util";
+import { clockTime, cx, formatMinutes, getWorkspaceTimeZone, isoDay } from "../lib/util";
 
 export function RightRail() {
   const ui = useUi();
@@ -30,8 +30,8 @@ export function RightRail() {
   return (
     <aside className="rail" aria-label="Utilities">
       <div className="rail-card">
-        <div className="clock-time">{now.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}</div>
-        <div className="clock-date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</div>
+        <div className="clock-time">{clockTime(now)}</div>
+        <div className="clock-date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: getWorkspaceTimeZone() })}</div>
         <div className="day-progress" title="Workday progress (08:00–18:00)">
           <motion.div initial={{ width: 0 }} animate={{ width: `${workday * 100}%` }} transition={{ duration: 0.8 }} />
         </div>
@@ -68,6 +68,8 @@ export function RightRail() {
           </ol>
         )}
       </div>
+
+      <CallTimer />
 
       <FocusTimer />
 
@@ -150,6 +152,81 @@ function FocusTimer() {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+const CALL_KEY = "ppos.callStartedAt";
+
+/** "In a call" stopwatch: stopping it opens Log call pre-filled. */
+function CallTimer() {
+  const ui = useUi();
+  const [startedAt, setStartedAt] = useState<number | null>(() => {
+    try {
+      const v = localStorage.getItem(CALL_KEY);
+      return v ? Number(v) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [, tick] = useState(0);
+  useEffect(() => {
+    if (startedAt === null) return;
+    const t = setInterval(() => tick((x) => x + 1), 1000);
+    return () => clearInterval(t);
+  }, [startedAt]);
+  const persist = (v: number | null) => {
+    setStartedAt(v);
+    try {
+      if (v === null) localStorage.removeItem(CALL_KEY);
+      else localStorage.setItem(CALL_KEY, String(v));
+    } catch {
+      /* storage unavailable — timer still works for this session */
+    }
+  };
+  const elapsed = startedAt ? Math.floor((Date.now() - startedAt) / 1000) : 0;
+  const mm = String(Math.floor(elapsed / 60)).padStart(2, "0");
+  const ss = String(elapsed % 60).padStart(2, "0");
+  return (
+    <div className={cx("rail-card", startedAt !== null && "in-call")}>
+      <div className="section-label">
+        <Phone /> {startedAt ? "In a call" : "Calls"}
+      </div>
+      {startedAt === null ? (
+        <div className="timer-row">
+          <span className="faint" style={{ fontSize: 12.5 }}>
+            Track an unplanned call as it happens.
+          </span>
+          <button className="btn sm" onClick={() => persist(Date.now())}>
+            <Play /> Start
+          </button>
+        </div>
+      ) : (
+        <div className="timer-row">
+          <div className="timer-face" style={{ color: "var(--accent-text)" }}>
+            {mm}:{ss}
+          </div>
+          <div style={{ display: "flex", gap: 4 }}>
+            <button
+              className="btn primary sm"
+              onClick={() => {
+                const start = new Date(startedAt).toISOString();
+                const minutes = Math.max(1, Math.round(elapsed / 60));
+                persist(null);
+                ui.openLogCall({ start, minutes });
+              }}
+            >
+              <Square /> Stop & log
+            </button>
+            <button className="btn icon sm ghost" aria-label="Discard call timer" onClick={() => persist(null)}>
+              <X />
+            </button>
+          </div>
+        </div>
+      )}
+      <button className="btn ghost sm block" style={{ marginTop: 8 }} onClick={() => ui.openLogCall()}>
+        Log a past call…
+      </button>
     </div>
   );
 }

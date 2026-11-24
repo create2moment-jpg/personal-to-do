@@ -44,3 +44,15 @@ describe("ordering and labels", () => {
     expect(relativeDay("2026-11-23", "2026-11-24")).toBe("Yesterday");
   });
 });
+
+describe("workspace time zone", () => {
+  it("computes dates, mondays and zoned instants", async () => {
+    const u = await import("./util");
+    u.setWorkspaceTimeZone("Europe/Berlin");
+    expect(u.isoDay(new Date("2026-11-24T23:30:00Z"))).toBe("2026-11-25"); // already Wednesday in Berlin
+    expect(u.mondayOf("2026-11-26")).toBe("2026-11-23");
+    expect(u.zonedInstant("2026-11-24", "09:00")).toBe("2026-11-24T08:00:00.000Z"); // CET = UTC+1
+    expect(u.zonedInstant("2026-07-01", "09:00")).toBe("2026-07-01T07:00:00.000Z"); // CEST = UTC+2
+    u.setWorkspaceTimeZone(undefined);
+  });
+});

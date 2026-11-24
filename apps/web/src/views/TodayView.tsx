@@ -1,23 +1,22 @@
 import {
-  closestCorners,
   DndContext,
   type DragEndEvent,
   type DragOverEvent,
   DragOverlay,
   type DragStartEvent,
-  type KeyboardCoordinateGetter,
   KeyboardSensor,
   PointerSensor,
   useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowRight,
   BookOpen,
+  CalendarClock,
   CalendarCheck2,
   ChevronLeft,
   ChevronRight,
@@ -25,17 +24,20 @@ import {
   Gauge,
   Inbox,
   MoonStar,
+  Phone,
   Plus,
   Sparkles,
   Wand2,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { MeetingRow } from "../components/meetings";
 import { ProgressRing, StatusDot } from "../components/primitives";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
+import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
 import { invalidateTasks, queryClient, useCreateTask, useMoveTask, useProjects, useTasks, useToday } from "../lib/queries";
-import { STATUS_LABEL, type DailyReview, type Task, type TaskStatus } from "../lib/types";
+import { STATUS_LABEL, type DailyReview, type Meeting, type Task, type TaskStatus } from "../lib/types";
 import { useUi } from "../lib/ui-store";
 import { addDays, cx, formatMinutes, greeting, isoDay, positionBetween, prettyDay } from "../lib/util";
 
@@ -48,27 +50,7 @@ const COLUMN_EMPTY: Record<string, string> = {
   done: "Finished work lands here",
 };
 
-/**
- * Keyboard drag across columns: ←/→ jump to the neighbouring column,
- * ↑/↓ reorder within a column (dnd-kit's sortable default).
- */
-const boardCoordinates: KeyboardCoordinateGetter = (event, args) => {
-  const { collisionRect, droppableRects, droppableContainers } = args.context;
-  if ((event.code === "ArrowRight" || event.code === "ArrowLeft") && collisionRect) {
-    event.preventDefault();
-    const ids = ["backlog", ...COLUMNS];
-    const right = event.code === "ArrowRight";
-    const target = droppableContainers
-      .getEnabled()
-      .filter((c) => ids.includes(String(c.id)))
-      .map((c) => droppableRects.get(c.id))
-      .filter((r): r is NonNullable<typeof r> => !!r && (right ? r.left > collisionRect.left + 20 : r.left < collisionRect.left - 20))
-      .sort((a, b) => Math.abs(a.left - collisionRect.left) - Math.abs(b.left - collisionRect.left))[0];
-    if (target) return { x: target.left + 8, y: target.top + 44 };
-    return args.currentCoordinates;
-  }
-  return sortableKeyboardCoordinates(event, args);
-};
+const boardCoordinates = columnCoordinates(() => ["backlog", ...COLUMNS]);
 
 export function TodayView() {
   const ui = useUi();
@@ -80,6 +62,7 @@ export function TodayView() {
   const move = useMoveTask(day);
   const create = useCreateTask();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [collision] = useState(inputAwareCollision);
   const [overContainer, setOverContainer] = useState<string | null>(null);
   const [showReview, setShowReview] = useState(false);
 
@@ -151,7 +134,10 @@ export function TodayView() {
     );
   };
 
-  const onDragStart = (e: DragStartEvent) => setActiveTask((e.active.data.current?.task as Task) ?? null);
+  const onDragStart = (e: DragStartEvent) => {
+    collision.track(e.activatorEvent);
+    setActiveTask((e.active.data.current?.task as Task) ?? null);
+  };
   const onDragOver = (e: DragOverEvent) => setOverContainer(e.over ? (containerOf(String(e.over.id)) ?? null) : null);
   const onDragEnd = (e: DragEndEvent) => {
     setActiveTask(null);
@@ -222,6 +208,24 @@ export function TodayView() {
           <div className={cx("stat", cap.overcommitted && "warn")}>
             <div className="stat-label">
               <Gauge /> Planned focus
+              {plan.capacity_mode === "manual" ? (
+                <button
+                  className="chip"
+                  style={{ cursor: "pointer", marginLeft: "auto" }}
+                  title="Capacity was set by hand — click to compute it from working hours and meetings again"
+                  onClick={() => api.updateDay(day, { capacity_mode: "auto" }).then(() => invalidateTasks())}
+                >
+                  manual · reset
+                </button>
+              ) : (
+                <span
+                  className="chip accent"
+                  style={{ marginLeft: "auto" }}
+                  title={data.time ? `Working hours ${formatMinutes(data.time.work_minutes)} − meetings ${formatMinutes(data.time.meeting_minutes)} − buffer` : "Working hours − meetings − buffer"}
+                >
+                  auto
+                </span>
+              )}
             </div>
             <div className="stat-value">
               {formatMinutes(cap.planned_minutes)}
@@ -259,7 +263,9 @@ export function TodayView() {
         )}
       </AnimatePresence>
 
-      <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
+      {(data.meetings.length > 0 || isToday) && <TodayMeetings meetings={data.meetings} minutes={data.time?.meeting_minutes_total ?? 0} />}
+
+      <DndContext sensors={sensors} collisionDetection={collision.detect} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
         <div className="today-layout">
           <aside className="tray">
             {data.overdue.length > 0 && (
@@ -518,6 +524,43 @@ function ReviewCard({ day, review, tasks }: { day: string; review: DailyReview; 
         </button>
         {review.completed_at && <span className="faint" style={{ fontSize: 12 }}>Completed {new Date(review.completed_at).toLocaleTimeString()}</span>}
       </div>
+    </section>
+  );
+}
+
+function TodayMeetings({ meetings, minutes }: { meetings: Meeting[]; minutes: number }) {
+  const ui = useUi();
+  const [open, setOpen] = useState(true);
+  return (
+    <section className="card" style={{ padding: "10px 12px", marginBottom: 16 }}>
+      <div className="tray-head" style={{ padding: "0 2px 6px" }}>
+        <button className="btn sm ghost" style={{ paddingLeft: 2 }} onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+          <CalendarClock /> <strong>Meetings today</strong>
+          <span className="faint">
+            {meetings.length} · {formatMinutes(minutes)}
+          </span>
+        </button>
+        <div style={{ display: "flex", gap: 4 }}>
+          <button className="btn sm ghost" onClick={() => ui.navigate("meetings")}>
+            Insights
+          </button>
+          <button className="btn sm" onClick={() => ui.openLogCall()}>
+            <Phone /> Log call
+          </button>
+        </div>
+      </div>
+      {open &&
+        (meetings.length === 0 ? (
+          <div className="faint" style={{ fontSize: 12.5, padding: "2px 4px 4px" }}>
+            No meetings today — a full day for focus. Import your calendar on the Meetings page to see recurring meetings here.
+          </div>
+        ) : (
+          <div className="meeting-list">
+            {meetings.map((m) => (
+              <MeetingRow key={m.id} m={m} />
+            ))}
+          </div>
+        ))}
     </section>
   );
 }

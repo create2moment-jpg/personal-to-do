@@ -8,12 +8,13 @@ exposing anything personal. A ``DEMO`` marker file makes the UI display a
 
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from ppos.application.ports import NoteQuery, TaskQuery
 from ppos.bootstrap import Container
 from ppos.domain.notes import EntityType, NoteKind
+from ppos.domain.planning import Commitment
 from ppos.domain.tasks import Priority, TaskStatus
 from ppos.shared.errors import ValidationError
 
@@ -100,7 +101,6 @@ def seed_demo(c: Container, today: date | None = None) -> dict[str, int]:
         today,
         {
             "objective": "Get the retrieval ADR ready for review",
-            "capacity_minutes": 330,
             "top_priority_ids": [adr, eval_task, review],
         },
     )
@@ -190,6 +190,9 @@ def seed_demo(c: Container, today: date | None = None) -> dict[str, int]:
     )
     c.links.link(EntityType.NOTE, learning_note.id, EntityType.PROJECT, learning.id)
 
+    _seed_sprint_and_week(c, today)
+    _seed_meetings(c, today)
+
     marker = c.settings.local_data_dir / DEMO_MARKER
     marker.write_text("Synthetic demo workspace created by `ppos demo`.\n", encoding="utf-8")
     return {
@@ -197,3 +200,164 @@ def seed_demo(c: Container, today: date | None = None) -> dict[str, int]:
         "tasks": len(c.tasks.find(TaskQuery(limit=1000))),
         "notes": len(c.notes.find(NoteQuery(limit=500))),
     }
+
+
+def _seed_sprint_and_week(c: Container, today: date) -> None:
+    start = today - timedelta(days=today.weekday())  # this Monday
+    sprint = c.sprints.create(
+        name="Sprint 12",
+        goal="Hybrid retrieval ready for internal beta",
+        start_date=start - timedelta(days=7),
+        end_date=start + timedelta(days=6),
+    )
+    open_tasks = c.tasks.find(TaskQuery(limit=500))
+    by_title = {t.title: t for t in open_tasks}
+    committed = [
+        t.id
+        for title, t in by_title.items()
+        if t.parent_id is None
+        and any(
+            k in title
+            for k in (
+                "ADR",
+                "regression evals",
+                "PR #482",
+                "Re-ranker",
+                "Benchmark",
+                "design notes",
+                "sqlite-vec",
+            )
+        )
+    ]
+    stretch = [
+        t.id
+        for title, t in by_title.items()
+        if "blog post" in title or "latency percentiles" in title
+    ]
+    c.sprints.add_tasks(sprint.id, committed)
+    c.sprints.add_tasks(sprint.id, stretch, Commitment.STRETCH)
+    c.sprints.start(sprint.id)
+    late = c.tasks.create(
+        "Fix flaky retrieval eval on CI", estimate_minutes=45, priority=Priority.P2, tags=["evals"]
+    )
+    c.sprints.add_tasks(sprint.id, [late.id])  # a mid-sprint scope change
+
+    # Backdate completions so the burndown tells a story.
+    with c.uow() as uow:
+        for i, tid in enumerate(
+            t for t in committed if (x := uow.tasks.get(t)) and x.status == TaskStatus.DONE
+        ):
+            uow.conn.execute(
+                "UPDATE tasks SET completed_at = ? WHERE id = ?",
+                ((datetime.now(timezone.utc) - timedelta(days=6 - i * 2)).isoformat(), tid),
+            )
+        uow.commit()
+
+    c.weeks.update_plan(
+        today,
+        {
+            "objectives": [
+                {"text": "Retrieval ADR approved", "done": False},
+                {"text": "4-bit model regression evals green", "done": False},
+                {"text": "Reading-group slides ready", "done": True},
+            ]
+        },
+    )
+    # Spread a few tasks across the week so the Week view is alive.
+    for offset, title, est in [
+        (1, "Pair with Marcus on index sharding", 60),
+        (2, "Draft Q1 OKR proposal", 90),
+        (3, "Prepare demo for platform review", 45),
+    ]:
+        c.tasks.create(title, scheduled_date=today + timedelta(days=offset), estimate_minutes=est)
+
+
+def _ics_time(day: date, hhmm: str) -> str:
+    return f"{day.strftime('%Y%m%d')}T{hhmm.replace(':', '')}00"
+
+
+def _seed_meetings(c: Container, today: date) -> None:
+    monday = today - timedelta(days=today.weekday())
+    first = monday - timedelta(days=21)
+    events = [
+        (
+            "demo-standup",
+            "Team standup",
+            first,
+            "09:30",
+            "09:45",
+            "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR",
+        ),
+        (
+            "demo-1on1",
+            "1:1 with Priya (manager)",
+            first + timedelta(days=1),
+            "11:00",
+            "11:30",
+            "FREQ=WEEKLY;BYDAY=TU",
+        ),
+        (
+            "demo-arch",
+            "Architecture review",
+            first + timedelta(days=3),
+            "14:00",
+            "15:00",
+            "FREQ=WEEKLY;INTERVAL=2;BYDAY=TH",
+        ),
+        ("demo-sync", "Platform sync", first, "10:00", "11:00", "FREQ=WEEKLY;BYDAY=MO"),
+        (
+            "demo-status",
+            "Cross-team status update",
+            first + timedelta(days=2),
+            "16:00",
+            "17:00",
+            "FREQ=WEEKLY;BYDAY=WE",
+        ),
+        (
+            "demo-allhands",
+            "Engineering all-hands",
+            first + timedelta(days=4),
+            "15:00",
+            "16:00",
+            "FREQ=MONTHLY;BYDAY=1FR",
+        ),
+    ]
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PPOS demo//EN"]
+    for uid, title, day, s, e, rule in events:
+        lines += [
+            "BEGIN:VEVENT", f"UID:{uid}@demo.invalid", f"SUMMARY:{title}",
+            f"DTSTART;TZID=Europe/Berlin:{_ics_time(day, s)}", f"DTEND;TZID=Europe/Berlin:{_ics_time(day, e)}",
+            f"RRULE:{rule}", "END:VEVENT",
+        ]  # fmt: skip
+    lines += [
+        "BEGIN:VEVENT", "UID:demo-qbr@demo.invalid", "SUMMARY:Quarterly roadmap review",
+        f"DTSTART;TZID=Europe/Berlin:{_ics_time(today + timedelta(days=2), '13:00')}",
+        f"DTEND;TZID=Europe/Berlin:{_ics_time(today + timedelta(days=2), '14:30')}", "END:VEVENT",
+        "END:VCALENDAR",
+    ]  # fmt: skip
+    c.meetings.import_ics("demo-calendar.ics", "\r\n".join(lines))
+    c.meetings.update_series("demo-standup@demo.invalid", {"rating": 4, "topic": "Team"})
+    c.meetings.update_series("demo-1on1@demo.invalid", {"rating": 5, "topic": "Career"})
+    c.meetings.update_series("demo-arch@demo.invalid", {"rating": 4, "topic": "Architecture"})
+    c.meetings.update_series("demo-status@demo.invalid", {"rating": 2, "topic": "Status"})
+    c.meetings.update_series(
+        "demo-allhands@demo.invalid", {"default_status": "skipped", "topic": "Company"}
+    )
+
+    tz = c.settings_service.tz()
+    calls = [
+        (-6, "10:30", 30, ["Priya"], "Retrieval", "ADR scope", 5),
+        (-5, "14:00", 45, ["Marcus"], "Retrieval", "Index sharding", 4),
+        (-4, "11:30", 20, ["Lena"], "Evals", "Eval harness questions", 3),
+        (-3, "15:30", 60, ["Marcus", "Lena"], "Evals", "Debug flaky eval", 4),
+        (-2, "13:30", 25, ["Jonas"], "Hiring", "Candidate debrief", 3),
+        (-1, "16:00", 30, ["Priya"], "Career", "Promotion evidence", 5),
+        (-1, "11:00", 40, ["Aisha"], "Status", "Status for leadership deck", 2),
+    ]
+    for offset, hhmm, minutes, people, topic, title, rating in calls:
+        day = today + timedelta(days=offset)
+        if day.weekday() >= 5:
+            day -= timedelta(days=2)
+        hh, mm = (int(x) for x in hhmm.split(":"))
+        start = datetime(day.year, day.month, day.day, hh, mm, tzinfo=tz)
+        c.meetings.log_call(title, start, minutes, people=people, topic=topic, rating=rating)

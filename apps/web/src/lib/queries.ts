@@ -25,10 +25,25 @@ export const keys = {
 
 /** Anything that changes tasks invalidates every task-shaped view. */
 export function invalidateTasks(qc: QueryClient = queryClient) {
-  void qc.invalidateQueries({ queryKey: ["today"] });
-  void qc.invalidateQueries({ queryKey: ["tasks"] });
-  void qc.invalidateQueries({ queryKey: ["task"] });
+  for (const k of ["today", "tasks", "task", "week", "sprint", "sprints"]) void qc.invalidateQueries({ queryKey: [k] });
 }
+
+/** Meetings affect capacity, so they refresh day/week views too. */
+export function invalidateTime(qc: QueryClient = queryClient) {
+  for (const k of ["today", "week", "meetings", "series", "insights", "people", "topics"]) void qc.invalidateQueries({ queryKey: [k] });
+}
+
+export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings, staleTime: 5 * 60_000 });
+export const useWeek = (day: string) => useQuery({ queryKey: ["week", day], queryFn: () => api.week(day) });
+export const useSprints = () => useQuery({ queryKey: ["sprints"], queryFn: api.sprints });
+export const useSprintSummary = (id: string | undefined) =>
+  useQuery({ queryKey: ["sprint", id], queryFn: () => api.sprintSummary(id!), enabled: !!id });
+export const useMeetings = (start: string, end: string) =>
+  useQuery({ queryKey: ["meetings", start, end], queryFn: () => api.meetings(start, end) });
+export const useSeries = () => useQuery({ queryKey: ["series"], queryFn: api.meetingSeries });
+export const useInsights = (days: number) => useQuery({ queryKey: ["insights", days], queryFn: () => api.insights(days) });
+export const usePeople = () => useQuery({ queryKey: ["people"], queryFn: api.people });
+export const useTopics = () => useQuery({ queryKey: ["topics"], queryFn: api.topics });
 
 export const useToday = (day: string) => useQuery({ queryKey: keys.today(day), queryFn: () => api.today(day) });
 export const useHealth = () => useQuery({ queryKey: keys.health, queryFn: api.health, staleTime: 60_000 });

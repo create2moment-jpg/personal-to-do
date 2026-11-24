@@ -1,13 +1,51 @@
-export function isoDay(d: Date = new Date()): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+/** Workspace time zone (from settings); "today" and clock times follow it. */
+let workspaceTz: string | undefined;
+export function setWorkspaceTimeZone(tz: string | undefined) {
+  workspaceTz = tz;
+}
+export function getWorkspaceTimeZone(): string {
+  return workspaceTz ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
+/** Calendar date (YYYY-MM-DD) of an instant in the workspace time zone. */
+export function isoDay(d: Date = new Date()): string {
+  const parts = new Intl.DateTimeFormat("en-CA", { timeZone: getWorkspaceTimeZone(), year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+  return parts; // en-CA formats as YYYY-MM-DD
+}
+
+/** Pure calendar arithmetic on YYYY-MM-DD strings (no time zone involved). */
 export function addDays(iso: string, n: number): string {
   const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return isoDay(new Date(y, m - 1, d + n));
+  const dt = new Date(Date.UTC(y, m - 1, d + n));
+  return dt.toISOString().slice(0, 10);
+}
+
+export function mondayOf(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
+  const wd = (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
+  return addDays(iso, -wd);
+}
+
+/** Clock time (HH:MM) of an instant in the workspace time zone. */
+export function clockTime(isoTs: string | Date): string {
+  const d = typeof isoTs === "string" ? new Date(isoTs) : isoTs;
+  return new Intl.DateTimeFormat(undefined, { timeZone: getWorkspaceTimeZone(), hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(d);
+}
+
+/** Build an ISO instant from a local date + HH:MM in the workspace zone. */
+export function zonedInstant(day: string, hhmm: string): string {
+  const [y, m, d] = day.split("-").map(Number) as [number, number, number];
+  const [hh, mm] = hhmm.split(":").map(Number) as [number, number];
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  const offset = tzOffsetMinutes(new Date(guess));
+  return new Date(guess - offset * 60_000).toISOString();
+}
+
+function tzOffsetMinutes(at: Date): number {
+  const f = new Intl.DateTimeFormat("en-US", { timeZone: getWorkspaceTimeZone(), hourCycle: "h23", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+  const p = Object.fromEntries(f.formatToParts(at).map((x) => [x.type, x.value]));
+  const asUtc = Date.UTC(Number(p.year), Number(p.month) - 1, Number(p.day), Number(p.hour), Number(p.minute));
+  return Math.round((asUtc - at.getTime()) / 60_000);
 }
 
 export function formatMinutes(min: number | null | undefined): string {
@@ -20,7 +58,7 @@ export function formatMinutes(min: number | null | undefined): string {
 
 export function prettyDay(iso: string): string {
   const [y, m, d] = iso.split("-").map(Number) as [number, number, number];
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+  return new Date(y, m - 1, d, 12).toLocaleDateString(undefined, {
     weekday: "long",
     month: "short",
     day: "numeric",

@@ -30,6 +30,8 @@ export interface Task {
   created_at: string;
   updated_at: string;
   completed_at: string | null;
+  sprint_id?: string | null;
+  commitment?: "committed" | "stretch" | null;
 }
 
 export type NoteKind =
@@ -103,6 +105,7 @@ export interface DailyPlan {
   objective: string;
   top_priority_ids: string[];
   review: DailyReview;
+  capacity_mode?: "auto" | "manual";
 }
 
 export interface Capacity {
@@ -123,6 +126,8 @@ export interface Today {
   due_today_unscheduled: Task[];
   capacity: Capacity;
   journal: Note | null;
+  time: DayTime | null;
+  meetings: Meeting[];
 }
 
 export interface SearchHit {
@@ -137,10 +142,13 @@ export interface CaptureResult {
   task: Task | null;
   note: Note | null;
   warnings: string[];
+  meeting?: Meeting | null;
 }
 
 export interface CapturePreview {
-  kind: "task" | "idea" | "note";
+  kind: "task" | "idea" | "note" | "call";
+  people?: string[];
+  start_time?: string | null;
   title: string;
   tags: string[];
   priority: number;
@@ -158,4 +166,188 @@ export interface Health {
   data_dir: string;
   demo: boolean;
   ai: { enabled: boolean; note: string };
+}
+
+// ------------------------------------------------------------------ Phase 2/3
+
+export interface WorkspaceSettings {
+  timezone: string;
+  work_start: string;
+  work_end: string;
+  workdays: number[];
+  buffer_percent: number;
+  sprint_length_days: number;
+  work_minutes: number;
+}
+
+export type SprintStatus = "planned" | "active" | "completed";
+
+export interface Sprint {
+  id: string;
+  name: string;
+  goal: string;
+  start_date: string;
+  end_date: string;
+  status: SprintStatus;
+  review_summary: string;
+  review_lessons: string;
+  completed_at: string | null;
+}
+
+export interface BurndownPoint {
+  day: string;
+  remaining_minutes: number; // -1 = future
+  ideal_minutes: number;
+  scope_minutes: number;
+}
+
+export interface SprintSummary {
+  sprint: Sprint;
+  tasks: Task[];
+  committed_total: number;
+  committed_done: number;
+  stretch_total: number;
+  stretch_done: number;
+  committed_minutes: number;
+  remaining_minutes: number;
+  added_after_start: string[];
+  removed_after_start: string[];
+  burndown: BurndownPoint[];
+  days_total: number;
+  days_elapsed: number;
+  completion_rate: number;
+}
+
+export type Attendance = "attended" | "skipped" | "partial";
+
+export interface Meeting {
+  id: string;
+  source: "ics" | "manual";
+  kind: "meeting" | "call";
+  title: string;
+  start_at: string;
+  end_at: string;
+  all_day: boolean;
+  location: string | null;
+  organizer: string | null;
+  series_key: string | null;
+  status: Attendance | null;
+  effective_status: Attendance;
+  counted_minutes: number;
+  duration_minutes: number;
+  attended_minutes: number | null;
+  rating: number | null;
+  note: string;
+  topic: string | null;
+  people: string[];
+  series_default_status: "attending" | "skipped" | null;
+  cadence: string | null;
+}
+
+export interface MeetingSeries {
+  series_key: string;
+  title: string;
+  cadence: string | null;
+  default_status: "attending" | "skipped";
+  rating: number | null;
+  notes: string;
+  topic: string | null;
+  occurrences_4w: number;
+  avg_minutes: number;
+  minutes_per_month: number;
+  next_start: string | null;
+  last_start: string | null;
+}
+
+export interface DayTime {
+  day: string;
+  work_minutes: number;
+  meeting_minutes: number;
+  meeting_minutes_total: number;
+  available_minutes: number;
+  capacity_minutes: number;
+}
+
+export interface WeekDay {
+  day: string;
+  tasks: Task[];
+  time: DayTime;
+  capacity_minutes: number;
+  planned_minutes: number;
+  meetings: Meeting[];
+}
+
+export interface WeeklyObjective {
+  text: string;
+  done: boolean;
+}
+
+export interface WeeklyPlan {
+  week_start: string;
+  objectives: WeeklyObjective[];
+  notes: string;
+  review_wins: string;
+  review_lessons: string;
+  review_risks: string;
+  review_next_focus: string;
+  review_completed_at: string | null;
+}
+
+export interface Week {
+  week_start: string;
+  plan: WeeklyPlan;
+  days: WeekDay[];
+  sprint: Sprint | null;
+  sprint_backlog: Task[];
+}
+
+export interface WeekReview {
+  week_start: string;
+  planned: number;
+  done: number;
+  open: number;
+  done_titles: string[];
+  open_titles: string[];
+  estimate_minutes: number;
+  actual_minutes: number;
+  meeting_minutes: number;
+  available_minutes: number;
+  work_minutes: number;
+  objectives: WeeklyObjective[];
+}
+
+export interface Ranked {
+  name: string;
+  minutes: number;
+  count: number;
+}
+
+export interface TimeInsights {
+  start: string;
+  end: string;
+  days: DayTime[];
+  meeting_minutes: number;
+  work_minutes: number;
+  available_minutes: number;
+  meetings_count: number;
+  calls_count: number;
+  by_person: Ranked[];
+  by_topic: Ranked[];
+  by_series: { series_key: string; title: string; minutes: number; count: number; rating: number | null }[];
+  rated_minutes: number;
+  avg_rating: number | null;
+  reconsider: { series_key: string; title: string; minutes: number; rating: number | null; suggestion: string }[];
+}
+
+export interface Named {
+  id: string;
+  name: string;
+}
+
+export interface IcsImportResult {
+  events: number;
+  created: number;
+  updated: number;
+  cancelled: number;
+  series: number;
 }
