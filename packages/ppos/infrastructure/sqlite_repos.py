@@ -458,7 +458,8 @@ class SqliteUnitOfWork:
     def commit(self) -> None:
         if self.conn.in_transaction:
             self.conn.execute("COMMIT")
-        self.conn.execute("BEGIN")
+        # Keep later work in this unit transactional and serialised too.
+        self.conn.execute("BEGIN IMMEDIATE")
 
     def rollback(self) -> None:
         if self.conn.in_transaction:
@@ -466,7 +467,15 @@ class SqliteUnitOfWork:
 
 
 class SqliteUnitOfWorkFactory:
-    """One short-lived connection per unit of work (safe under the threadpool)."""
+    """One short-lived connection per unit of work (safe under the threadpool).
+
+    Units start with ``BEGIN IMMEDIATE``: a deferred transaction that reads and
+    then writes cannot be upgraded while another writer is active, and SQLite
+    fails that immediately with "database is locked" (the busy timeout does not
+    apply to lock upgrades). Taking the write lock up front makes concurrent
+    writers queue on the busy timeout instead. WAL keeps reads from other
+    connections unblocked.
+    """
 
     def __init__(self, db_path: Path | str) -> None:
         self._db_path = db_path
@@ -475,7 +484,7 @@ class SqliteUnitOfWorkFactory:
     def __call__(self) -> Iterator[SqliteUnitOfWork]:
         conn = connect(self._db_path)
         uow = SqliteUnitOfWork(conn)
-        conn.execute("BEGIN")
+        conn.execute("BEGIN IMMEDIATE")
         try:
             yield uow
         finally:

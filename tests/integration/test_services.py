@@ -165,3 +165,23 @@ def test_audit_log_is_append_only(container: Container) -> None:
         assert [r[0] for r in rows] == ["create"]
         with pytest.raises(sqlite3.IntegrityError):
             uow.conn.execute("UPDATE audit_log SET action = 'x'")
+
+
+def test_concurrent_writers_do_not_fail_with_database_locked(container: Container) -> None:
+    """Regression: read-then-write units used to hit 'database is locked'."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    task = container.tasks.create("contended", scheduled_date=TODAY)
+    note = container.notes.create("n", "x")
+
+    def work(i: int) -> None:
+        if i % 3 == 0:
+            container.tasks.update(task.id, {"actual_minutes": i})
+        elif i % 3 == 1:
+            container.notes.update(note.id, {"body": f"edit {i}"})
+        else:
+            container.tasks.create(f"t{i}", scheduled_date=TODAY)
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(work, range(60)))
+    assert len(container.days.today_view(TODAY).tasks) == 1 + 20
