@@ -59,7 +59,7 @@ function Insights() {
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-        <span className="faint" style={{ fontSize: 13 }}>
+        <span className="faint" style={{ fontSize: "0.9286rem" }}>
           {relativeDay(r.start)} – {relativeDay(r.end)}
         </span>
         <div className="segmented" role="group" aria-label="Range">
@@ -104,7 +104,7 @@ function Insights() {
                 <ThumbsDown size={16} /> Worth reconsidering
               </h3>
               {r.reconsider.length === 0 ? (
-                <div className="faint" style={{ fontSize: 13 }}>
+                <div className="faint" style={{ fontSize: "0.9286rem" }}>
                   Nothing flagged. Recurring meetings rated 1–2★ that cost over an hour show up here.
                 </div>
               ) : (
@@ -147,7 +147,7 @@ function Recurring() {
           <SeriesRow key={s.series_key} s={s} />
         ))}
       </section>
-      <p className="faint" style={{ fontSize: 12.5, marginTop: 10 }}>
+      <p className="faint" style={{ fontSize: "0.8929rem", marginTop: 10 }}>
         Marking a series as “Not attending” removes all its occurrences from your capacity and time totals. Single occurrences can still be overridden on Today or in Meetings & calls.
       </p>
     </div>
@@ -293,12 +293,12 @@ export function ImportPanel() {
       >
         <Upload size={22} />
         <div style={{ fontWeight: 600, marginTop: 6 }}>Drop an .ics file here, or click to choose</div>
-        <div className="faint" style={{ fontSize: 12.5, marginTop: 4 }}>
+        <div className="faint" style={{ fontSize: "0.8929rem", marginTop: 4 }}>
           Recurring meetings are expanded 30 days back and 4 months ahead. Re-import any time — your choices are kept.
         </div>
       </div>
       <input ref={ref} type="file" accept=".ics,text/calendar" hidden onChange={(e) => e.target.files?.[0] && void doImport(e.target.files[0])} />
-      <div className="grid-2" style={{ marginTop: 14, fontSize: 13, color: "var(--text-2)" }}>
+      <div className="grid-2" style={{ marginTop: 14, fontSize: "0.9286rem", color: "var(--text-2)" }}>
         <div>
           <strong style={{ color: "var(--text)" }}>Outlook for Windows</strong>
           <ol style={{ margin: "6px 0 0", paddingLeft: 18 }}>
@@ -315,7 +315,7 @@ export function ImportPanel() {
           </ol>
         </div>
       </div>
-      <p className="faint" style={{ fontSize: 12, marginTop: 12, display: "flex", gap: 6, alignItems: "center" }}>
+      <p className="faint" style={{ fontSize: "0.8571rem", marginTop: 12, display: "flex", gap: 6, alignItems: "center" }}>
         <ShieldCheck size={13} /> Read-only. Nothing is ever written back to Outlook, and attendee lists are not imported.
       </p>
     </section>

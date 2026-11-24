@@ -26,8 +26,8 @@ export function ShortcutsDialog({ open, onClose }: { open: boolean; onClose: () 
   return (
     <Dialog open={open} onClose={onClose} label="Keyboard shortcuts" width={720}>
       <div style={{ padding: "18px 22px 0" }}>
-        <h3 style={{ fontSize: 17, fontWeight: 650 }}>Keyboard shortcuts</h3>
-        <p className="muted" style={{ margin: "4px 0 0", fontSize: 13 }}>
+        <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Keyboard shortcuts</h3>
+        <p className="muted" style={{ margin: "4px 0 0", fontSize: "0.9286rem" }}>
           Everything is reachable without the mouse.
         </p>
       </div>

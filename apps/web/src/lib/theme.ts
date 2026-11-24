@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 export type ThemeMode = "system" | "light" | "dark";
 export type Accent = "indigo" | "violet" | "blue" | "teal" | "amber" | "rose";
 export type Density = "comfortable" | "compact";
+export type DisplaySize = "auto" | "compact" | "comfortable" | "large" | "xl";
 export type DarkPalette = "graphite" | "obsidian" | "midnight" | "forest" | "aubergine";
 
 /** Dark palettes: [name, description, background, surface] for previews. */
@@ -19,6 +20,7 @@ export interface Appearance {
   accent: Accent;
   density: Density;
   dark: DarkPalette;
+  display: DisplaySize;
 }
 
 export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
@@ -31,7 +33,7 @@ export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
 };
 
 const KEY = "ppos.appearance";
-const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable", dark: "graphite" };
+const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable", dark: "graphite", display: "auto" };
 
 // UI preferences only (per browser). Never personal content.
 export function loadAppearance(): Appearance {
@@ -50,6 +52,7 @@ export function applyAppearance(a: Appearance) {
   root.dataset.accent = a.accent;
   root.dataset.density = a.density;
   root.dataset.dark = a.dark;
+  root.dataset.display = a.display;
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? DARK_PALETTES[a.dark].bg : "#f7f7f5");
 }
 

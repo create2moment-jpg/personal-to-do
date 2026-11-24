@@ -478,8 +478,8 @@ function ReviewCard({ day, review, tasks }: { day: string; review: DailyReview; 
     <section className="card review-card">
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
-          <h3 style={{ fontSize: 17, fontWeight: 650 }}>End-of-day review</h3>
-          <div className="muted" style={{ fontSize: 13, marginTop: 2 }}>
+          <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>End-of-day review</h3>
+          <div className="muted" style={{ fontSize: "0.9286rem", marginTop: 2 }}>
             {completed.length} completed ·{" "}
             {completed
               .slice(0, 4)
@@ -522,7 +522,7 @@ function ReviewCard({ day, review, tasks }: { day: string; review: DailyReview; 
         <button className="btn ghost" onClick={() => save(false)}>
           Save draft
         </button>
-        {review.completed_at && <span className="faint" style={{ fontSize: 12 }}>Completed {new Date(review.completed_at).toLocaleTimeString()}</span>}
+        {review.completed_at && <span className="faint" style={{ fontSize: "0.8571rem" }}>Completed {new Date(review.completed_at).toLocaleTimeString()}</span>}
       </div>
     </section>
   );
@@ -551,7 +551,7 @@ function TodayMeetings({ meetings, minutes }: { meetings: Meeting[]; minutes: nu
       </div>
       {open &&
         (meetings.length === 0 ? (
-          <div className="faint" style={{ fontSize: 12.5, padding: "2px 4px 4px" }}>
+          <div className="faint" style={{ fontSize: "0.8929rem", padding: "2px 4px 4px" }}>
             No meetings today — a full day for focus. Import your calendar on the Meetings page to see recurring meetings here.
           </div>
         ) : (

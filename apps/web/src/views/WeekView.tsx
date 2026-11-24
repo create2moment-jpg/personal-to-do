@@ -90,7 +90,7 @@ function Objectives({ week }: { week: Week }) {
   return (
     <section className="card panel" style={{ marginBottom: 14 }}>
       <h3>
-        <Target size={16} /> Weekly objectives <span className="faint" style={{ fontWeight: 400, fontSize: 12.5 }}>three outcomes that make this week a success</span>
+        <Target size={16} /> Weekly objectives <span className="faint" style={{ fontWeight: 400, fontSize: "0.8929rem" }}>three outcomes that make this week a success</span>
       </h3>
       <div className="objectives">
         {items.map((o, i) => (
@@ -199,7 +199,7 @@ function WeekPlan({ week }: { week: Week }) {
                           {m.all_day ? "All day" : clockTime(m.start_at)} {m.title}
                         </div>
                       ))}
-                      {d.meetings.length > 5 && <div className="faint" style={{ fontSize: 11 }}>+{d.meetings.length - 5} more</div>}
+                      {d.meetings.length > 5 && <div className="faint" style={{ fontSize: "0.7857rem" }}>+{d.meetings.length - 5} more</div>}
                     </div>
                   )}
                   <SortableContext id={d.day} items={d.tasks.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -223,7 +223,7 @@ function WeekPlan({ week }: { week: Week }) {
             </div>
             {week.sprint ? (
               <>
-                <div className="faint" style={{ fontSize: 12, padding: "0 4px" }}>
+                <div className="faint" style={{ fontSize: "0.8571rem", padding: "0 4px" }}>
                   Unscheduled sprint work — drag onto a day.
                 </div>
                 <SortableContext id="sprint-backlog" items={week.sprint_backlog.map((t) => t.id)} strategy={verticalListSortingStrategy}>
@@ -309,16 +309,16 @@ function WeekReviewPanel({ week, onPlanNext }: { week: Week; onPlanNext: () => v
             ))}
           </ul>
           <div className="divider" />
-          <div className="faint" style={{ fontSize: 12.5 }}>
+          <div className="faint" style={{ fontSize: "0.8929rem" }}>
             <strong style={{ color: "var(--text-2)" }}>Done:</strong> {r.done_titles.slice(0, 6).join(" · ") || "—"}
           </div>
-          <div className="faint" style={{ fontSize: 12.5, marginTop: 6 }}>
+          <div className="faint" style={{ fontSize: "0.8929rem", marginTop: 6 }}>
             <strong style={{ color: "var(--text-2)" }}>Open:</strong> {r.open_titles.slice(0, 6).join(" · ") || "—"}
           </div>
         </section>
       </div>
       <section className="card review-card">
-        <h3 style={{ fontSize: 17, fontWeight: 650 }}>Reflect</h3>
+        <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Reflect</h3>
         <div className="review-grid">
           {(
             [
@@ -367,7 +367,7 @@ export function Kpi({ label, value, sub, warn }: { label: string; value: string;
     <div className={cx("stat", warn && "warn")}>
       <div className="stat-label">{label}</div>
       <div className="stat-value">{value}</div>
-      {sub && <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>{sub}</div>}
+      {sub && <div className="faint" style={{ fontSize: "0.8571rem", marginTop: 2 }}>{sub}</div>}
     </div>
   );
 }

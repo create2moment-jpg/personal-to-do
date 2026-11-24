@@ -45,7 +45,7 @@ export function RightRail() {
           <button className="btn ghost block" style={{ justifyContent: "flex-start", height: "auto", padding: "4px 0", whiteSpace: "normal", textAlign: "left", color: "var(--text)" }} onClick={() => ui.openTask(next.id)}>
             {next.title}
           </button>
-          {next.estimate_minutes !== null && <div className="faint" style={{ fontSize: 12 }}>{formatMinutes(next.estimate_minutes)} estimated</div>}
+          {next.estimate_minutes !== null && <div className="faint" style={{ fontSize: "0.8571rem" }}>{formatMinutes(next.estimate_minutes)} estimated</div>}
         </div>
       )}
 
@@ -54,7 +54,7 @@ export function RightRail() {
           <Star /> Top priorities
         </div>
         {top.length === 0 ? (
-          <div className="faint" style={{ fontSize: 12.5 }}>
+          <div className="faint" style={{ fontSize: "0.8929rem" }}>
             Star up to three tasks on Today to keep them in view.
           </div>
         ) : (
@@ -77,7 +77,7 @@ export function RightRail() {
         <div className="section-label">
           <Sparkles /> Assistant
         </div>
-        <div style={{ fontSize: 12.5, color: "var(--text-2)" }}>
+        <div style={{ fontSize: "0.8929rem", color: "var(--text-2)" }}>
           A private, on-device AI that drafts plans and reviews from your own records arrives in Phase 5. Everything works without it.
         </div>
       </div>
@@ -194,7 +194,7 @@ function CallTimer() {
       </div>
       {startedAt === null ? (
         <div className="timer-row">
-          <span className="faint" style={{ fontSize: 12.5 }}>
+          <span className="faint" style={{ fontSize: "0.8929rem" }}>
             Track an unplanned call as it happens.
           </span>
           <button className="btn sm" onClick={() => persist(Date.now())}>

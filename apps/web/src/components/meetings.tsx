@@ -280,7 +280,7 @@ function LogCallBody({ draft, onClose }: { draft?: CallDraft; onClose: () => voi
         <Stars value={rating} onChange={setRating} size={18} />
       </div>
       <div className="lc-foot">
-        <span className="faint" style={{ fontSize: 12 }}>
+        <span className="faint" style={{ fontSize: "0.8571rem" }}>
           <Kbd>⌘</Kbd>
           <Kbd>↵</Kbd> save
         </span>

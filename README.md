@@ -139,6 +139,8 @@ Commit rules: small logical commits, imperative messages, author `Jimmy`
 
 ## Documentation
 
+- [Backlog — every feature request and its status](docs/backlog.md)
+
 - [Architecture](docs/architecture.md)
 - [Design system](docs/design-system.md)
 - [Decisions (ADRs)](docs/adr/)

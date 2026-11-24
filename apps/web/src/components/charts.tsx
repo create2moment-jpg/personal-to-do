@@ -200,7 +200,7 @@ function roundedTop(x: number, y: number, w: number, h: number, r: number): stri
 
 /** Ranked horizontal bars — one series, so no legend; values labelled directly. */
 export function RankBars({ items, empty, limit = 8 }: { items: Ranked[]; empty: string; limit?: number }) {
-  if (items.length === 0) return <div className="faint" style={{ fontSize: 13, padding: "8px 0" }}>{empty}</div>;
+  if (items.length === 0) return <div className="faint" style={{ fontSize: "0.9286rem", padding: "8px 0" }}>{empty}</div>;
   const shown = items.slice(0, limit);
   const max = Math.max(...shown.map((i) => i.minutes), 1);
   return (
@@ -214,7 +214,7 @@ export function RankBars({ items, empty, limit = 8 }: { items: Ranked[]; empty: 
           <span className="rb-value">{formatMinutes(i.minutes)}</span>
         </li>
       ))}
-      {items.length > limit && <li className="faint" style={{ fontSize: 12 }}>+{items.length - limit} more</li>}
+      {items.length > limit && <li className="faint" style={{ fontSize: "0.8571rem" }}>+{items.length - limit} more</li>}
     </ul>
   );
 }

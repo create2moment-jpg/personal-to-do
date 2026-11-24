@@ -110,7 +110,7 @@ export function ProjectsView() {
                         {p.name[0]}
                       </div>
                       <h4>{p.name}</h4>
-                      <div className="faint" style={{ fontSize: 12.5 }}>
+                      <div className="faint" style={{ fontSize: "0.8929rem" }}>
                         {s.open} open · {s.done} done
                       </div>
                       <div className="project-bar">

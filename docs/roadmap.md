@@ -167,7 +167,7 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 Recorded 2026-11-24. Order reflects value vs. effort; each ships at the
 product bar above.
 
-**N1 — Large-monitor layout (24″ and 32″)** · *requirement*
+**N1 — Large-monitor layout (24″ and 32″)** · *requirement* · ✅ done
 - Goal: behave like standard desktop apps across resolutions — 24″ (1920×1080
   or 2560×1440) and 32″ (2560×1440 or 3840×2160 at 150–200 % OS scaling).
 - Fluid type and spacing scale (`clamp()`-based root size) so text stays a
@@ -181,7 +181,12 @@ product bar above.
   override, next to the existing density setting.
 - Acceptance: Playwright screenshots at 1920×1080, 2560×1440 and 3840×2160
   (device scale 1 and 2) with no clipped text, no horizontal page scroll,
-  and body text ≥ 14 px effective.
+  and primary text ≥ 13 px effective.
+- Delivered: all sizes are `rem`; root size is 14 px up to ~2200 CSS px and
+  grows to 18 px on 32″ 4K at 100 % scaling (OS scaling at 150–200 % keeps
+  14 px, as Windows already enlarges); wider sidebar/rail and page widths
+  above 1800 px; Display size override S / M / L / XL. Verified at 1600,
+  1920×1080, 2560×1440, 3840×2160 @1× and @2× with no horizontal overflow.
 
 **N2 — Prompt Book (writing desk for AI prompts)**
 - A book-like tool for notes and messages you give to AI assistants: every

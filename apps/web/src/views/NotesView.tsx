@@ -78,7 +78,7 @@ export function NotesView({ noteId }: { noteId?: string }) {
       <aside className="notes-sidebar">
         <div className="notes-sidebar-head">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <h1 className="page-title" style={{ fontSize: 20 }}>
+            <h1 className="page-title" style={{ fontSize: "1.4286rem" }}>
               Notes
             </h1>
             <button className="btn sm primary" onClick={create}>
@@ -115,7 +115,7 @@ export function NotesView({ noteId }: { noteId?: string }) {
               </button>
             );
           })}
-          {shown.length === 0 && <div className="faint" style={{ padding: 14, fontSize: 13 }}>No notes here yet.</div>}
+          {shown.length === 0 && <div className="faint" style={{ padding: 14, fontSize: "0.9286rem" }}>No notes here yet.</div>}
         </div>
       </aside>
       <div className="editor-wrap">
@@ -285,7 +285,7 @@ function NoteEditor({ noteId }: { noteId: string }) {
               #{t}
             </span>
           ))}
-          <span className="faint" style={{ fontSize: 12 }}>
+          <span className="faint" style={{ fontSize: "0.8571rem" }}>
             Edited {relativeTime(note.updated_at)}
           </span>
         </div>
@@ -361,7 +361,7 @@ function HistorySheet({
       <div className="sheet-head">
         <History size={16} />
         <strong style={{ fontWeight: 600 }}>Version history</strong>
-        <span className="faint" style={{ fontSize: 12 }}>
+        <span className="faint" style={{ fontSize: "0.8571rem" }}>
           {versions.length} versions · restoring never deletes history
         </span>
         <button className="btn icon ghost" style={{ marginLeft: "auto" }} aria-label="Close" onClick={onClose}>
@@ -380,11 +380,11 @@ function HistorySheet({
         <div style={{ overflowY: "auto", padding: "16px 20px" }}>
           {current && (
             <>
-              <h3 style={{ fontSize: 18, fontWeight: 650 }}>{current.title}</h3>
-              <div className="faint" style={{ fontSize: 12, margin: "4px 0 14px" }}>
+              <h3 style={{ fontSize: "1.2857rem", fontWeight: 650 }}>{current.title}</h3>
+              <div className="faint" style={{ fontSize: "0.8571rem", margin: "4px 0 14px" }}>
                 {new Date(current.created_at).toLocaleString()}
               </div>
-              <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--mono)", fontSize: 12.5, lineHeight: 1.6, color: "var(--text-2)" }}>{current.body || "(empty)"}</pre>
+              <pre style={{ whiteSpace: "pre-wrap", fontFamily: "var(--mono)", fontSize: "0.8929rem", lineHeight: 1.6, color: "var(--text-2)" }}>{current.body || "(empty)"}</pre>
               {current.version !== note.version && (
                 <button
                   className="btn primary"

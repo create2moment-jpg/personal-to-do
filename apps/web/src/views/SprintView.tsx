@@ -136,7 +136,7 @@ function SprintDetail({ sprint, sprints, onSelect }: { sprint: Sprint; sprints: 
           </div>
           <input
             className="objective-input"
-            style={{ fontSize: 24, fontWeight: 680, color: "var(--text)", letterSpacing: "-0.03em", marginTop: 4 }}
+            style={{ fontSize: "1.7143rem", fontWeight: 680, color: "var(--text)", letterSpacing: "-0.03em", marginTop: 4 }}
             value={goal}
             placeholder="Set a sprint goal…"
             aria-label="Sprint goal"
@@ -223,7 +223,7 @@ function SprintDetail({ sprint, sprints, onSelect }: { sprint: Sprint; sprints: 
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", margin: "6px 0 10px" }}>
-        <h3 style={{ fontSize: 15, fontWeight: 620 }}>Sprint work</h3>
+        <h3 style={{ fontSize: "1.0714rem", fontWeight: 620 }}>Sprint work</h3>
         {sprint.status !== "completed" && (
           <button className="btn" onClick={() => setPicking(true)}>
             <Plus /> Add from backlog
@@ -262,7 +262,7 @@ function BacklogPicker({ open, sprint, onClose, onAdded }: { open: boolean; spri
   return (
     <Dialog open={open} onClose={onClose} label="Add work to sprint" width={680}>
       <div style={{ padding: "16px 18px", display: "flex", flexDirection: "column", gap: 10, maxHeight: "70vh" }}>
-        <h3 style={{ fontSize: 17, fontWeight: 650 }}>Add work to {sprint.name}</h3>
+        <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Add work to {sprint.name}</h3>
         <div className="search-input" style={{ maxWidth: "none" }}>
           <Search />
           <input className="input" autoFocus placeholder="Filter open tasks" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -304,7 +304,7 @@ function CompleteDialog({ open, sprint, openCount, onClose, onDone }: { open: bo
           onDone(r.next_sprint?.id);
         }}
       >
-        <h3 style={{ fontSize: 17, fontWeight: 650 }}>Complete {sprint.name}</h3>
+        <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Complete {sprint.name}</h3>
         <p className="muted" style={{ margin: 0 }}>
           {openCount} unfinished task(s). Where should they go?
         </p>

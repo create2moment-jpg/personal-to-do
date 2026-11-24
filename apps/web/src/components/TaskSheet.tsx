@@ -65,7 +65,7 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
             <ChevronUp /> Parent
           </button>
         )}
-        <span className="faint" style={{ fontSize: 12 }}>
+        <span className="faint" style={{ fontSize: "0.8571rem" }}>
           Updated {relativeTime(task.updated_at)}
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>

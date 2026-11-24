@@ -101,6 +101,27 @@ export function SettingsView() {
         </div>
         <div className="setting-row">
           <div>
+            <div className="s-label">Display size</div>
+            <div className="s-help">Auto grows text on large, high-resolution monitors (24″–32″). Browser zoom still works.</div>
+          </div>
+          <div className="segmented" role="group" aria-label="Display size">
+            {(
+              [
+                ["auto", "Auto"],
+                ["compact", "S"],
+                ["comfortable", "M"],
+                ["large", "L"],
+                ["xl", "XL"],
+              ] as const
+            ).map(([v, label]) => (
+              <button key={v} aria-pressed={appearance.display === v} onClick={() => set({ display: v })}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="setting-row">
+          <div>
             <div className="s-label">Density</div>
             <div className="s-help">Compact fits more on screen.</div>
           </div>
