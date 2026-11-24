@@ -12,6 +12,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from ppos import __version__
+from ppos.ai.provider import AIOutputError, AIUnavailableError
 from ppos.bootstrap import Container, build_container
 from ppos.infrastructure.config import Settings
 from ppos.infrastructure.db import connect
@@ -24,13 +25,15 @@ from ppos.shared.errors import (
     PposError,
     ValidationError,
 )
-from ppos_api.routes import notes, planning, sprints, tasks
+from ppos_api.routes import book, notes, planning, sprints, tasks
 from ppos_api.routes import time as time_routes
 from ppos_api.schemas import HealthOut
 
 log = logging.getLogger("ppos.api")
 
-_STATUS = {
+_STATUS: dict[type[Exception], int] = {
+    AIUnavailableError: 503,
+    AIOutputError: 502,
     NotFoundError: 404,
     ValidationError: 422,
     ConflictError: 409,
@@ -92,6 +95,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(notes.router)
     app.include_router(planning.router)
     app.include_router(sprints.router)
+    app.include_router(book.router)
     app.include_router(time_routes.router)
 
     dist = settings.web_dist_dir

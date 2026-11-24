@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""Deterministic stand-in for a local Ollama server (tests and demos only).
+
+Implements /api/tags and /api/chat. The "improved" prompt restructures the
+original into Goal / Context / Ask so the UI flow can be exercised without a
+real model. Binds to 127.0.0.1 only.
+"""
+
+from __future__ import annotations
+
+import json
+import re
+import sys
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+
+def improve(user_message: str) -> str:
+    m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
+    original = (m.group(1) if m else user_message).strip()
+    first = original.split("\n")[0].rstrip(".")
+    return (
+        f"Goal: {first[:1].upper() + first[1:]}.\n"
+        "Context: [language/framework], [relevant files or functions].\n"
+        "Constraints: keep behaviour unchanged; small, reviewable steps.\n"
+        "Output: the changed code plus a short explanation of each step."
+    )
+
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        self._json({"models": [{"name": "fake-llm"}]})
+
+    def do_POST(self) -> None:
+        payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
+        user = next(
+            (m["content"] for m in payload.get("messages", []) if m.get("role") == "user"), ""
+        )
+        self._json(
+            {
+                "model": payload.get("model", "fake-llm"),
+                "message": {"role": "assistant", "content": improve(user)},
+            }
+        )
+
+    def _json(self, data: dict[str, object]) -> None:
+        body = json.dumps(data).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def log_message(self, *args: object) -> None:
+        pass
+
+
+if __name__ == "__main__":
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else 11999
+    ThreadingHTTPServer(("127.0.0.1", port), Handler).serve_forever()

@@ -45,6 +45,15 @@ class Settings(BaseSettings):
     web_dist_dir: Path = REPO_ROOT / "apps" / "web" / "dist"
     cors_origins: list[str] = ["http://127.0.0.1:5173", "http://localhost:5173"]
     log_level: str = "INFO"
+    # Local AI (Phase 5 slice). Off unless a provider and model are set.
+    llm_provider: str = "none"  # none | ollama | openai_compatible
+    llm_base_url: str = ""
+    llm_model: str = ""
+    llm_timeout_seconds: float = 120
+    llm_temperature: float = 0.3
+    llm_max_tokens: int = 1200
+    llm_allow_remote: bool = False  # never send private data off-machine by default
+    prompts_dir: Path = REPO_ROOT / "prompts"
     # Escape hatch for unusual layouts; never enable for real personal data.
     allow_data_dir_in_repo: bool = False
 

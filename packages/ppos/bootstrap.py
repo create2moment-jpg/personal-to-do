@@ -6,6 +6,10 @@ import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from ppos.ai.output import clean_improved
+from ppos.ai.prompts import load_template
+from ppos.ai.provider import LLMProvider, build_provider
+from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.daily import DayService
 from ppos.application.meetings import MeetingService
@@ -40,6 +44,8 @@ class Container:
     meetings: MeetingService
     sprints: SprintService
     weeks: WeekService
+    book: BookService
+    ai: LLMProvider
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -73,6 +79,20 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         found, series = meetings.between(day, day)
         return day_time(day, found, series, workspace.get()), found, series
 
+    ai = build_provider(
+        settings.llm_provider, settings.llm_base_url, settings.llm_model,
+        settings.llm_timeout_seconds, settings.llm_allow_remote,
+    )  # fmt: skip
+    improve_template = load_template(settings.prompts_dir, "02_writing/improve_prompt/v1.md")
+
+    def improver(original: str, style_instruction: str) -> tuple[str, str, str, int]:
+        prompt = improve_template.render(style_instruction=style_instruction, prompt=original)
+        system = improve_template.meta.get("role", "You improve prompts.")
+        r = ai.generate(
+            system, prompt, temperature=settings.llm_temperature, max_tokens=settings.llm_max_tokens
+        )
+        return clean_improved(r.text), r.model, improve_template.ref, r.latency_ms
+
     return Container(
         settings=settings,
         clock=clock,
@@ -87,4 +107,6 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         meetings=meetings,
         sprints=sprints,
         weeks=WeekService(uow, clock, workspace, meetings, sprints),
+        book=BookService(uow, clock, improver),
+        ai=ai,
     )

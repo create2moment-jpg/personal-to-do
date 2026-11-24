@@ -192,6 +192,7 @@ def seed_demo(c: Container, today: date | None = None) -> dict[str, int]:
 
     _seed_sprint_and_week(c, today)
     _seed_meetings(c, today)
+    _seed_prompt_book(c)
 
     marker = c.settings.local_data_dir / DEMO_MARKER
     marker.write_text("Synthetic demo workspace created by `ppos demo`.\n", encoding="utf-8")
@@ -361,3 +362,39 @@ def _seed_meetings(c: Container, today: date) -> None:
         hh, mm = (int(x) for x in hhmm.split(":"))
         start = datetime(day.year, day.month, day.day, hh, mm, tzinfo=tz)
         c.meetings.log_call(title, start, minutes, people=people, topic=topic, rating=rating)
+
+
+def _seed_prompt_book(c: Container) -> None:
+    from ppos.domain.book import NodeKind
+
+    b = c.book.create_book(
+        "Copilot prompts", emoji="🤖", description="Prompts I reuse with coding assistants"
+    )
+    code = c.book.create_node(b.id, NodeKind.CHAPTER, "Code quality", emoji="🧹")
+    py = c.book.create_node(b.id, NodeKind.SECTION, "Python", emoji="🐍", parent_id=code.id)
+    c.book.create_node(
+        b.id, NodeKind.PAGE, "Add type hints", parent_id=py.id,
+        body="Add precise type hints to {{file}}. Use modern built-in generics (list[str], X | None). "
+        "Do not change behaviour. Run mypy --strict mentally and fix what it would flag.",
+    )  # fmt: skip
+    c.book.create_node(
+        b.id, NodeKind.PAGE, "Refactor long function", parent_id=py.id,
+        body="refactor {{function}} its too long, split it up",
+    )  # fmt: skip
+    tests = c.book.create_node(b.id, NodeKind.CHAPTER, "Testing", emoji="🧪")
+    c.book.create_node(
+        b.id, NodeKind.PAGE, "Unit tests for a function", parent_id=tests.id,
+        body="Write pytest unit tests for {{function}} in {{file}}.\nCover: happy path, empty input, "
+        "invalid types, and one property-based test with hypothesis.\nReturn only the test file.",
+    )  # fmt: skip
+    rag = c.book.create_node(b.id, NodeKind.CHAPTER, "ML & RAG", emoji="🧠")
+    evals = c.book.create_node(b.id, NodeKind.SECTION, "Evaluation", parent_id=rag.id)
+    c.book.create_node(
+        b.id, NodeKind.PAGE, "Retrieval eval harness", parent_id=evals.id,
+        body="Design an evaluation harness for our hybrid retriever: recall@k, MRR and nDCG on a labelled "
+        "set of {{n}} queries. Explain how to avoid leakage between tuning and test sets.",
+    )  # fmt: skip
+    c.book.create_node(
+        b.id, NodeKind.PAGE, "Explain this error", emoji="🐞",
+        body="Explain this error and propose the smallest fix:\n\n{{error}}",
+    )  # fmt: skip

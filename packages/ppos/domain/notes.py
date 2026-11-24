@@ -66,6 +66,7 @@ class EntityType(str, Enum):
     NOTE = "note"
     PROJECT = "project"
     DAY = "day"
+    PAGE = "page"
 
 
 @dataclass(frozen=True)
