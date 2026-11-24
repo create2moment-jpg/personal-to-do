@@ -17,6 +17,14 @@ from ppos.domain.notes import EntityType, Link, Note, NoteKind, NoteVersion
 from ppos.domain.projects import Project, ProjectStatus
 from ppos.domain.tasks import Priority, Task, TaskStatus
 from ppos.infrastructure.db import connect
+from ppos.infrastructure.sqlite_planning import (
+    SqliteMeetingRepository,
+    SqlitePeopleRepository,
+    SqliteSettingsRepository,
+    SqliteSprintRepository,
+    SqliteTopicRepository,
+    SqliteWeeklyPlanRepository,
+)
 
 
 def _ts(value: datetime | None) -> str | None:
@@ -38,7 +46,7 @@ def _ds(value: date | None) -> str | None:
 _TASK_COLS = (
     "id, title, description, notes, status, priority, estimate_minutes, actual_minutes, "
     "project_id, area, parent_id, tags, due_date, scheduled_date, recurrence, position, "
-    "created_at, updated_at, completed_at"
+    "created_at, updated_at, completed_at, sprint_id, commitment"
 )
 
 
@@ -48,6 +56,7 @@ def _task_row(t: Task) -> tuple[Any, ...]:
         t.estimate_minutes, t.actual_minutes, t.project_id, t.area, t.parent_id,
         json.dumps(t.tags), _ds(t.due_date), _ds(t.scheduled_date), t.recurrence,
         t.position, _ts(t.created_at), _ts(t.updated_at), _ts(t.completed_at),
+        t.sprint_id, t.commitment,
     )  # fmt: skip
 
 
@@ -75,6 +84,8 @@ def _task_from(row: sqlite3.Row) -> Task:
         created_at=created,
         updated_at=updated,
         completed_at=_dt(row["completed_at"]),
+        sprint_id=row["sprint_id"],
+        commitment=row["commitment"],
     )
 
 
@@ -83,7 +94,7 @@ class SqliteTaskRepository:
         self._c = conn
 
     def add(self, task: Task) -> None:
-        placeholders = ",".join("?" * 19)
+        placeholders = ",".join("?" * 21)
         self._c.execute(
             f"INSERT INTO tasks ({_TASK_COLS}) VALUES ({placeholders})", _task_row(task)
         )
@@ -123,6 +134,21 @@ class SqliteTaskRepository:
             args.append(query.parent_id)
         elif query.top_level_only:
             where.append("parent_id IS NULL")
+        if query.sprint_id is not None:
+            where.append("sprint_id = ?")
+            args.append(query.sprint_id)
+        if query.scheduled_from is not None:
+            where.append("scheduled_date >= ?")
+            args.append(query.scheduled_from.isoformat())
+        if query.scheduled_to is not None:
+            where.append("scheduled_date <= ?")
+            args.append(query.scheduled_to.isoformat())
+        if query.completed_from is not None:
+            where.append("completed_at >= ?")
+            args.append(_ts(query.completed_from))
+        if query.completed_to is not None:
+            where.append("completed_at < ?")
+            args.append(_ts(query.completed_to))
         if query.tag is not None:
             where.append("EXISTS (SELECT 1 FROM json_each(tasks.tags) WHERE value = ?)")
             args.append(query.tag.lower())
@@ -332,6 +358,7 @@ class SqliteDailyPlanRepository:
                 completed_at=_dt(row["review_completed_at"]),
             ),
             updated_at=_dt(row["updated_at"]),
+            capacity_mode=row["capacity_mode"],
         )
 
     def upsert(self, plan: DailyPlan) -> None:
@@ -339,17 +366,19 @@ class SqliteDailyPlanRepository:
         self._c.execute(
             "INSERT INTO daily_plans (day, capacity_minutes, objective, top_priority_ids,"
             " review_unfinished, review_blockers, review_learning, review_wins, review_tomorrow,"
-            " review_completed_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)"
+            " review_completed_at, updated_at, capacity_mode) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
             " ON CONFLICT (day) DO UPDATE SET capacity_minutes=excluded.capacity_minutes,"
             " objective=excluded.objective, top_priority_ids=excluded.top_priority_ids,"
             " review_unfinished=excluded.review_unfinished,"
             " review_blockers=excluded.review_blockers,"
             " review_learning=excluded.review_learning, review_wins=excluded.review_wins,"
             " review_tomorrow=excluded.review_tomorrow,"
-            " review_completed_at=excluded.review_completed_at, updated_at=excluded.updated_at",
+            " review_completed_at=excluded.review_completed_at, updated_at=excluded.updated_at,"
+            " capacity_mode=excluded.capacity_mode",
             (plan.day.isoformat(), plan.capacity_minutes, plan.objective,
              json.dumps(plan.top_priority_ids), r.unfinished, r.blockers, r.learning, r.wins,
-             r.tomorrow_first_task, _ts(r.completed_at), _ts(plan.updated_at)),
+             r.tomorrow_first_task, _ts(r.completed_at), _ts(plan.updated_at),
+             plan.capacity_mode),
         )  # fmt: skip
 
 
@@ -454,6 +483,12 @@ class SqliteUnitOfWork:
         self.links = SqliteLinkRepository(conn)
         self.search = SqliteSearchIndex(conn)
         self.audit = SqliteAuditLog(conn)
+        self.settings = SqliteSettingsRepository(conn)
+        self.sprints = SqliteSprintRepository(conn)
+        self.weeks = SqliteWeeklyPlanRepository(conn)
+        self.people = SqlitePeopleRepository(conn)
+        self.topics = SqliteTopicRepository(conn)
+        self.meetings = SqliteMeetingRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

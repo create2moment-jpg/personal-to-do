@@ -29,6 +29,7 @@ class DailyPlan:
     top_priority_ids: list[str] = field(default_factory=list)
     review: DailyReview = field(default_factory=DailyReview)
     updated_at: datetime | None = None
+    capacity_mode: str = "auto"  # auto = working hours − meetings − buffer
 
     def __post_init__(self) -> None:
         if not 0 <= self.capacity_minutes <= 24 * 60:

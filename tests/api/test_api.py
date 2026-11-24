@@ -1,9 +1,11 @@
 from fastapi.testclient import TestClient
 
+from tests.conftest import latest_schema_version
+
 
 def test_health(client: TestClient) -> None:
     body = client.get("/api/health").json()
-    assert body["status"] == "ok" and body["schema_version"] == 1
+    assert body["status"] == "ok" and body["schema_version"] == latest_schema_version()
     assert body["ai"]["enabled"] is False
 
 

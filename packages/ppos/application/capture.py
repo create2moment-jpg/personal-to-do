@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import timedelta, timezone, tzinfo
 
+from ppos.application.meetings import MeetingService
 from ppos.application.notes import NoteService
 from ppos.application.ports import UnitOfWorkFactory
 from ppos.application.tasks import TaskService
 from ppos.domain.capture import CaptureKind, ParsedCapture, parse_capture
+from ppos.domain.meetings import Meeting
 from ppos.domain.notes import Note, NoteKind
 from ppos.domain.tasks import Task
 from ppos.shared.clock import Clock
@@ -20,6 +24,7 @@ class CaptureResult:
     task: Task | None = None
     note: Note | None = None
     warnings: list[str] | None = None
+    meeting: Meeting | None = None
 
 
 class CaptureService:
@@ -29,11 +34,15 @@ class CaptureService:
         clock: Clock,
         tasks: TaskService,
         notes: NoteService,
+        meetings: MeetingService | None = None,
+        tz: Callable[[], tzinfo] | None = None,
     ) -> None:
         self._uow = uow_factory
         self._clock = clock
         self._tasks = tasks
         self._notes = notes
+        self._meetings = meetings
+        self._tz = tz
 
     def preview(self, text: str) -> tuple[ParsedCapture, str | None]:
         """Parse without saving (live preview in the capture bar).
@@ -53,6 +62,8 @@ class CaptureService:
             raise ValidationError("nothing to capture")
         parsed = parse_capture(text, self._clock.today())
         warnings: list[str] = []
+        if parsed.kind == CaptureKind.CALL:
+            return self._capture_call(parsed)
         if parsed.kind in (CaptureKind.IDEA, CaptureKind.NOTE):
             kind = NoteKind.IDEA if parsed.kind == CaptureKind.IDEA else NoteKind.GENERAL
             note = self._notes.create(body=parsed.title, kind=kind, tags=parsed.tags)
@@ -78,3 +89,25 @@ class CaptureService:
             project_id=project_id,
         )
         return CaptureResult(parsed, task=task, warnings=warnings)
+
+    def _capture_call(self, parsed: ParsedCapture) -> CaptureResult:
+        if self._meetings is None:
+            raise ValidationError("call logging is not available")
+        if not parsed.people and not parsed.title:
+            raise ValidationError("say who the call was with, e.g. call: Priya / ADR review ~30m")
+        minutes = parsed.estimate_minutes or 30
+        tz = self._tz() if self._tz else timezone.utc
+        now = self._clock.now().astimezone(tz)
+        if parsed.start_time:
+            hh, mm = (int(x) for x in parsed.start_time.split(":"))
+            start = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+        else:
+            start = (now - timedelta(minutes=minutes)).replace(second=0, microsecond=0)
+        meeting = self._meetings.log_call(
+            title=parsed.title,
+            start_at=start,
+            minutes=minutes,
+            people=parsed.people,
+            topic=parsed.tags[0] if parsed.tags else None,
+        )
+        return CaptureResult(parsed, meeting=meeting, warnings=[])

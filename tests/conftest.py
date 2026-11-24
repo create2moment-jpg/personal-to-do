@@ -35,3 +35,10 @@ def container(settings: Settings, clock: FixedClock) -> Container:
 def client(settings: Settings, clock: FixedClock) -> Iterator[TestClient]:
     with TestClient(create_app(settings, clock)) as c:
         yield c
+
+
+def latest_schema_version() -> int:
+    from ppos.infrastructure.config import DEFAULT_MIGRATIONS_DIR
+    from ppos.infrastructure.migrations import discover
+
+    return len(discover(DEFAULT_MIGRATIONS_DIR))

@@ -7,13 +7,14 @@ import pytest
 from ppos.bootstrap import Container
 from ppos.infrastructure.backup import BackupError, create_backup, export_json, restore_backup
 from ppos.infrastructure.config import Settings
+from tests.conftest import latest_schema_version
 
 
 def test_backup_restore_roundtrip(container: Container, settings: Settings, tmp_path: Path) -> None:
     task = container.tasks.create("keep me")
     (settings.local_data_dir / "documents" / "doc.txt").write_text("original")
     info = create_backup(settings)
-    assert info.schema_version == 1
+    assert info.schema_version == latest_schema_version()
 
     container.tasks.delete(task.id)
     aside = restore_backup(settings, info.path, force=True)

@@ -36,6 +36,8 @@ class TaskOut(Out):
     created_at: datetime
     updated_at: datetime
     completed_at: datetime | None
+    sprint_id: str | None = None
+    commitment: str | None = None
 
 
 class TaskCreate(BaseModel):
@@ -185,12 +187,14 @@ class DailyPlanOut(Out):
     top_priority_ids: list[str]
     review: DailyReviewOut
     updated_at: datetime | None
+    capacity_mode: str = "auto"
 
 
 class DailyPlanUpdate(BaseModel):
     objective: str | None = Field(default=None, max_length=1000)
     capacity_minutes: int | None = Field(default=None, ge=0, le=1440)
     top_priority_ids: list[str] | None = Field(default=None, max_length=3)
+    capacity_mode: str | None = Field(default=None, pattern="^(auto|manual)$")
 
 
 class DailyReviewUpdate(BaseModel):
@@ -220,6 +224,8 @@ class TodayOut(BaseModel):
     due_today_unscheduled: list[TaskOut]
     capacity: CapacityOut
     journal: NoteOut | None
+    time: DayTimeOut | None = None
+    meetings: list[MeetingOut] = []
 
 
 class RollOverRequest(BaseModel):
@@ -240,6 +246,8 @@ class CapturePreviewOut(BaseModel):
     due_date: date | None
     project_hint: str | None
     project_name: str | None
+    people: list[str] = []
+    start_time: str | None = None
 
 
 class CaptureOut(BaseModel):
@@ -247,6 +255,7 @@ class CaptureOut(BaseModel):
     task: TaskOut | None
     note: NoteOut | None
     warnings: list[str]
+    meeting: MeetingOut | None = None
 
 
 class SearchHitOut(Out):
@@ -264,3 +273,287 @@ class HealthOut(BaseModel):
     data_dir: str
     demo: bool
     ai: dict[str, Any]
+
+
+# --------------------------------------------------------------------------- Phase 2/3
+
+
+class WorkspaceSettingsOut(BaseModel):
+    timezone: str
+    work_start: str
+    work_end: str
+    workdays: list[int]
+    buffer_percent: int
+    sprint_length_days: int
+    work_minutes: int
+
+
+class WorkspaceSettingsUpdate(BaseModel):
+    timezone: str | None = None
+    work_start: str | None = Field(default=None, pattern=r"^\d{1,2}:\d{2}$")
+    work_end: str | None = Field(default=None, pattern=r"^\d{1,2}:\d{2}$")
+    workdays: list[int] | None = None
+    buffer_percent: int | None = Field(default=None, ge=0, le=50)
+    sprint_length_days: int | None = Field(default=None, ge=7, le=28)
+
+
+class SprintOut(Out):
+    id: str
+    name: str
+    goal: str
+    start_date: date
+    end_date: date
+    status: str
+    review_summary: str
+    review_lessons: str
+    completed_at: datetime | None
+
+
+class SprintCreate(BaseModel):
+    name: str = ""
+    goal: str = ""
+    start_date: date | None = None
+    end_date: date | None = None
+
+
+class SprintUpdate(BaseModel):
+    name: str | None = None
+    goal: str | None = None
+    start_date: date | None = None
+    end_date: date | None = None
+    review_summary: str | None = None
+    review_lessons: str | None = None
+
+
+class SprintTasksAdd(BaseModel):
+    task_ids: list[str] = Field(min_length=1, max_length=500)
+    commitment: str = Field(default="committed", pattern="^(committed|stretch)$")
+
+
+class SprintComplete(BaseModel):
+    rollover: str = Field(default="next", pattern="^(next|backlog)$")
+    summary: str = ""
+    lessons: str = ""
+
+
+class BurndownPointOut(BaseModel):
+    day: date
+    remaining_minutes: int
+    ideal_minutes: float
+    scope_minutes: int
+
+
+class SprintSummaryOut(BaseModel):
+    sprint: SprintOut
+    tasks: list[TaskOut]
+    committed_total: int
+    committed_done: int
+    stretch_total: int
+    stretch_done: int
+    committed_minutes: int
+    remaining_minutes: int
+    added_after_start: list[str]
+    removed_after_start: list[str]
+    burndown: list[BurndownPointOut]
+    days_total: int
+    days_elapsed: int
+    completion_rate: float
+
+
+class SprintCompleteOut(BaseModel):
+    sprint: SprintOut
+    next_sprint: SprintOut | None
+    rolled_over: int
+
+
+class MeetingOut(BaseModel):
+    id: str
+    source: str
+    kind: str
+    title: str
+    start_at: datetime
+    end_at: datetime
+    all_day: bool
+    location: str | None
+    organizer: str | None
+    series_key: str | None
+    status: str | None  # explicit override
+    effective_status: str
+    counted_minutes: int
+    duration_minutes: int
+    attended_minutes: int | None
+    rating: int | None
+    note: str
+    topic: str | None
+    people: list[str]
+    series_default_status: str | None
+    cadence: str | None
+
+
+class MeetingUpdate(BaseModel):
+    status: str | None = Field(default=None, pattern="^(attended|skipped|partial)$")
+    attended_minutes: int | None = Field(default=None, ge=0, le=1440)
+    rating: int | None = Field(default=None, ge=1, le=5)
+    note: str | None = None
+    topic: str | None = None
+    people: list[str] | None = None
+    title: str | None = None
+    start_at: datetime | None = None
+    minutes: int | None = Field(default=None, ge=1, le=720)
+    kind: str | None = Field(default=None, pattern="^(meeting|call)$")
+    clear_status: bool = False
+
+
+class CallCreate(BaseModel):
+    title: str = ""
+    people: list[str] = []
+    topic: str | None = None
+    start_at: datetime
+    minutes: int = Field(ge=1, le=720)
+    note: str = ""
+    rating: int | None = Field(default=None, ge=1, le=5)
+    kind: str = Field(default="call", pattern="^(meeting|call)$")
+
+
+class SeriesUpdate(BaseModel):
+    default_status: str | None = Field(default=None, pattern="^(attending|skipped)$")
+    rating: int | None = Field(default=None, ge=1, le=5)
+    topic: str | None = None
+    notes: str | None = None
+
+
+class SeriesOut(BaseModel):
+    series_key: str
+    title: str
+    cadence: str | None
+    default_status: str
+    rating: int | None
+    notes: str
+    topic: str | None
+    occurrences_4w: int
+    avg_minutes: int
+    minutes_per_month: int
+    next_start: datetime | None
+    last_start: datetime | None
+
+
+class IcsImportIn(BaseModel):
+    filename: str = Field(default="calendar.ics", max_length=255)
+    content: str = Field(min_length=10, max_length=10 * 1024 * 1024)
+
+
+class IcsImportOut(BaseModel):
+    events: int
+    created: int
+    updated: int
+    cancelled: int
+    series: int
+    window_start: datetime
+    window_end: datetime
+
+
+class NamedOut(Out):
+    id: str
+    name: str
+
+
+class DayTimeOut(BaseModel):
+    day: date
+    work_minutes: int
+    meeting_minutes: int
+    meeting_minutes_total: int
+    available_minutes: int
+    capacity_minutes: int
+
+
+class WeekDayOut(BaseModel):
+    day: date
+    tasks: list[TaskOut]
+    time: DayTimeOut
+    capacity_minutes: int
+    planned_minutes: int
+    meetings: list[MeetingOut]
+
+
+class WeeklyObjectiveOut(BaseModel):
+    text: str
+    done: bool = False
+
+
+class WeeklyPlanOut(BaseModel):
+    week_start: date
+    objectives: list[WeeklyObjectiveOut]
+    notes: str
+    review_wins: str
+    review_lessons: str
+    review_risks: str
+    review_next_focus: str
+    review_completed_at: datetime | None
+
+
+class WeeklyPlanUpdate(BaseModel):
+    objectives: list[WeeklyObjectiveOut] | None = Field(default=None, max_length=3)
+    notes: str | None = None
+    review_wins: str | None = None
+    review_lessons: str | None = None
+    review_risks: str | None = None
+    review_next_focus: str | None = None
+    complete_review: bool = False
+
+
+class WeekOut(BaseModel):
+    week_start: date
+    plan: WeeklyPlanOut
+    days: list[WeekDayOut]
+    sprint: SprintOut | None
+    sprint_backlog: list[TaskOut]
+
+
+class WeekReviewOut(BaseModel):
+    week_start: date
+    planned: int
+    done: int
+    open: int
+    done_titles: list[str]
+    open_titles: list[str]
+    estimate_minutes: int
+    actual_minutes: int
+    meeting_minutes: int
+    available_minutes: int
+    work_minutes: int
+    objectives: list[WeeklyObjectiveOut]
+
+
+class RankedOut(BaseModel):
+    name: str
+    minutes: int
+    count: int
+
+
+class SeriesRankOut(BaseModel):
+    series_key: str
+    title: str
+    minutes: int
+    count: int
+    rating: float | None
+
+
+class InsightsOut(BaseModel):
+    start: date
+    end: date
+    days: list[DayTimeOut]
+    meeting_minutes: int
+    work_minutes: int
+    available_minutes: int
+    meetings_count: int
+    calls_count: int
+    by_person: list[RankedOut]
+    by_topic: list[RankedOut]
+    by_series: list[SeriesRankOut]
+    rated_minutes: int
+    avg_rating: float | None
+    reconsider: list[dict[str, Any]]
+
+
+TodayOut.model_rebuild()
+CaptureOut.model_rebuild()

@@ -26,6 +26,7 @@ from ppos_api.schemas import (
     TaskOut,
     TodayOut,
 )
+from ppos_api.serializers import MeetingSerializer, day_time_out
 
 router = APIRouter(tags=["planning"])
 
@@ -45,6 +46,7 @@ def _capacity(cap: CapacitySummary) -> CapacityOut:
 @router.get("/api/today", response_model=TodayOut)
 def today(c: ContainerDep, day: date | None = None) -> TodayOut:
     view = c.days.today_view(day)
+    ser = MeetingSerializer(c)
     return TodayOut(
         day=view.day,
         plan=DailyPlanOut.model_validate(view.plan),
@@ -53,6 +55,8 @@ def today(c: ContainerDep, day: date | None = None) -> TodayOut:
         due_today_unscheduled=[TaskOut.model_validate(t) for t in view.due_today_unscheduled],
         capacity=_capacity(view.capacity),
         journal=NoteOut.model_validate(view.journal) if view.journal else None,
+        time=day_time_out(view.time) if view.time else None,
+        meetings=[ser(m, view.series) for m in view.meetings],
     )
 
 
@@ -98,6 +102,8 @@ def capture_preview(body: CaptureRequest, c: ContainerDep) -> CapturePreviewOut:
         due_date=parsed.due_date,
         project_hint=parsed.project_hint,
         project_name=project_name,
+        people=parsed.people,
+        start_time=parsed.start_time,
     )
 
 
@@ -109,6 +115,7 @@ def capture(body: CaptureRequest, c: ContainerDep) -> CaptureOut:
         task=TaskOut.model_validate(result.task) if result.task else None,
         note=NoteOut.model_validate(result.note) if result.note else None,
         warnings=result.warnings or [],
+        meeting=MeetingSerializer(c)(result.meeting, {}) if result.meeting else None,
     )
 
 

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import date, datetime, timezone
+from collections.abc import Callable
+from datetime import date, datetime, timezone, tzinfo
 from typing import Protocol
 
 
@@ -38,6 +39,19 @@ class FixedClock:
         from datetime import timedelta
 
         self._at = self._at + timedelta(**kwargs)
+
+
+class ZonedClock:
+    """System clock whose "today" follows the workspace time zone setting."""
+
+    def __init__(self, tz_provider: Callable[[], tzinfo]) -> None:
+        self._tz = tz_provider
+
+    def now(self) -> datetime:
+        return datetime.now(timezone.utc)
+
+    def today(self) -> date:
+        return datetime.now(self._tz()).date()
 
 
 def new_id() -> str:

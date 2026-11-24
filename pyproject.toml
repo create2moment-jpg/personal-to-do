@@ -14,6 +14,9 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "pydantic>=2.7",
     "pydantic-settings>=2.3",
+    "icalendar>=6,<7",
+    "recurring-ical-events>=3,<4",
+    "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
@@ -37,14 +40,19 @@ src = ["packages", "apps/api", "tests", "scripts"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "S", "PTH", "N"]
-ignore = ["S101", "S608"]  # asserts in tests; SQL built only from whitelisted column names
+ignore = ["S101", "S608", "RUF001", "RUF002", "RUF003"]  # asserts; whitelisted SQL; typographic dashes in UI text
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "PTH"]
 "packages/ppos/demo.py" = ["E501"]  # long synthetic content strings
+"packages/ppos/infrastructure/sqlite_*.py" = ["E501"]  # SQL statements read better unbroken
 
 [tool.mypy]
 python_version = "3.10"
 strict = true
 mypy_path = ["packages", "apps/api"]
 packages = ["ppos", "ppos_api"]
+
+[[tool.mypy.overrides]]
+module = ["icalendar", "icalendar.*", "recurring_ical_events"]
+ignore_missing_imports = true

@@ -4,18 +4,23 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import date, timedelta
 
 from ppos.application.capture import CaptureService
 from ppos.application.daily import DayService
+from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
+from ppos.application.planning import SprintService, WeekService
 from ppos.application.ports import SearchHit
+from ppos.application.settings import SettingsService
 from ppos.application.tasks import ProjectService, TaskService
+from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
+from ppos.infrastructure.ics import parse_ics
 from ppos.infrastructure.migrations import prepare_database
 from ppos.infrastructure.sqlite_repos import SqliteUnitOfWorkFactory
-from ppos.shared.clock import Clock, SystemClock
+from ppos.shared.clock import Clock, ZonedClock
 
 log = logging.getLogger("ppos")
 
@@ -31,6 +36,10 @@ class Container:
     links: LinkService
     days: DayService
     capture: CaptureService
+    settings_service: SettingsService
+    meetings: MeetingService
+    sprints: SprintService
+    weeks: WeekService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -50,11 +59,20 @@ def init_database(settings: Settings) -> list[int]:
 
 
 def build_container(settings: Settings, clock: Clock | None = None) -> Container:
-    clock = clock or SystemClock()
     init_database(settings)
     uow = SqliteUnitOfWorkFactory(settings.db_path)
+    workspace = SettingsService(uow)
+    workspace.get()  # warm the cache so later reads never open a nested transaction
+    clock = clock or ZonedClock(workspace.tz)
     tasks = TaskService(uow, clock)
     notes = NoteService(uow, clock, timedelta(seconds=settings.note_snapshot_interval_seconds))
+    meetings = MeetingService(uow, clock, workspace, parse_ics)
+    sprints = SprintService(uow, clock, workspace)
+
+    def day_meetings(day: date) -> tuple[DayTime, list[Meeting], dict[str, MeetingSeries]]:
+        found, series = meetings.between(day, day)
+        return day_time(day, found, series, workspace.get()), found, series
+
     return Container(
         settings=settings,
         clock=clock,
@@ -63,6 +81,10 @@ def build_container(settings: Settings, clock: Clock | None = None) -> Container
         projects=ProjectService(uow, clock),
         notes=notes,
         links=LinkService(uow, clock),
-        days=DayService(uow, clock, settings.default_capacity_minutes),
-        capture=CaptureService(uow, clock, tasks, notes),
+        days=DayService(uow, clock, settings.default_capacity_minutes, day_meetings),
+        capture=CaptureService(uow, clock, tasks, notes, meetings, workspace.tz),
+        settings_service=workspace,
+        meetings=meetings,
+        sprints=sprints,
+        weeks=WeekService(uow, clock, workspace, meetings, sprints),
     )

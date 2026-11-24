@@ -50,6 +50,8 @@ class Task:
     recurrence: str | None = None  # RFC 5545 RRULE text; expansion engine lands in Phase 3
     position: float = 0.0
     completed_at: datetime | None = None
+    sprint_id: str | None = None
+    commitment: str | None = None  # committed | stretch (only with sprint_id)
 
     def __post_init__(self) -> None:
         self.title = normalize_title(self.title)

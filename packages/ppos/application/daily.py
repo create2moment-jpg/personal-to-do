@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from typing import Any
 
 from ppos.application.ports import TaskQuery, UnitOfWorkFactory
 from ppos.domain.daily import CapacitySummary, DailyPlan, summarize_capacity
+from ppos.domain.meetings import DayTime, Meeting, MeetingSeries
 from ppos.domain.notes import Note
 from ppos.domain.tasks import Task, TaskStatus
 from ppos.shared.clock import Clock
@@ -28,15 +29,24 @@ class TodayView:
     capacity: CapacitySummary
     journal: Note | None
     completed: list[Task] = field(default_factory=list)
+    time: DayTime | None = None
+    meetings: list[Meeting] = field(default_factory=list)
+    series: dict[str, MeetingSeries] = field(default_factory=dict)
 
 
 class DayService:
     def __init__(
-        self, uow_factory: UnitOfWorkFactory, clock: Clock, default_capacity_minutes: int
+        self,
+        uow_factory: UnitOfWorkFactory,
+        clock: Clock,
+        default_capacity_minutes: int,
+        day_meetings: Callable[[date], tuple[DayTime, list[Meeting], dict[str, MeetingSeries]]]
+        | None = None,
     ) -> None:
         self._uow = uow_factory
         self._clock = clock
         self._default_capacity = default_capacity_minutes
+        self._day_meetings = day_meetings
 
     def plan_for(self, day: date) -> DailyPlan:
         with self._uow() as uow:
@@ -60,6 +70,13 @@ class DayService:
                 if t.due_date is not None and t.due_date <= day
             ]
             journal = uow.notes.find_daily_journal(day)
+        time: DayTime | None = None
+        meetings: list[Meeting] = []
+        series: dict[str, MeetingSeries] = {}
+        if self._day_meetings is not None:
+            time, meetings, series = self._day_meetings(day)
+            if plan.capacity_mode == "auto":
+                plan.capacity_minutes = time.capacity_minutes
         return TodayView(
             day=day,
             plan=plan,
@@ -69,10 +86,13 @@ class DayService:
             capacity=summarize_capacity(plan.capacity_minutes, tasks),
             journal=journal,
             completed=[t for t in tasks if t.status == TaskStatus.DONE],
+            time=time,
+            meetings=meetings,
+            series=series,
         )
 
     def update_plan(self, day: date, changes: Mapping[str, Any]) -> DailyPlan:
-        allowed = {"objective", "capacity_minutes", "top_priority_ids"}
+        allowed = {"objective", "capacity_minutes", "top_priority_ids", "capacity_mode"}
         unknown = set(changes) - allowed
         if unknown:
             raise ValidationError(f"fields not editable: {sorted(unknown)}")
@@ -88,7 +108,14 @@ class DayService:
                 top_priority_ids=list(changes.get("top_priority_ids", plan.top_priority_ids)),
                 review=plan.review,
                 updated_at=self._clock.now(),
+                capacity_mode=(
+                    "manual"
+                    if "capacity_minutes" in changes
+                    else str(changes.get("capacity_mode", plan.capacity_mode))
+                ),
             )
+            if updated.capacity_mode not in ("auto", "manual"):
+                raise ValidationError("capacity_mode must be auto or manual")
             uow.days.upsert(updated)
             uow.audit.record("day", day.isoformat(), "update_plan", details=dict(changes))
             uow.commit()
