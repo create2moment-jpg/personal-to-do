@@ -33,6 +33,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | ✅ done |
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
+| N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
 | 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | **next** |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
@@ -160,6 +161,68 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 6. **Timeboxing**: drag tasks into free calendar slots (moved to 3b).
 7. Privacy: attendee data stays local, excluded from AI by default, deletable
    per person; tokens in the OS keychain.
+
+### Next features requested by the owner (queued after the current target topics)
+
+Recorded 2026-11-24. Order reflects value vs. effort; each ships at the
+product bar above.
+
+**N1 — Large-monitor layout (24″ and 32″)** · *requirement*
+- Goal: behave like standard desktop apps across resolutions — 24″ (1920×1080
+  or 2560×1440) and 32″ (2560×1440 or 3840×2160 at 150–200 % OS scaling).
+- Fluid type and spacing scale (`clamp()`-based root size) so text stays a
+  comfortable reading size instead of shrinking on high-resolution screens;
+  respects the OS/browser zoom rather than fighting it.
+- Content widths capped for reading (notes, settings, reviews), while boards
+  (Today, Week, Sprint) use the extra width: wider columns, the right rail and
+  sprint backlog shown side by side, more days/columns visible at once.
+- Breakpoints added above the current ones (≈1680 px, ≈2200 px, ≈2800 px).
+- A "Display size" setting (Auto / Compact / Comfortable / Large) as an
+  override, next to the existing density setting.
+- Acceptance: Playwright screenshots at 1920×1080, 2560×1440 and 3840×2160
+  (device scale 1 and 2) with no clipped text, no horizontal page scroll,
+  and body text ≥ 14 px effective.
+
+**N2 — Prompt Book (writing desk for AI prompts)**
+- A book-like tool for notes and messages you give to AI assistants: every
+  prompt you write is stored, versioned and searchable.
+- **Multi-level hierarchy**: Book → Chapter → Section → Page (arbitrary
+  depth via a parent tree), drag to reorder or move pages between chapters,
+  table of contents sidebar.
+- **Diary view**: one page at a time with a page-turn transition (respecting
+  reduced motion), ←/→ to flip pages, a date per page, and a spread view on
+  wide screens.
+- **Improve with local AI** (needs Phase 5 provider): side-by-side original
+  vs. improved prompt with a diff; choose a style (clearer, more specific,
+  add context, add constraints/output format); the original is never
+  overwritten; both versions are kept.
+- **Send to Copilot**: one click copies the chosen version to the clipboard
+  (no direct Copilot integration — nothing leaves the machine automatically),
+  and records when/where it was used plus an optional "did it work?" rating.
+- Reusable templates and variables (e.g. `{{repo}}`, `{{goal}}`), tags, links
+  to tasks/projects.
+- Data: `books`, `book_nodes` (tree with position), `prompt_versions`
+  (original / improved, model + prompt-template version for AI output).
+- Before Phase 5 lands, the book is fully usable without AI; the "Improve"
+  button explains that it activates with the local model.
+
+**N3 — Delight, in moderation**
+- Small, meaningful moments: a light confetti burst when all three top
+  priorities are done or a sprint completes; a "day closed" animation after
+  the end-of-day review; subtle springy drop on drag and drop.
+- Optional emoji for projects, notes chapters and weekly objectives
+  (picker, never required); streak and celebration messages with a little
+  personality.
+- Rules: max one celebration per event type per day, ≤ 800 ms, never blocks
+  input, respects `prefers-reduced-motion`, and a Settings toggle
+  ("Celebrations: on / subtle / off").
+
+**N4 — Drag and drop everywhere**
+- Today: drag between board, backlog and overdue already works; Week: between
+  days and sprint backlog; Sprint: lanes via buttons.
+- Extend to: drag tasks onto projects (sidebar or project cards), onto the
+  sprint from any list, between Upcoming days, notes into Prompt Book
+  chapters, and pages between chapters — all with keyboard equivalents.
 
 ### Premium items queued for later phases
 
