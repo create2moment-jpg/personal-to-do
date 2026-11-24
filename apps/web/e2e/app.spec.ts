@@ -105,8 +105,12 @@ test("notes autosave as markdown", async ({ page, request }) => {
 
 test("theme and accent switch from settings", async ({ page }) => {
   await open(page, "settings");
-  await page.getByRole("button", { name: "Dark" }).click();
+  await page.getByRole("button", { name: "Dark", exact: true }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.getByRole("button", { name: "Teal" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-accent", "teal");
+  await page.getByRole("button", { name: "Midnight dark palette" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-dark", "midnight");
+  const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  expect(bg).toBe("rgb(11, 16, 32)");
 });

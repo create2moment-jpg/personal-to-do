@@ -1,7 +1,7 @@
 import { Check, HardDrive, Keyboard, Monitor, Moon, Palette, ShieldCheck, Sun } from "lucide-react";
 import { Keys } from "../components/primitives";
 import { useHealth } from "../lib/queries";
-import { ACCENTS, type Accent, useAppearance } from "../lib/theme";
+import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
 import { useUi } from "../lib/ui-store";
 
 export function SettingsView() {
@@ -40,6 +40,36 @@ export function SettingsView() {
                 <Icon /> {label}
               </button>
             ))}
+          </div>
+        </div>
+        <div className="setting-row" style={{ alignItems: "flex-start", flexDirection: "column", gap: 10 }}>
+          <div>
+            <div className="s-label">Dark palette</div>
+            <div className="s-help">Used whenever the dark theme is active. Picking one switches to dark.</div>
+          </div>
+          <div className="palette-grid" role="group" aria-label="Dark palette">
+            {(Object.keys(DARK_PALETTES) as DarkPalette[]).map((d) => {
+              const p = DARK_PALETTES[d];
+              return (
+                <button
+                  key={d}
+                  className="palette-tile"
+                  aria-pressed={appearance.dark === d}
+                  aria-label={`${p.label} dark palette`}
+                  onClick={() => set({ dark: d, theme: appearance.theme === "light" ? "dark" : appearance.theme })}
+                >
+                  <span className="palette-preview" style={{ background: p.bg }}>
+                    <span style={{ background: p.surface }} />
+                    <span style={{ background: p.surface, width: "60%" }} />
+                    <i style={{ background: "var(--accent)" }} />
+                  </span>
+                  <span className="palette-name">
+                    {p.label} {appearance.dark === d && <Check size={13} strokeWidth={3} />}
+                  </span>
+                  <span className="palette-hint">{p.hint}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="setting-row">

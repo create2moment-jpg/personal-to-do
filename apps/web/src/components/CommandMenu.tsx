@@ -3,7 +3,7 @@ import { FileText, Keyboard, Monitor, Moon, NotebookPen, Plus, Search, SquareChe
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
-import { setAppearance, loadAppearance } from "../lib/theme";
+import { DARK_PALETTES, type DarkPalette, loadAppearance, setAppearance } from "../lib/theme";
 import type { SearchHit } from "../lib/types";
 import { useUi } from "../lib/ui-store";
 import { Dialog, Keys, Kbd } from "./primitives";
@@ -93,6 +93,12 @@ function MenuBody({ onClose }: { onClose: () => void }) {
           ).map(([mode, label, Icon]) => (
             <Command.Item key={mode} value={`theme ${label}`} onSelect={run(() => setAppearance({ ...loadAppearance(), theme: mode }))}>
               <Icon /> {label}
+            </Command.Item>
+          ))}
+          {(Object.keys(DARK_PALETTES) as DarkPalette[]).map((d) => (
+            <Command.Item key={d} value={`theme dark palette ${DARK_PALETTES[d].label}`} onSelect={run(() => setAppearance({ ...loadAppearance(), theme: "dark", dark: d }))}>
+              <Moon /> Dark · {DARK_PALETTES[d].label}
+              <span className="cmd-hint">{DARK_PALETTES[d].hint}</span>
             </Command.Item>
           ))}
         </Command.Group>

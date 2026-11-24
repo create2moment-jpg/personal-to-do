@@ -3,11 +3,22 @@ import { useEffect, useState } from "react";
 export type ThemeMode = "system" | "light" | "dark";
 export type Accent = "indigo" | "violet" | "blue" | "teal" | "amber" | "rose";
 export type Density = "comfortable" | "compact";
+export type DarkPalette = "graphite" | "obsidian" | "midnight" | "forest" | "aubergine";
+
+/** Dark palettes: [name, description, background, surface] for previews. */
+export const DARK_PALETTES: Record<DarkPalette, { label: string; hint: string; bg: string; surface: string }> = {
+  graphite: { label: "Graphite", hint: "Neutral near-black (default)", bg: "#0e0e10", surface: "#161618" },
+  obsidian: { label: "Obsidian", hint: "True black, ideal for OLED", bg: "#000000", surface: "#0c0c0d" },
+  midnight: { label: "Midnight", hint: "Deep navy", bg: "#0b1020", surface: "#111831" },
+  forest: { label: "Forest", hint: "Green-tinted night", bg: "#0b110e", surface: "#111a15" },
+  aubergine: { label: "Aubergine", hint: "Deep plum", bg: "#120d16", surface: "#1a1320" },
+};
 
 export interface Appearance {
   theme: ThemeMode;
   accent: Accent;
   density: Density;
+  dark: DarkPalette;
 }
 
 export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
@@ -20,7 +31,7 @@ export const ACCENTS: Record<Accent, { label: string; swatch: string }> = {
 };
 
 const KEY = "ppos.appearance";
-const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable" };
+const DEFAULTS: Appearance = { theme: "system", accent: "indigo", density: "comfortable", dark: "graphite" };
 
 // UI preferences only (per browser). Never personal content.
 export function loadAppearance(): Appearance {
@@ -38,6 +49,8 @@ export function applyAppearance(a: Appearance) {
   root.dataset.theme = dark ? "dark" : "light";
   root.dataset.accent = a.accent;
   root.dataset.density = a.density;
+  root.dataset.dark = a.dark;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? DARK_PALETTES[a.dark].bg : "#f7f7f5");
 }
 
 const listeners = new Set<(a: Appearance) => void>();
