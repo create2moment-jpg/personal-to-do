@@ -179,6 +179,23 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 - Search inside documents (Knowledge and ⌘K) with page citations; the reader
   jumps to and highlights the cited passage.
 
+### Phase 4b delivered — AI fact extraction (B-007)
+
+- Local model reads each passage with the versioned template
+  `documents.extract_facts@v1` and proposes facts of seven kinds
+  (responsibility, achievement, competency, strength, development area, goal,
+  level expectation).
+- **Grounding guard:** every fact must carry a quote that occurs verbatim in
+  its passage; anything else is dropped and counted ("n dropped") — the model
+  cannot introduce achievements that are not in the document.
+- Provenance on every fact: document, chunk, page, section, model, prompt
+  template, extractor version. Bounded runs (≤ 60 passages) in the background
+  with live progress; re-runs replace only unreviewed proposals.
+- Facts are proposals: accept / reject in the document; only accepted facts
+  will feed career evidence (Phase 7, B-009). The quote can never be edited.
+- Chunking now starts a new passage at every heading (chunk:v2) so framework
+  levels and review sections are cited separately.
+
 ### Next features requested by the owner (queued after the current target topics)
 
 Recorded 2026-11-24. Order reflects value vs. effort; each ships at the
