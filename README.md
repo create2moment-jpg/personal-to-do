@@ -43,6 +43,15 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   top-3 priorities, overdue and due-but-unscheduled lists, roll unfinished work to
   tomorrow, end-of-day review, daily journal.
 - **Upcoming**: the next seven days with per-day load.
+- **Week**: seven-day board with load vs. capacity and meetings per day,
+  weekly objectives, sprint backlog to drag from, and a guided weekly review.
+- **Sprint**: goal, committed and stretch work, burndown, scope changes,
+  completion with roll-over and a sprint review.
+- **Meetings & time**: import your Outlook calendar (read-only `.ics`), skip a
+  recurring meeting with one click, log calls (`call: Priya / ADR review ~30m
+  #retrieval`), rate whether meetings were worth it, and see meeting vs. focus
+  hours, time per person and per topic. Capacity is computed automatically from
+  your working hours (default 08:00–17:00, Europe/Berlin) minus meetings.
 - **Tasks**: priority, estimate vs actual, due date, project/area, tags,
   subtasks, dependencies (completion blocked until they're done), recurrence
   rule stored.
@@ -56,6 +65,14 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Command menu** (`Ctrl/⌘+K`) with full-text search, navigation and theme
   switching; `g t` / `g b` / `g n` navigation; `?` shows all shortcuts.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.
+
+### Importing your Outlook calendar
+
+Outlook for Windows: *File → Save Calendar → More Options* (pick a date range),
+then on **Meetings & time** choose *Import calendar* (or drop the file).
+Outlook on the web: *Settings → Calendar → Shared calendars → Publish a
+calendar* and download the ICS link. Import is read-only; re-import any time —
+your attendance choices and ratings are kept.
 
 ## Quick start
 

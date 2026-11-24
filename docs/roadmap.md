@@ -30,9 +30,10 @@ See [design-system.md](design-system.md) for the visual language.
 | 0 | Repository inspection, architecture, ADRs, threat model, data boundary | ✅ done |
 | 1 | Tasks + Today + notes + local database | ✅ done |
 | **1.5** | **Premium experience foundation** (design system, interaction model, demo workspace, e2e tests) | ✅ done — see below |
-| 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | **next** |
-| 3 | **Calendar, meetings & time**: Outlook sync (Graph or ICS), attendance toggles, call logging, time per person/topic, meeting value ratings, automatic capacity, timeboxing, recurrence expansion, installable app (PWA) — [spec](specs/meetings-and-time.md) | planned |
-| 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | |
+| 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | ✅ done |
+| 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
+| 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
+| 4 | Knowledge inbox: document ingestion, extraction/OCR, provenance, background jobs | **next** |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | |
@@ -91,7 +92,36 @@ restore), Settings (appearance, privacy & data, keyboard), and polished
 another writer is active). Units of work now start with `BEGIN IMMEDIATE`; a
 threaded regression test covers it.
 
-### Phase 2 plan (next) — Week & Sprint, at the same quality bar
+### Phases 2 & 3 delivered — Week, Sprint, meetings & time
+
+Plan: [plans/phase-2-3.md](plans/phase-2-3.md). Decisions from the product
+owner: calendar import read-only and optional (purpose: recurring-meeting
+overview), time zone default Europe/Berlin and changeable, working hours
+default 08:00–17:00.
+
+- **Workspace settings**: time zone, working hours, workdays, focus buffer,
+  sprint length — "today" and all times follow the chosen zone.
+- **Week**: Monday–Sunday board with per-day load vs. capacity and meetings,
+  weekly objectives, sprint backlog docked on the right, drag between days
+  (pointer + keyboard), roll unfinished work to next week, guided **weekly
+  review** (completion, meeting share, estimate accuracy, meetings-vs-focus
+  chart, reflection → plan next week).
+- **Sprint**: goal, committed vs. stretch lanes, burndown with ideal line,
+  scope changes after start, on-track indicator, add-from-backlog picker,
+  completion with roll-over to the next sprint or backlog, sprint review.
+- **Meetings & time**: read-only `.ics` import with recurrence expansion
+  (exceptions, moved occurrences; cancelled / free / out-of-office skipped;
+  attendee lists ignored); per-occurrence attendance (attend / partly / skip)
+  and per-series "not attending"; value ratings; call logging via dialog,
+  `call:` quick capture or the "In a call" timer; **automatic capacity**
+  (working hours − attended meetings − buffer) with manual override;
+  insights: meeting vs. focus per day, time with people, by topic, by recurring
+  meeting, average value, "worth reconsidering".
+- Two real bugs found by the new tests and fixed: nested transactions when
+  reading settings (deadlock), and an invalid `step` on the call-duration input
+  that blocked saving.
+
+### Phase 2 plan — Week & Sprint (as planned; delivered above)
 
 1. **Data**: `sprints` (goal, start/end, status) + `sprint_id` and
    `commitment` (committed | stretch) on tasks; weekly plan (three objectives,
@@ -110,13 +140,14 @@ threaded regression test covers it.
 6. **Tests**: domain invariants, migration round trip, e2e for week drag/drop
    and the review flow; screenshots in both themes.
 
-### Phase 3 plan — Calendar, meetings & time
+### Phase 3 plan — Calendar, meetings & time (delivered; Graph sync deferred)
 
 Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 
-1. **Calendar sources** behind one port: Microsoft Graph (Outlook, opt-in,
-   read-only, device-code sign-in, incremental sync), ICS subscription URL,
-   `.ics` file import, manual entries.
+1. **Calendar sources**: `.ics` file import and manual entries are built.
+   Microsoft Graph sync and ICS subscription URLs are **deferred** — the owner
+   only needs a read-only overview of recurring meetings, and file import needs
+   no network access or IT approval.
 2. **Attendance**: per-meeting *Attending / Not attending / Partial*, stored
    separately from the synced mirror so re-sync never overwrites it.
 3. **Log a call** in seconds: dialog, quick capture (`call: Priya ~30m
@@ -126,7 +157,7 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 5. **Time insights**: meeting vs. focus hours, time per person, per topic, per
    recurring series; value rating (1–5) after each meeting; "meetings to
    reconsider". Basic charts ship in Phase 3; deeper trends in Phase 8.
-6. **Timeboxing**: drag tasks into free calendar slots.
+6. **Timeboxing**: drag tasks into free calendar slots (moved to 3b).
 7. Privacy: attendee data stays local, excluded from AI by default, deletable
    per person; tokens in the OS keychain.
 
@@ -157,15 +188,12 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 2. **PostgreSQL as primary.** For a single-user local app SQLite is simpler
    and safer to operate; Postgres stays available behind the same ports
    (ADR-0001). Please confirm, or tell me if multi-device access is a near-term need.
-3. **Calendar source — answered: Outlook.** Still open: is it a company
-   Microsoft 365 tenant, and can a read-only app registration be approved
-   (admin consent)? If not, ICS publish/export is the fallback. See the
-   [meetings spec](specs/meetings-and-time.md#open-questions-for-the-product-owner).
-4. **Time zones and "day".** Days are the user's local calendar day; travel and
-   late-night work need a rule (e.g. a configurable day-start hour).
-5. **Capacity definition.** Phase 1 uses a manually set focus capacity per
-   day. With calendar import it should become working hours − meetings −
-   buffer. Confirm the default buffer.
+3. **Calendar source — answered: Outlook, read-only, optional.** Implemented as
+   `.ics` import; live Graph sync only if it becomes necessary.
+4. **Time zones — answered:** configurable, default Europe/Berlin. Still open:
+   a day-start hour for late-night work.
+5. **Capacity — answered:** working hours (default 08:00–17:00) − attended
+   meetings − buffer (default 10 %), with per-day manual override.
 6. **Encryption at rest.** Key management matters more than the cipher: a
    passphrase on startup vs OS keychain. OS full-disk encryption is the
    recommended baseline until then.
@@ -189,7 +217,11 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 - Typing `[ ]` *inside* an existing bullet list produces a literal `[ ]`
   (TipTap input-rule behaviour); start a checklist on a new line or use the
   toolbar.
-- Deleting a task has no undo yet (confirm dialog instead) — soft delete in Phase 2.
+- Deleting a task has no undo yet (confirm dialog instead) — soft delete queued.
+- Week view on narrow screens scrolls horizontally; a single-day agenda layout
+  for phones is queued.
+- Insights range is up to 30 days in the UI (API supports a year); monthly /
+  quarterly roll-ups arrive with Phase 8 reviews.
 - No local auth token; API must stay on loopback (threat model T4/T5).
 - Search ranks with bm25 only; no recency boost.
 - The `ui` vendor chunk is ~140 KB gzipped; revisit if first load grows.

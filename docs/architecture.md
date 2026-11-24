@@ -125,6 +125,22 @@ canonical tables apart from FTS5, which is a derived index).
 - Nothing expensive runs in a request today; Phase 4 introduces the job queue
   before any extraction/embedding work exists.
 
+## 7b. Phase 2/3 modules
+
+- `domain/settings.py` (workspace settings), `domain/planning.py` (sprints,
+  weekly plans, burndown), `domain/meetings.py` (meetings, series,
+  attendance, interval union, per-day time accounting).
+- `application/settings.py`, `application/planning.py` (Sprint/Week services),
+  `application/meetings.py` (import, calls, series, insights). The ICS parser
+  is injected as a function, so the application layer has no dependency on
+  `icalendar`.
+- `infrastructure/ics.py` (read-only parsing + recurrence expansion with
+  `recurring-ical-events`), `infrastructure/sqlite_planning.py` (repositories).
+- Capacity is computed per day from settings + meetings (`day_time`) unless
+  the day's `capacity_mode` is `manual`.
+- `ZonedClock` makes "today" follow the workspace time zone; settings are
+  cached in memory and read before a transaction is opened (never nested).
+
 ## 8. Frontend architecture
 
 ```

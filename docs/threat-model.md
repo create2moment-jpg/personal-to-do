@@ -19,7 +19,7 @@ journal, tasks and plans, AI histories, backups.
 | T11 | Prompt injection from ingested documents (Phase 4+) | Design: documents are data, never instructions; AI output is a validated proposal requiring approval (ADR-0004); tools available to agents are allow-listed per workflow |
 | T12 | AI fabricates achievements / competencies | Design: provenance required on extracted facts; unsupported claims labelled as inference; evaluations measure groundedness |
 | T13 | Supply chain (npm / PyPI) | Lockfile for web deps ✅; minimal dependency set ✅; ⏳ pin Python deps with a lock (uv/pip-tools) in Phase 9 |
-| T14 | Calendar sync (Phase 3): token theft, over-broad access, leaking colleagues' data | Opt-in only; read-only `Calendars.Read` scope; single allow-listed host; refresh token / ICS URL in OS keychain (else encrypted), never logged or exported; attendee data local-only, excluded from AI context by default, "forget person" deletion; the tool never writes to Outlook |
+| T14 | Calendar data (Phase 3): leaking colleagues' data; future live sync | Implemented as **file import only** — no network access, no tokens ✅; attendee lists are not imported, only the organizer's display name ✅; size-limited, parse errors rejected ✅. For a future Graph adapter: opt-in only; read-only `Calendars.Read` scope; single allow-listed host; refresh token / ICS URL in OS keychain (else encrypted), never logged or exported; attendee data local-only, excluded from AI context by default, "forget person" deletion; the tool never writes to Outlook |
 
 Residual risks to accept knowingly for now: no app-level authentication
 (loopback only), no encryption at rest beyond OS disk encryption.

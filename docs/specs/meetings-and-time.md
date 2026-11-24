@@ -1,7 +1,13 @@
 # Spec: Meetings, calls and where the time goes
 
-Status: **accepted for the backlog** — scheduled as Phase 3 ("Calendar, meetings
-& time"). Requested by the product owner on 2026-11-24.
+Status: **implemented** (Phase 3) with the product owner's scope decisions:
+read-only `.ics` import (no live Outlook sync), time zone default
+Europe/Berlin, working hours default 08:00–17:00. Microsoft Graph sync remains
+an optional future adapter.
+
+Implementation notes: imported and user-owned fields live in separate
+*columns* of `meetings` (re-import updates only imported columns) rather than a
+separate table; per-series decisions live in `meeting_series`.
 
 ## Why
 

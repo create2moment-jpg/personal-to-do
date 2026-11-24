@@ -39,6 +39,22 @@ Theme, accent (`indigo`, `violet`, `blue`, `teal`, `amber`, `rose`) and density
 `data-accent`, `data-density`. They are UI preferences stored in the browser
 only (never personal content).
 
+## Charts
+
+Rules follow the data-viz method (validated with its palette script against
+the light surface and all five dark palettes):
+
+- Categorical slots: `--series-1` blue (focus / remaining work) and
+  `--series-2` orange (meetings) — light `#2a78d6` / `#eb6834`, dark `#3987e5`
+  / `#d95926`. Charts never use the user's accent colour, so data colours stay
+  stable when the accent changes.
+- 2 px lines, 4 px rounded bar ends, 2 px surface gaps between stacked
+  segments, dashed neutral line for reference values (ideal burndown).
+- A legend whenever a chart has two or more series; single-series ranked bars
+  are labelled directly and have no legend.
+- Hover tooltips on every chart; text uses text tokens, never series colours.
+- Charts render at their real pixel width (ResizeObserver) so labels stay 11 px.
+
 ## Typography
 
 Inter Variable, bundled locally via `@fontsource-variable` (no font CDN — the
