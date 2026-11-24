@@ -1,0 +1,39 @@
+.PHONY: setup dev api web check test lint typecheck build backup doctor
+
+PY ?= .venv/bin/python
+BIN := .venv/bin
+
+setup:            ## create venv, install deps, install git hooks
+	python3 -m venv .venv
+	$(BIN)/pip install -e ".[dev]"
+	cd apps/web && npm ci
+	bash scripts/install-git-hooks.sh
+
+api:              ## run the API on 127.0.0.1:8765
+	$(BIN)/ppos serve
+
+web:              ## run the Vite dev server (proxies /api to :8765)
+	cd apps/web && npm run dev
+
+build:            ## build the web UI so `ppos serve` serves it
+	cd apps/web && npm run build
+
+lint:
+	$(BIN)/ruff check . && $(BIN)/ruff format --check .
+
+typecheck:
+	$(BIN)/mypy
+	cd apps/web && npm run typecheck
+
+test:
+	$(BIN)/pytest
+	cd apps/web && npm test
+
+check: lint typecheck test   ## everything CI runs
+	python3 scripts/check_repo_safety.py --all
+
+backup:
+	$(BIN)/ppos backup
+
+doctor:
+	$(BIN)/ppos doctor
