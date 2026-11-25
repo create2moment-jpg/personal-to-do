@@ -42,11 +42,13 @@ class DayService:
         default_capacity_minutes: int,
         day_meetings: Callable[[date], tuple[DayTime, list[Meeting], dict[str, MeetingSeries]]]
         | None = None,
+        unestimated_minutes: Callable[[], int] = lambda: 30,
     ) -> None:
         self._uow = uow_factory
         self._clock = clock
         self._default_capacity = default_capacity_minutes
         self._day_meetings = day_meetings
+        self._unestimated = unestimated_minutes
 
     def plan_for(self, day: date) -> DailyPlan:
         with self._uow() as uow:
@@ -83,7 +85,7 @@ class DayService:
             tasks=tasks,
             overdue=overdue,
             due_today_unscheduled=due_unscheduled,
-            capacity=summarize_capacity(plan.capacity_minutes, tasks),
+            capacity=summarize_capacity(plan.capacity_minutes, tasks, self._unestimated()),
             journal=journal,
             completed=[t for t in tasks if t.status == TaskStatus.DONE],
             time=time,

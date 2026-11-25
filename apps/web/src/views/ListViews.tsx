@@ -70,7 +70,7 @@ export function BacklogView() {
       </div>
 
       <div style={{ marginBottom: 10 }}>
-        <AddRow placeholder="Add to backlog — press Enter" onAdd={(title) => create.mutateAsync({ title, project_id: project || null })} />
+        <AddRow placeholder="Add to backlog — press Enter" onAdd={(title, est) => create.mutateAsync({ title, project_id: project || null, estimate_minutes: est })} />
       </div>
 
       {!isLoading && shown.length === 0 ? (
@@ -136,7 +136,7 @@ export function UpcomingView() {
               {tasks.map((t) => (
                 <TaskCard key={t.id} task={t} project={t.project_id ? projectById.get(t.project_id) : undefined} onOpen={ui.openTask} />
               ))}
-              <AddRow placeholder={`Add to ${relativeDay(d, today)}`} onAdd={(title) => create.mutateAsync({ title, scheduled_date: d })} />
+              <AddRow placeholder={`Add to ${relativeDay(d, today)}`} onAdd={(title, est) => create.mutateAsync({ title, scheduled_date: d, estimate_minutes: est })} />
             </div>
           </DayDrop>
         );

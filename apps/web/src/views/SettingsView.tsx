@@ -6,6 +6,7 @@ import { api } from "../lib/api";
 import type { WorkspaceSettings } from "../lib/types";
 import { formatMinutes, setWorkspaceTimeZone } from "../lib/util";
 import { AiSettings } from "../components/AiSettings";
+import { DurationInput } from "../components/DurationPicker";
 import { Keys } from "../components/primitives";
 import { useHealth, useSettings } from "../lib/queries";
 import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
@@ -303,6 +304,20 @@ function WorkSettings() {
               {b}%
             </button>
           ))}
+        </div>
+      </div>
+      <div className="setting-row">
+        <div>
+          <div className="s-label">Tasks without an estimate count as</div>
+          <div className="s-help">Used for capacity until you set a task’s own time (click the time on any card). 0 = don’t count them.</div>
+        </div>
+        <div style={{ width: "8rem" }}>
+          <DurationInput
+            label="Default task time"
+            placeholder="0 = don't count"
+            value={s.default_task_minutes || null}
+            onSave={(m) => void save({ default_task_minutes: m ?? 0 })}
+          />
         </div>
       </div>
       <div className="setting-row">

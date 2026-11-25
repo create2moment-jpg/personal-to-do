@@ -14,6 +14,7 @@ import {
   Rocket,
   Settings,
   Sparkles,
+  SquareKanban,
   Sun,
   Target,
   TrendingUp,
@@ -33,6 +34,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Plan",
     items: [
       { id: "today", label: "Today", icon: Sun, shortcut: "G T" },
+      { id: "board", label: "Task board", icon: SquareKanban, shortcut: "G A" },
       { id: "week", label: "Week", icon: CalendarRange, shortcut: "G W" },
       { id: "sprint", label: "Sprint", icon: Rocket, shortcut: "G R" },
       { id: "upcoming", label: "Upcoming", icon: CalendarDays, shortcut: "G U" },
@@ -69,6 +71,7 @@ export const ALL_NAV: NavItem[] = [...NAV_GROUPS.flatMap((g) => g.items), SETTIN
 /** Second key of the "g <key>" navigation chords. */
 export const GOTO_KEYS: Record<string, ViewId> = {
   t: "today",
+  a: "board",
   w: "week",
   r: "sprint",
   m: "meetings",

@@ -4,6 +4,7 @@ import { AlarmClock, CalendarClock, Clock, Flag, ListChecks, Star } from "lucide
 import type { CSSProperties, KeyboardEvent } from "react";
 import type { Project, Task } from "../lib/types";
 import { startTaskDrag } from "../lib/drop";
+import { DurationChip } from "./DurationPicker";
 import { cx, formatMinutes, isoDay, relativeDay } from "../lib/util";
 
 export interface TaskCardProps {
@@ -83,7 +84,9 @@ export function TaskCard({
               <Flag fill="currentColor" /> P{task.priority}
             </span>
           )}
-          {task.estimate_minutes !== null && (
+          {!done && !overlay ? (
+            <DurationChip task={task} />
+          ) : task.estimate_minutes !== null && (
             <span title="Estimate">
               <Clock /> {task.actual_minutes > 0 ? `${formatMinutes(task.actual_minutes)} / ` : ""}
               {formatMinutes(task.estimate_minutes)}

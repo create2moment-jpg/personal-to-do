@@ -2,6 +2,7 @@ import { createContext, useContext } from "react";
 
 export type ViewId =
   | "today"
+  | "board"
   | "upcoming"
   | "meetings"
   | "book"

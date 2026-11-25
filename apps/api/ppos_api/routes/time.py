@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 from fastapi import APIRouter, Query, Response, status
 
-from ppos.domain.meetings import MeetingKind
+from ppos.domain.meetings import Meeting, MeetingKind, Recurrence
 from ppos_api.deps import ContainerDep
 from ppos_api.schemas import (
     CallCreate,
@@ -17,7 +17,9 @@ from ppos_api.schemas import (
     MeetingUpdate,
     NamedOut,
     RankedOut,
+    ScheduleIn,
     SeriesOut,
+    SeriesPlanPatch,
     SeriesRankOut,
     SeriesUpdate,
     WorkspaceSettingsOut,
@@ -101,9 +103,39 @@ def list_series(c: ContainerDep) -> list[SeriesOut]:
             minutes_per_month=o.minutes_per_month,
             next_start=o.next_start,
             last_start=o.last_start,
+            source=o.series.source,
+            plan=o.series.plan,
         )
         for o in c.meetings.series_overview()
     ]
+
+
+@router.post("/api/meetings/schedule", status_code=status.HTTP_201_CREATED)
+def schedule_meeting(body: ScheduleIn, c: ContainerDep) -> dict[str, object]:
+    """Add a meeting you organise or attend — once or recurring."""
+    rec = Recurrence(**body.recurrence.model_dump()) if body.recurrence else None
+    result = c.meetings.schedule(
+        body.title, body.day, body.start_time, body.minutes,
+        people=body.people, topic=body.topic, location=body.location,
+        note=body.note, kind=body.kind, recurrence=rec,
+    )  # fmt: skip
+    if isinstance(result, Meeting):
+        return {"meeting": MeetingSerializer(c)(result, {}).model_dump(mode="json")}
+    return {"series_key": result.series_key, "cadence": result.cadence, "title": result.title}
+
+
+@router.patch("/api/meeting-series/{series_key}/plan")
+def edit_series_plan(series_key: str, body: SeriesPlanPatch, c: ContainerDep) -> dict[str, object]:
+    changes = body.model_dump(exclude_unset=True)
+    if body.recurrence is not None:
+        changes["recurrence"] = Recurrence(**body.recurrence.model_dump())
+    s = c.meetings.edit_series(series_key, changes)
+    return {"series_key": s.series_key, "cadence": s.cadence, "title": s.title}
+
+
+@router.delete("/api/meeting-series/{series_key}", status_code=status.HTTP_200_OK)
+def end_series(series_key: str, c: ContainerDep) -> dict[str, int]:
+    return {"removed": c.meetings.end_series(series_key)}
 
 
 @router.patch("/api/meeting-series/{series_key:path}", response_model=dict)

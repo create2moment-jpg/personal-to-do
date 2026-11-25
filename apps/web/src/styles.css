@@ -879,3 +879,41 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .ai-note { margin-top: 1.1rem; font-size: 0.82rem; color: var(--text-3); line-height: 1.5; }
 .ai-note svg { width: 0.95rem; height: 0.95rem; vertical-align: -0.15rem; margin-right: 0.3rem; }
 .ai-note code { white-space: nowrap; }
+
+/* ---------- Durations ---------- */
+.duration-chip { display: inline-flex; align-items: center; gap: 3px; border: 1px solid transparent; background: none; padding: 0 0.3rem; margin: 0 -0.3rem; border-radius: 0.4rem; font: inherit; color: inherit; cursor: pointer; height: 1.3rem; }
+.duration-chip:hover, .duration-chip[aria-expanded="true"] { border-color: var(--border); background: var(--surface); color: var(--text); }
+.duration-chip.unset { color: var(--text-3); opacity: 0.55; transition: opacity 0.15s; }
+.task-card:hover .duration-chip.unset, .task-card:focus-within .duration-chip.unset, .duration-chip.unset[aria-expanded="true"] { opacity: 1; }
+.duration-pop { position: fixed; z-index: 80; width: 236px; padding: 0.7rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg, 0 12px 32px rgba(0,0,0,.25)); display: flex; flex-direction: column; gap: 0.6rem; }
+.duration-presets { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.3rem; }
+.duration-presets .filter-chip { justify-content: center; padding: 0; }
+.duration-custom { display: flex; gap: 0.4rem; }
+.duration-custom .input { flex: 1; min-width: 0; height: 1.9rem; }
+.duration-clear { font-size: 0.8rem; align-self: flex-start; color: var(--text-3); }
+.input.invalid { border-color: var(--red); }
+
+/* ---------- Task board ---------- */
+.board-tools { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.board-tools .search-input { width: 15rem; }
+.board-tools .select { width: auto; }
+.all-board { display: grid; grid-template-columns: repeat(5, minmax(15rem, 1fr)); gap: 0.85rem; align-items: start; overflow-x: auto; padding-bottom: 0.5rem; }
+.all-board .column { min-height: 14rem; max-height: calc(100vh - 12rem); overflow-y: auto; }
+.done-range { margin: 0 0 0.5rem; align-self: flex-start; }
+.done-range button { font-size: 0.78rem; height: 1.6rem; }
+
+/* ---------- Schedule meeting ---------- */
+.schedule .segmented button:disabled { opacity: 0.4; cursor: default; }
+.repeat-box { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.7rem 0.8rem; border-radius: var(--radius); background: var(--bg-sunken); }
+.inline-field { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; color: var(--text-2); flex-wrap: wrap; }
+.inline-field .input { width: 5rem; height: 1.9rem; }
+.inline-field input[type="date"] { width: auto; }
+.inline-field .select { width: auto; height: 1.9rem; }
+.weekday-picker { display: flex; gap: 0.3rem; }
+.weekday-picker button { width: 2.1rem; height: 2.1rem; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 0.8rem; font-weight: 600; cursor: pointer; }
+.weekday-picker button[aria-pressed="true"] { background: var(--accent); color: #fff; border-color: transparent; }
+.schedule-summary { margin-right: auto; font-size: 0.84rem; color: var(--text-2); }
+.sr-own { display: inline-flex; gap: 0.6rem; margin-left: 0.6rem; font-size: 0.8rem; font-weight: 400; }
+.sr-own .link-btn { text-decoration: none; color: var(--text-3); display: inline-flex; align-items: center; gap: 3px; }
+.sr-own .link-btn:hover { color: var(--accent-text); }
+.own-series-hint { margin-top: 0.8rem; font-size: 0.9rem; color: var(--text-2); }

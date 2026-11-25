@@ -21,6 +21,7 @@ import { api } from "../lib/api";
 import { invalidateTasks, keys, useMoveTask, useProjects, useSprints, useTask, useTasks, useUpdateTask } from "../lib/queries";
 import { STATUS_LABEL, type Task, type TaskStatus } from "../lib/types";
 import { relativeTime } from "../lib/util";
+import { DurationInput } from "./DurationPicker";
 import { Sheet, StatusDot } from "./primitives";
 
 const STATUSES = Object.keys(STATUS_LABEL) as TaskStatus[];
@@ -141,18 +142,10 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
           <input type="date" className="input" {...field("due_date")} onChange={(e) => save({ due_date: e.target.value || null })} />
 
           <Label icon={Clock} text="Estimate" />
-          <input
-            type="number"
-            min={0}
-            step={5}
-            className="input"
-            placeholder="minutes"
-            {...field("estimate_minutes")}
-            onBlur={(e) => save({ estimate_minutes: e.target.value === "" ? null : Number(e.target.value) })}
-          />
+          <DurationInput label="Estimate" value={task.estimate_minutes} onSave={(m) => save({ estimate_minutes: m })} />
 
           <Label icon={Hourglass} text="Time spent" />
-          <input type="number" min={0} step={5} className="input" placeholder="minutes" {...field("actual_minutes")} onBlur={(e) => save({ actual_minutes: Number(e.target.value || 0) })} />
+          <DurationInput label="Time spent" placeholder="e.g. 25, 1h10" value={task.actual_minutes || null} onSave={(m) => save({ actual_minutes: m ?? 0 })} />
 
           <Label icon={FolderKanban} text="Project" />
           <select className="select" value={task.project_id ?? ""} onChange={(e) => save({ project_id: e.target.value || null })}>

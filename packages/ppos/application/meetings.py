@@ -19,6 +19,8 @@ from ppos.domain.meetings import (
     MeetingKind,
     MeetingSeries,
     Person,
+    Recurrence,
+    SeriesPlan,
     Topic,
     day_time,
 )
@@ -206,6 +208,218 @@ class MeetingService:
             uow.commit()
             return meeting
 
+    # ---------------------------------------------------------------- meetings you create
+    def schedule(
+        self,
+        title: str,
+        day: date,
+        start_time: str,
+        minutes: int,
+        *,
+        people: list[str] | None = None,
+        topic: str | None = None,
+        location: str | None = None,
+        note: str = "",
+        kind: str = "meeting",
+        recurrence: Recurrence | None = None,
+    ) -> Meeting | MeetingSeries:
+        """Add a meeting (or call) to the calendar — once, or as a recurring series."""
+        if not title.strip():
+            raise ValidationError("give the meeting a title")
+        plan = SeriesPlan(
+            recurrence=recurrence or Recurrence("daily", count=1),
+            first_day=day,
+            start_time=start_time,
+            minutes=minutes,
+            kind=kind,
+            people=tuple(p.strip() for p in people or [] if p.strip()),
+            topic=topic.strip() if topic and topic.strip() else None,
+            location=location.strip() if location and location.strip() else None,
+        )
+        if recurrence is None:
+            tz = self._settings.tz()
+            with self._uow() as uow:
+                m = self._occurrence(uow, title, plan, day, None, tz)
+                m.note = note
+                uow.meetings.add(m)
+                uow.audit.record("meeting", m.id, "schedule", details={"minutes": minutes})
+                uow.commit()
+                return m
+        key = f"app:{new_id()}"
+        with self._uow() as uow:
+            uow.meetings.set_series_plan(key, title.strip(), recurrence.describe(), plan.to_dict())
+            created = self._materialise(uow, key, title.strip(), plan, from_day=day)
+            if plan.topic:
+                s = uow.meetings.get_series(key)
+                assert s is not None
+                s.topic_id = uow.topics.get_or_create(plan.topic).id
+                uow.meetings.update_series(s)
+            uow.audit.record(
+                "meeting_series",
+                key,
+                "create",
+                details={"cadence": recurrence.describe(), "occurrences": created},
+            )
+            uow.commit()
+            series = uow.meetings.get_series(key)
+            assert series is not None
+            return series
+
+    def edit_series(self, key: str, changes: Mapping[str, Any]) -> MeetingSeries:
+        """Change a series you created. Past occurrences stay as they happened; future ones
+        are regenerated, keeping what you set on individual occurrences (skips, notes)."""
+        allowed = {
+            "title",
+            "start_time",
+            "minutes",
+            "recurrence",
+            "people",
+            "topic",
+            "location",
+            "kind",
+        }
+        unknown = set(changes) - allowed
+        if unknown:
+            raise ValidationError(f"fields not editable: {sorted(unknown)}")
+        today = self._clock.today()
+        with self._uow() as uow:
+            s, plan = self._app_series(uow, key)
+            values = plan.to_dict()
+            for k in ("start_time", "minutes", "location", "kind", "topic"):
+                if k in changes:
+                    values[k] = changes[k]
+            if "people" in changes:
+                values["people"] = [p for p in changes["people"] if p.strip()]
+            if "recurrence" in changes:
+                r = changes["recurrence"]
+                values["recurrence"] = (
+                    r if isinstance(r, Recurrence) else Recurrence.from_dict(r)
+                ).to_dict()
+            new_plan = SeriesPlan.from_dict(values)
+            title = str(changes.get("title") or s.title).strip()
+            uow.meetings.set_series_plan(
+                key, title, new_plan.recurrence.describe(), new_plan.to_dict()
+            )
+            if "topic" in changes:
+                s = uow.meetings.get_series(key) or s
+                s.topic_id = uow.topics.get_or_create(new_plan.topic).id if new_plan.topic else None
+                uow.meetings.update_series(s)
+            self._materialise(uow, key, title, new_plan, from_day=today, replace_future=True)
+            uow.audit.record(
+                "meeting_series", key, "edit", details={k: str(v) for k, v in changes.items()}
+            )
+            uow.commit()
+            out = uow.meetings.get_series(key)
+            assert out is not None
+            return out
+
+    def end_series(self, key: str) -> int:
+        """Stop a series you created: future occurrences are removed, history is kept."""
+        today, now = self._clock.today(), self._clock.now()
+        with self._uow() as uow:
+            s, plan = self._app_series(uow, key)
+            occurrences = uow.meetings.occurrences(key)
+            past = [m for m in occurrences if m.start_at < now]
+            for m in occurrences:
+                if m.start_at >= now:
+                    uow.meetings.delete(m.id)
+            removed = len(occurrences) - len(past)
+            if past:
+                r = plan.recurrence
+                ended = Recurrence(r.freq, r.interval, r.weekdays, until=today - timedelta(days=1))
+                new_plan = SeriesPlan.from_dict(plan.to_dict() | {"recurrence": ended.to_dict()})
+                uow.meetings.set_series_plan(key, s.title, ended.describe(), new_plan.to_dict())
+            else:
+                uow.meetings.delete_series(key)
+            uow.audit.record("meeting_series", key, "end", details={"removed": removed})
+            uow.commit()
+            return removed
+
+    def top_up_series(self) -> int:
+        """Keep open-ended series you created filled up to the planning horizon."""
+        added = 0
+        with self._uow() as uow:
+            for key, s in uow.meetings.series().items():
+                if s.source != "app" or not s.plan:
+                    continue
+                plan = SeriesPlan.from_dict(s.plan)
+                existing = uow.meetings.occurrences(key)
+                start = (
+                    (
+                        existing[-1].start_at.astimezone(self._settings.tz()).date()
+                        + timedelta(days=1)
+                    )
+                    if existing
+                    else plan.first_day
+                )
+                added += self._materialise(uow, key, s.title, plan, from_day=start)
+            if added:
+                uow.commit()
+        return added
+
+    def _app_series(self, uow: UnitOfWork, key: str) -> tuple[MeetingSeries, SeriesPlan]:
+        s = uow.meetings.get_series(key)
+        if s is None:
+            raise NotFoundError("meeting series", key)
+        if s.source != "app" or not s.plan:
+            raise ValidationError("imported series are read-only; change them in your calendar")
+        return s, SeriesPlan.from_dict(s.plan)
+
+    def _occurrence(
+        self, uow: UnitOfWork, title: str, plan: SeriesPlan, day: date, key: str | None, tz: tzinfo
+    ) -> Meeting:
+        hh, mm = (int(x) for x in plan.start_time.split(":"))
+        start = datetime(day.year, day.month, day.day, hh, mm, tzinfo=tz).astimezone(timezone.utc)
+        now = self._clock.now()
+        return Meeting(
+            id=new_id(),
+            source="manual",
+            kind=MeetingKind(plan.kind),
+            title=title,
+            start_at=start,
+            end_at=start + timedelta(minutes=plan.minutes),
+            external_key=f"{key}:{day.isoformat()}" if key else None,
+            series_key=key,
+            location=plan.location,
+            topic_id=uow.topics.get_or_create(plan.topic).id if plan.topic else None,
+            people_ids=[uow.people.get_or_create(n).id for n in plan.people],
+            created_at=now,
+            updated_at=now,
+        )
+
+    def _materialise(
+        self,
+        uow: UnitOfWork,
+        key: str,
+        title: str,
+        plan: SeriesPlan,
+        from_day: date,
+        replace_future: bool = False,
+    ) -> int:
+        tz = self._settings.tz()
+        horizon = self._clock.today() + timedelta(days=IMPORT_FUTURE_DAYS)
+        kept: dict[str, Meeting] = {}
+        if replace_future:
+            for m in uow.meetings.occurrences(key):
+                if m.start_at.astimezone(tz).date() >= from_day:
+                    if m.external_key:
+                        kept[m.external_key.rsplit(":", 1)[-1]] = m
+                    uow.meetings.delete(m.id)
+        days = [d for d in plan.recurrence.days(plan.first_day, horizon) if d >= from_day]
+        for d in days:
+            m = self._occurrence(uow, title, plan, d, key, tz)
+            old = kept.get(d.isoformat())
+            if old is not None:  # carry over what the user set on this occurrence
+                m.status, m.note, m.rating, m.cancelled = (
+                    old.status,
+                    old.note,
+                    old.rating,
+                    old.cancelled,
+                )
+                m.attended_minutes = old.attended_minutes
+            uow.meetings.add(m)
+        return len(days)
+
     def update(self, meeting_id: str, changes: Mapping[str, Any]) -> Meeting:
         allowed = {
             "status",
@@ -264,7 +478,11 @@ class MeetingService:
                 raise ValidationError(
                     "imported meetings can't be deleted; mark them as skipped instead"
                 )
-            uow.meetings.delete(meeting_id)
+            if m.series_key:  # one occurrence of a series you created: cancel just this one
+                m.cancelled, m.updated_at = True, self._clock.now()
+                uow.meetings.update(m)
+            else:
+                uow.meetings.delete(meeting_id)
             uow.audit.record("meeting", meeting_id, "delete")
             uow.commit()
 

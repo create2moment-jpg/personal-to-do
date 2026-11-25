@@ -38,10 +38,10 @@ import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import { columnCoordinates, inputAwareCollision } from "../lib/dnd";
 import { dropOutsideBoard } from "../lib/drop";
-import { invalidateTasks, queryClient, useCreateTask, useMoveTask, useProjects, useTasks, useToday } from "../lib/queries";
+import { invalidateTasks, queryClient, useCreateTask, useMoveTask, useProjects, useSettings, useTasks, useToday } from "../lib/queries";
 import { STATUS_LABEL, type DailyReview, type Meeting, type Task, type TaskStatus } from "../lib/types";
 import { useUi } from "../lib/ui-store";
-import { addDays, cx, formatMinutes, greeting, greetingEmoji, isoDay, positionBetween, prettyDay } from "../lib/util";
+import { addDays, cx, formatMinutes, greeting, greetingEmoji, isoDay, positionBetween, prettyDay, splitEstimate } from "../lib/util";
 
 const COLUMNS: TaskStatus[] = ["planned", "in_progress", "blocked", "done"];
 const COLUMN_LABEL: Record<string, string> = { planned: "Planned", in_progress: "In progress", blocked: "Blocked", done: "Done" };
@@ -61,6 +61,7 @@ export function TodayView() {
   const { data, isLoading } = useToday(day);
   const { data: backlog = [] } = useTasks({ status: "backlog", top_level: true });
   const { data: projects = [] } = useProjects();
+  const { data: settings } = useSettings();
   const move = useMoveTask(day);
   const create = useCreateTask();
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -263,7 +264,7 @@ export function TodayView() {
         {cap.overcommitted && (
           <motion.div className="alert-strip" style={{ marginBottom: 16 }} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
             <AlertTriangle /> You’ve planned {formatMinutes(-cap.remaining_capacity)} more than your capacity. Move something back to the backlog or tomorrow.
-            {cap.unestimated_count > 0 && <span className="faint"> ({cap.unestimated_count} unestimated task(s) counted as 30m)</span>}
+            {cap.unestimated_count > 0 && <span className="faint"> ({cap.unestimated_count} task(s) without an estimate counted as {formatMinutes(settings?.default_task_minutes ?? 30)} each — set their time on the card)</span>}
           </motion.div>
         )}
       </AnimatePresence>
@@ -337,7 +338,7 @@ export function TodayView() {
                     </AnimatePresence>
                   </SortableContext>
                   {tasks.length === 0 && <div className="column-empty">{COLUMN_EMPTY[status]}</div>}
-                  {status === "planned" && <AddRow onAdd={(title) => create.mutateAsync({ title, scheduled_date: day })} />}
+                  {status === "planned" && <AddRow placeholder="Add task — e.g. Write spec ~50m" onAdd={(title, est) => create.mutateAsync({ title, scheduled_date: day, estimate_minutes: est })} />}
                 </DroppableColumn>
               );
             })}
@@ -440,7 +441,8 @@ function CapacityInput({ day, value }: { day: string; value: number }) {
   );
 }
 
-export function AddRow({ onAdd, placeholder = "Add task" }: { onAdd: (title: string) => Promise<unknown>; placeholder?: string }) {
+/** Quick add; a trailing "~50m" / "~1h30" sets the estimate. */
+export function AddRow({ onAdd, placeholder = "Add task" }: { onAdd: (title: string, estimate: number | null) => Promise<unknown>; placeholder?: string }) {
   const [value, setValue] = useState("");
   return (
     <label className="add-row">
@@ -451,9 +453,9 @@ export function AddRow({ onAdd, placeholder = "Add task" }: { onAdd: (title: str
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={async (e) => {
           if (e.key === "Enter" && value.trim()) {
-            const v = value.trim();
+            const { title, minutes } = splitEstimate(value);
             setValue("");
-            await onAdd(v);
+            await onAdd(title, minutes);
           }
         }}
       />

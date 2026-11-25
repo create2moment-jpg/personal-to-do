@@ -412,6 +412,8 @@ class SqliteMeetingRepository:
             rating=r["rating"],
             notes=r["notes"],
             updated_at=_req(r["updated_at"]),
+            source=r["source"],
+            plan=json.loads(r["plan"]) if r["plan"] else None,
         )
 
     def upsert_series(self, key: str, title: str, cadence: str | None) -> None:
@@ -427,6 +429,33 @@ class SqliteMeetingRepository:
             " WHERE series_key=?",
             (s.default_status, s.topic_id, s.rating, s.notes, _ts(s.updated_at), s.series_key),
         )
+
+    def set_series_plan(
+        self, key: str, title: str, cadence: str, plan: dict[str, Any] | None
+    ) -> None:
+        self._c.execute(
+            "INSERT INTO meeting_series (series_key, title, cadence, source, plan, updated_at)"
+            " VALUES (?,?,?, 'app', ?, ?) ON CONFLICT (series_key) DO UPDATE SET"
+            " title = excluded.title, cadence = excluded.cadence, plan = excluded.plan,"
+            " updated_at = excluded.updated_at",
+            (
+                key,
+                title,
+                cadence,
+                json.dumps(plan) if plan else None,
+                _ts(datetime.now(timezone.utc)),
+            ),
+        )
+
+    def delete_series(self, key: str) -> None:
+        self._c.execute("DELETE FROM meeting_series WHERE series_key = ?", (key,))
+
+    def occurrences(self, key: str) -> list[Meeting]:
+        rows = self._c.execute(
+            "SELECT * FROM meetings WHERE series_key = ? ORDER BY start_at", (key,)
+        ).fetchall()
+        people = self._people_for([r["id"] for r in rows])
+        return [self._from(r, people) for r in rows]
 
     def series(self) -> dict[str, MeetingSeries]:
         return {

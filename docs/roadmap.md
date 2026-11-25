@@ -35,6 +35,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | ✅ done |
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
+| 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ core done — OCR, .docx and AI fact extraction queued (B-005…B-007) |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer (any OpenAI-compatible local server, configured live in Settings → Local AI, R-017), prompt templates and output validation shipped |

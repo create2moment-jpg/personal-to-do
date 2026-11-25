@@ -45,6 +45,8 @@ class MeetingSeries:
     topic_id: str | None = None
     rating: int | None = None
     notes: str = ""
+    source: str = "ics"  # ics | app (created in the app, with a plan)
+    plan: dict[str, object] | None = None
 
 
 @dataclass
@@ -191,3 +193,142 @@ def day_time(
     available = max(work - meeting_work, 0)
     capacity = int(available * (1 - settings.buffer_percent / 100))
     return DayTime(day, work, meeting_work, union_minutes(intervals_all), available, capacity)
+
+
+# --------------------------------------------------------------------------- app-created series
+
+FREQS = ("daily", "weekly", "monthly")
+WEEKDAY_NAMES = ("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+MAX_OCCURRENCES = 1000
+
+
+@dataclass(frozen=True)
+class Recurrence:
+    """When a meeting you created repeats. Weekdays use 0 = Monday."""
+
+    freq: str
+    interval: int = 1
+    weekdays: tuple[int, ...] = ()
+    until: date | None = None
+    count: int | None = None
+
+    def __post_init__(self) -> None:
+        if self.freq not in FREQS:
+            raise ValidationError(f"repeat must be one of {', '.join(FREQS)}")
+        if not 1 <= self.interval <= 52:
+            raise ValidationError("repeat interval must be between 1 and 52")
+        if any(not 0 <= d <= 6 for d in self.weekdays):
+            raise ValidationError("weekdays must be 0 (Mon) to 6 (Sun)")
+        if self.weekdays and self.freq != "weekly":
+            raise ValidationError("weekdays apply to weekly meetings only")
+        if self.count is not None and not 1 <= self.count <= MAX_OCCURRENCES:
+            raise ValidationError(f"number of occurrences must be 1–{MAX_OCCURRENCES}")
+        if self.count is not None and self.until is not None:
+            raise ValidationError("end a series either on a date or after a number of times")
+        object.__setattr__(self, "weekdays", tuple(sorted(set(self.weekdays))))
+
+    def describe(self) -> str:
+        every = {"daily": "day", "weekly": "week", "monthly": "month"}[self.freq]
+        head = (
+            {"daily": "Daily", "weekly": "Weekly", "monthly": "Monthly"}[self.freq]
+            if self.interval == 1
+            else f"Every {self.interval} {every}s"
+        )
+        if self.freq == "weekly" and self.weekdays:
+            if self.weekdays == (0, 1, 2, 3, 4) and self.interval == 1:
+                head = "Every weekday"
+            else:
+                head += " on " + ", ".join(WEEKDAY_NAMES[d] for d in self.weekdays)
+        if self.until:
+            head += f" until {self.until.isoformat()}"
+        elif self.count:
+            head += f", {self.count} times"
+        return head
+
+    def days(self, first: date, window_end: date) -> list[date]:
+        """All occurrence days from ``first`` up to ``window_end`` (inclusive)."""
+        from dateutil.rrule import DAILY, MONTHLY, WEEKLY, rrule, weekday  # type: ignore[import-untyped]
+
+        freq = {"daily": DAILY, "weekly": WEEKLY, "monthly": MONTHLY}[self.freq]
+        common = {
+            "dtstart": datetime(first.year, first.month, first.day),
+            "interval": self.interval,
+            "byweekday": [weekday(d) for d in self.weekdays] or None,
+        }
+        if self.count is not None:  # COUNT and UNTIL must not be combined in one rule
+            days = [d.date() for d in rrule(freq, count=self.count, **common)]
+            return [d for d in days if d <= window_end]
+        end = min(window_end, self.until) if self.until else window_end
+        if end < first:
+            return []
+        rule = rrule(freq, until=datetime(end.year, end.month, end.day), **common)
+        return [d.date() for d in rule[:MAX_OCCURRENCES]]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "freq": self.freq,
+            "interval": self.interval,
+            "weekdays": list(self.weekdays),
+            "until": self.until.isoformat() if self.until else None,
+            "count": self.count,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, object]) -> Recurrence:
+        until = d.get("until")
+        count = d.get("count")
+        return cls(
+            freq=str(d["freq"]),
+            interval=int(str(d.get("interval", 1))),
+            weekdays=tuple(int(str(x)) for x in d.get("weekdays") or []),  # type: ignore[attr-defined]
+            until=date.fromisoformat(str(until)) if until else None,
+            count=int(str(count)) if count else None,
+        )
+
+
+@dataclass(frozen=True)
+class SeriesPlan:
+    """Everything needed to (re)generate the occurrences of a series you created."""
+
+    recurrence: Recurrence
+    first_day: date
+    start_time: str  # HH:MM, local to the workspace time zone
+    minutes: int
+    kind: str = "meeting"
+    people: tuple[str, ...] = ()
+    topic: str | None = None
+    location: str | None = None
+
+    def __post_init__(self) -> None:
+        if not 1 <= self.minutes <= 12 * 60:
+            raise ValidationError("duration must be between 1 minute and 12 hours")
+        hh, _, mm = self.start_time.partition(":")
+        if not (hh.isdigit() and mm.isdigit() and int(hh) < 24 and int(mm) < 60):
+            raise ValidationError(f"invalid start time {self.start_time!r}, expected HH:MM")
+        if self.kind not in ("meeting", "call"):
+            raise ValidationError("kind must be meeting or call")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "recurrence": self.recurrence.to_dict(),
+            "first_day": self.first_day.isoformat(),
+            "start_time": self.start_time,
+            "minutes": self.minutes,
+            "kind": self.kind,
+            "people": list(self.people),
+            "topic": self.topic,
+            "location": self.location,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, object]) -> SeriesPlan:
+        return cls(
+            recurrence=Recurrence.from_dict(d["recurrence"]),  # type: ignore[arg-type]
+            first_day=date.fromisoformat(str(d["first_day"])),
+            start_time=str(d["start_time"]),
+            minutes=int(str(d["minutes"])),
+            kind=str(d.get("kind", "meeting")),
+            people=tuple(str(p) for p in d.get("people") or []),  # type: ignore[attr-defined]
+            topic=str(d["topic"]) if d.get("topic") else None,
+            location=str(d["location"]) if d.get("location") else None,
+        )

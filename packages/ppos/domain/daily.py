@@ -67,7 +67,9 @@ class CapacitySummary:
 DEFAULT_UNESTIMATED_MINUTES = 30
 
 
-def summarize_capacity(capacity_minutes: int, tasks: list[Task]) -> CapacitySummary:
+def summarize_capacity(
+    capacity_minutes: int, tasks: list[Task], unestimated_minutes: int = DEFAULT_UNESTIMATED_MINUTES
+) -> CapacitySummary:
     planned = 0
     unestimated = 0
     done = 0
@@ -79,7 +81,7 @@ def summarize_capacity(capacity_minutes: int, tasks: list[Task]) -> CapacitySumm
             continue
         if task.estimate_minutes is None:
             unestimated += 1
-            planned += DEFAULT_UNESTIMATED_MINUTES
+            planned += unestimated_minutes
         else:
             planned += task.remaining_minutes()
     return CapacitySummary(capacity_minutes, planned, unestimated, done)

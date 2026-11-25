@@ -132,6 +132,7 @@ def build_container(
         job_runner,
     )
     documents.resume_pending()
+    meetings.top_up_series()  # open-ended series you created stay filled ahead
 
     return Container(
         settings=settings,
@@ -141,7 +142,13 @@ def build_container(
         projects=ProjectService(uow, clock),
         notes=notes,
         links=LinkService(uow, clock),
-        days=DayService(uow, clock, settings.default_capacity_minutes, day_meetings),
+        days=DayService(
+            uow,
+            clock,
+            settings.default_capacity_minutes,
+            day_meetings,
+            unestimated_minutes=lambda: workspace.get().default_task_minutes,
+        ),
         capture=CaptureService(uow, clock, tasks, notes, meetings, workspace.tz),
         settings_service=workspace,
         meetings=meetings,

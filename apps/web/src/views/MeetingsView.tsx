@@ -1,10 +1,11 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { BarChart3, CalendarClock, ChevronLeft, ChevronRight, FileUp, ListChecks, Phone, Repeat, ShieldCheck, ThumbsDown, Upload } from "lucide-react";
+import { BarChart3, CalendarClock, CalendarPlus, Pencil, ChevronLeft, ChevronRight, FileUp, ListChecks, Phone, Repeat, ShieldCheck, ThumbsDown, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { DayTimeChart, RankBars } from "../components/charts";
 import { MeetingRow, Stars } from "../components/meetings";
+import { ScheduleMeetingDialog } from "../components/ScheduleMeeting";
 import { EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import { invalidateTime, useInsights, useMeetings, useSeries } from "../lib/queries";
@@ -18,6 +19,8 @@ type Tab = "insights" | "recurring" | "log";
 export function MeetingsView() {
   const ui = useUi();
   const [tab, setTab] = useState<Tab>("insights");
+  const [schedule, setSchedule] = useState<{ open: boolean; series: MeetingSeries | null }>({ open: false, series: null });
+  const edit = (series: MeetingSeries | null) => setSchedule({ open: true, series });
   return (
     <div className="page">
       <header className="page-head">
@@ -27,8 +30,11 @@ export function MeetingsView() {
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <ImportButton />
-          <button className="btn primary" onClick={() => ui.openLogCall()}>
+          <button className="btn" onClick={() => ui.openLogCall()}>
             <Phone /> Log a call
+          </button>
+          <button className="btn primary" onClick={() => edit(null)}>
+            <CalendarPlus /> New meeting
           </button>
         </div>
       </header>
@@ -44,8 +50,9 @@ export function MeetingsView() {
         </button>
       </div>
       {tab === "insights" && <Insights />}
-      {tab === "recurring" && <Recurring />}
+      {tab === "recurring" && <Recurring onEdit={edit} />}
       {tab === "log" && <MeetingLog />}
+      <ScheduleMeetingDialog open={schedule.open} series={schedule.series} onClose={() => setSchedule({ open: false, series: null })} />
     </div>
   );
 }
@@ -129,11 +136,19 @@ function Insights() {
   );
 }
 
-function Recurring() {
+function Recurring({ onEdit }: { onEdit: (s: MeetingSeries | null) => void }) {
   const { data: series = [], isLoading } = useSeries();
   const { data: last } = useQuery({ queryKey: ["series", "last-import"], queryFn: api.lastImport });
   if (isLoading) return <div className="faint">Loading…</div>;
-  if (series.length === 0) return <ImportPanel />;
+  if (series.length === 0)
+    return (
+      <>
+        <ImportPanel />
+        <div className="own-series-hint">
+          No calendar to import? <button className="link-btn" onClick={() => onEdit(null)}>Add your recurring meetings yourself</button> — stand-ups, 1:1s, planning — with their real durations.
+        </div>
+      </>
+    );
   const totalMonth = series.filter((s) => s.default_status === "attending").reduce((a, s) => a + s.minutes_per_month, 0);
   return (
     <div>
@@ -144,7 +159,7 @@ function Recurring() {
       </div>
       <section className="card" style={{ overflow: "hidden" }}>
         {series.map((s) => (
-          <SeriesRow key={s.series_key} s={s} />
+          <SeriesRow key={s.series_key} s={s} onEdit={() => onEdit(s)} />
         ))}
       </section>
       <p className="faint" style={{ fontSize: "0.8929rem", marginTop: 10 }}>
@@ -154,7 +169,7 @@ function Recurring() {
   );
 }
 
-function SeriesRow({ s }: { s: MeetingSeries }) {
+function SeriesRow({ s, onEdit }: { s: MeetingSeries; onEdit: () => void }) {
   const qc = useQueryClient();
   const [topic, setTopic] = useState(s.topic ?? "");
   const update = (changes: Parameters<typeof api.updateSeries>[1]) =>
@@ -163,7 +178,28 @@ function SeriesRow({ s }: { s: MeetingSeries }) {
   return (
     <div className={cx("series-row", skipped && "skipped")}>
       <div style={{ minWidth: 0 }}>
-        <div className="sr-title">{s.title}</div>
+        <div className="sr-title">
+          {s.title}
+          {s.source === "app" && (
+            <span className="sr-own">
+              <button className="link-btn" onClick={onEdit} aria-label={`Edit ${s.title}`}>
+                <Pencil size={12} /> Edit
+              </button>
+              <button
+                className="link-btn"
+                aria-label={`End ${s.title}`}
+                onClick={async () => {
+                  if (!confirm(`End “${s.title}”? Future meetings are removed; past ones stay in your history.`)) return;
+                  const r = await api.endSeries(s.series_key);
+                  invalidateTime(qc);
+                  toast.success("Series ended", { description: `${r.removed} upcoming meeting(s) removed` });
+                }}
+              >
+                End
+              </button>
+            </span>
+          )}
+        </div>
         <div className="sr-sub">
           {s.cadence ?? "Recurring"} · {formatMinutes(s.avg_minutes)}
           {s.next_start && ` · next ${relativeDay(isoDay(new Date(s.next_start)))} ${clockTime(s.next_start)}`}

@@ -10,7 +10,7 @@ from typing import Any
 from ppos.application.meetings import MeetingService
 from ppos.application.ports import TaskQuery, UnitOfWork, UnitOfWorkFactory
 from ppos.application.settings import SettingsService
-from ppos.domain.daily import DEFAULT_UNESTIMATED_MINUTES, DailyPlan
+from ppos.domain.daily import DailyPlan
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.domain.planning import (
     BurndownPoint,
@@ -201,6 +201,7 @@ class SprintService:
 
     def summary(self, sprint_id: str) -> SprintSummary:
         today = self._clock.today()
+        default = self._settings.get().default_task_minutes  # read before locking
         with self._uow() as uow:
             s = self._require(uow, sprint_id)
             tasks = uow.tasks.find(TaskQuery(sprint_id=sprint_id, top_level_only=True, limit=1000))
@@ -209,11 +210,7 @@ class SprintService:
         stretch = [t for t in tasks if t.commitment == Commitment.STRETCH.value]
 
         def w(t: Task) -> int:
-            return (
-                t.estimate_minutes
-                if t.estimate_minutes is not None
-                else DEFAULT_UNESTIMATED_MINUTES
-            )
+            return t.estimate_minutes if t.estimate_minutes is not None else default
 
         added = [e.task_id for e in events if e.after_start and e.action == "add"]
         removed = [e.task_id for e in events if e.after_start and e.action == "remove"]
@@ -229,7 +226,7 @@ class SprintService:
             remaining_minutes=sum(w(t) for t in tasks if t.status != TaskStatus.DONE),
             added_after_start=added,
             removed_after_start=removed,
-            burndown=burndown(s, tasks, events, today),
+            burndown=burndown(s, tasks, events, today, default),
             days_total=len(s.days),
             days_elapsed=elapsed,
         )
@@ -417,7 +414,7 @@ class WeekService:
                 (
                     t.estimate_minutes
                     if t.estimate_minutes is not None
-                    else DEFAULT_UNESTIMATED_MINUTES
+                    else settings.default_task_minutes
                 )
                 for t in day_tasks
                 if t.status != TaskStatus.DONE

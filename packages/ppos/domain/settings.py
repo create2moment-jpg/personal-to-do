@@ -20,6 +20,7 @@ class WorkspaceSettings:
     workdays: list[int] = field(default_factory=lambda: [0, 1, 2, 3, 4])  # Mon=0
     buffer_percent: int = 10
     sprint_length_days: int = 14
+    default_task_minutes: int = 30  # what a task without an estimate counts as in capacity
 
     def __post_init__(self) -> None:
         if self.timezone not in _zones():
@@ -33,6 +34,8 @@ class WorkspaceSettings:
             raise ValidationError("buffer must be between 0 and 50 percent")
         if not 7 <= self.sprint_length_days <= 28:
             raise ValidationError("sprint length must be between 7 and 28 days")
+        if not 0 <= self.default_task_minutes <= 480:
+            raise ValidationError("default task time must be between 0 and 480 minutes")
 
     @property
     def tz(self) -> ZoneInfo:

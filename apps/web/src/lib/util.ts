@@ -162,3 +162,25 @@ export function wordDiff(a: string, b: string): DiffPart[] {
   while (j < B.length) push(B[j++]!, "add");
   return out;
 }
+
+/**
+ * Parse a human duration into minutes: "50", "50m", "1h", "1h20", "1h 20m", "1.5h", "1:30", "90min".
+ * Returns null for anything else (including 0 or more than 24 hours).
+ */
+export function parseDuration(input: string): number | null {
+  const s = input.trim().toLowerCase().replace(/^~/, "").replace(/\s+/g, "");
+  if (!s) return null;
+  let m: RegExpExecArray | null;
+  let minutes: number | null = null;
+  if ((m = /^(\d{1,2}):(\d{2})$/.exec(s))) minutes = Number(m[1]) * 60 + Number(m[2]);
+  else if ((m = /^(\d+(?:[.,]\d+)?)h(?:(\d{1,2})(?:m|min)?)?$/.exec(s))) minutes = Math.round(Number(m[1]!.replace(",", ".")) * 60) + Number(m[2] ?? 0);
+  else if ((m = /^(\d{1,4})(?:m|min|mins)?$/.exec(s))) minutes = Number(m[1]);
+  return minutes !== null && minutes > 0 && minutes <= 24 * 60 ? minutes : null;
+}
+
+/** Split "Write spec ~50m" into the title and its estimate. */
+export function splitEstimate(text: string): { title: string; minutes: number | null } {
+  const m = /^(.*\S)\s+~(\S+)$/.exec(text.trim());
+  const minutes = m ? parseDuration(m[2]!) : null;
+  return minutes !== null && m ? { title: m[1]!, minutes } : { title: text.trim(), minutes: null };
+}

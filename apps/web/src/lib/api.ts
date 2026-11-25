@@ -1,4 +1,6 @@
 import type {
+  RecurrenceRule,
+  SeriesPlan,
   AiConfigState,
   AiTestReport,
   LlmConfig,
@@ -95,7 +97,7 @@ export const api = {
   rollOver: (day: string) => request<Task[]>("POST", `/api/days/${day}/roll-over`, {}),
   journal: (day: string) => request<Note>("POST", `/api/days/${day}/journal`),
 
-  tasks: (params: { status?: TaskStatus; unscheduled?: boolean; project_id?: string; parent_id?: string; top_level?: boolean; tag?: string } = {}) =>
+  tasks: (params: { status?: TaskStatus; unscheduled?: boolean; project_id?: string; parent_id?: string; top_level?: boolean; tag?: string; limit?: number } = {}) =>
     request<Task[]>("GET", `/api/tasks${qs(params)}`),
   task: (id: string) => request<Task>("GET", `/api/tasks/${id}`),
   createTask: (data: Partial<Task> & { title: string }) => request<Task>("POST", "/api/tasks", data),
@@ -146,6 +148,11 @@ export const api = {
     request<Meeting>("PATCH", `/api/meetings/${id}`, changes),
   deleteMeeting: (id: string) => request<void>("DELETE", `/api/meetings/${id}`),
   meetingSeries: () => request<MeetingSeries[]>("GET", "/api/meeting-series"),
+  scheduleMeeting: (body: { title: string; day: string; start_time: string; minutes: number; people: string[]; topic: string | null; location: string | null; kind: "meeting" | "call"; recurrence: RecurrenceRule | null }) =>
+    request<{ meeting?: Meeting; series_key?: string; cadence?: string; title?: string }>("POST", "/api/meetings/schedule", body),
+  editSeriesPlan: (key: string, changes: Partial<Omit<SeriesPlan, "first_day">> & { title?: string }) =>
+    request<{ series_key: string; cadence: string; title: string }>("PATCH", `/api/meeting-series/${encodeURIComponent(key)}/plan`, changes),
+  endSeries: (key: string) => request<{ removed: number }>("DELETE", `/api/meeting-series/${encodeURIComponent(key)}`),
   updateSeries: (key: string, changes: Partial<Pick<MeetingSeries, "default_status" | "rating" | "notes">> & { topic?: string | null }) =>
     request<unknown>("PATCH", `/api/meeting-series/${encodeURIComponent(key)}`, changes),
   importCalendar: (filename: string, content: string) => request<IcsImportResult>("POST", "/api/calendar/import", { filename, content }),

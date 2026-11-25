@@ -285,6 +285,7 @@ class WorkspaceSettingsOut(BaseModel):
     workdays: list[int]
     buffer_percent: int
     sprint_length_days: int
+    default_task_minutes: int
     work_minutes: int
 
 
@@ -295,6 +296,7 @@ class WorkspaceSettingsUpdate(BaseModel):
     workdays: list[int] | None = None
     buffer_percent: int | None = Field(default=None, ge=0, le=50)
     sprint_length_days: int | None = Field(default=None, ge=7, le=28)
+    default_task_minutes: int | None = Field(default=None, ge=0, le=480)
 
 
 class SprintOut(Out):
@@ -415,6 +417,38 @@ class CallCreate(BaseModel):
     kind: str = Field(default="call", pattern="^(meeting|call)$")
 
 
+class RecurrenceIn(BaseModel):
+    freq: str = Field(pattern="^(daily|weekly|monthly)$")
+    interval: int = Field(default=1, ge=1, le=52)
+    weekdays: list[int] = []
+    until: date | None = None
+    count: int | None = Field(default=None, ge=1, le=1000)
+
+
+class ScheduleIn(BaseModel):
+    title: str = Field(min_length=1, max_length=300)
+    day: date
+    start_time: str = Field(pattern=r"^\d{1,2}:\d{2}$")
+    minutes: int = Field(ge=1, le=720)
+    people: list[str] = []
+    topic: str | None = None
+    location: str | None = Field(default=None, max_length=300)
+    note: str = ""
+    kind: str = Field(default="meeting", pattern="^(meeting|call)$")
+    recurrence: RecurrenceIn | None = None
+
+
+class SeriesPlanPatch(BaseModel):
+    title: str | None = Field(default=None, max_length=300)
+    start_time: str | None = Field(default=None, pattern=r"^\d{1,2}:\d{2}$")
+    minutes: int | None = Field(default=None, ge=1, le=720)
+    recurrence: RecurrenceIn | None = None
+    people: list[str] | None = None
+    topic: str | None = None
+    location: str | None = None
+    kind: str | None = Field(default=None, pattern="^(meeting|call)$")
+
+
 class SeriesUpdate(BaseModel):
     default_status: str | None = Field(default=None, pattern="^(attending|skipped)$")
     rating: int | None = Field(default=None, ge=1, le=5)
@@ -435,6 +469,8 @@ class SeriesOut(BaseModel):
     minutes_per_month: int
     next_start: datetime | None
     last_start: datetime | None
+    source: str = "ics"
+    plan: dict[str, Any] | None = None
 
 
 class IcsImportIn(BaseModel):

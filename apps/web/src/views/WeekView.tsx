@@ -210,7 +210,7 @@ function WeekPlan({ week }: { week: Week }) {
                       <SortableTaskCard key={t.id} containerId={d.day} task={t} onOpen={ui.openTask} project={t.project_id ? projectById.get(t.project_id) : undefined} />
                     ))}
                   </SortableContext>
-                  <AddRow placeholder="Add" onAdd={(title) => api.createTask({ title, scheduled_date: d.day }).then(() => invalidateTasks())} />
+                  <AddRow placeholder="Add" onAdd={(title, est) => api.createTask({ title, scheduled_date: d.day, estimate_minutes: est }).then(() => invalidateTasks())} />
                 </DayColumn>
               );
             })}

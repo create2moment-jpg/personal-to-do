@@ -177,6 +177,7 @@ export interface WorkspaceSettings {
   workdays: number[];
   buffer_percent: number;
   sprint_length_days: number;
+  default_task_minutes: number;
   work_minutes: number;
 }
 
@@ -257,6 +258,27 @@ export interface MeetingSeries {
   minutes_per_month: number;
   next_start: string | null;
   last_start: string | null;
+  source: "ics" | "app";
+  plan: SeriesPlan | null;
+}
+
+export interface RecurrenceRule {
+  freq: "daily" | "weekly" | "monthly";
+  interval: number;
+  weekdays: number[]; // 0 = Monday
+  until: string | null;
+  count: number | null;
+}
+
+export interface SeriesPlan {
+  recurrence: RecurrenceRule;
+  first_day: string;
+  start_time: string;
+  minutes: number;
+  kind: "meeting" | "call";
+  people: string[];
+  topic: string | null;
+  location: string | null;
 }
 
 export interface DayTime {

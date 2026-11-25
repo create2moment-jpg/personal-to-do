@@ -42,13 +42,20 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   when you overcommit, drag/drop board (Planned → In progress → Blocked → Done),
   top-3 priorities, overdue and due-but-unscheduled lists, roll unfinished work to
   tomorrow, end-of-day review, daily journal.
+- **Task board** (`g a`): every task by state — Backlog, Planned, In progress,
+  Blocked, Completed (last 7 / 30 days / all) — with drag and drop, filter and
+  project selector.
+- **Any duration**: click the time on a card for presets or type `50`,
+  `1h20`, `1.5h`; quick add takes `Write spec ~50m`. Tasks without an
+  estimate count as a default you choose (Settings → Work & time).
 - **Upcoming**: the next seven days with per-day load.
 - **Week**: seven-day board with load vs. capacity and meetings per day,
   weekly objectives, sprint backlog to drag from, and a guided weekly review.
 - **Sprint**: goal, committed and stretch work, burndown, scope changes,
   completion with roll-over and a sprint review.
 - **Meetings & time**: import your Outlook calendar (read-only `.ics`), skip a
-  recurring meeting with one click, log calls (`call: Priya / ADR review ~30m
+  recurring meeting with one click, **add your own meetings** (once, or
+  daily / weekdays / weekly on chosen days / monthly, any duration), log calls (`call: Priya / ADR review ~30m
   #retrieval`), rate whether meetings were worth it, and see meeting vs. focus
   hours, time per person and per topic. Capacity is computed automatically from
   your working hours (default 08:00–17:00, Europe/Berlin) minus meetings.

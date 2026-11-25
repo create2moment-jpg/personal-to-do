@@ -29,6 +29,9 @@ with a reason).
 | R-015 | Drag and drop of items from anywhere to anywhere | 2026-11-24 | done (boards, lists, sidebar, projects, Upcoming days, notes → Prompt Book; keyboard via task panel) | roadmap N4 |
 | R-016 | Keep track of the backlog so feature requests are not lost | 2026-11-24 | done (this file) | — |
 | R-017 | Configure the local LLM in the app (like Model Forensic): OpenAI-compatible endpoint e.g. `127.0.0.1:8080/v1`, model, key, reasoning effort, limits, Apply + Test connection | 2026-11-24 | done (presets, endpoint …/v1, auto-detected model, session or env-var key, reasoning effort, limits, Apply live, Test connection; local-only kept) | Settings → Local AI |
+| R-018 | Task board across all work: Backlog, Planned, In progress, Completed (not only today) | 2026-11-25 | done (5 columns incl. Blocked, drag between states, filter, project, completed 7/30 days/all) | Task board (`g a`) |
+| R-019 | Add meetings myself as separate items: one-off and recurring | 2026-11-25 | done (daily / weekdays / weekly on chosen days / monthly, every N, end on date or after N; edit changes the future only; end keeps history) | Meetings & time → New meeting |
+| R-020 | Custom durations instead of a fixed 30 min | 2026-11-25 | done (time chip on every card with presets + free entry like 50 / 1h20 / 1.5h; `~50m` in quick add; any-minute meetings; default for unestimated tasks is a setting) | cards, task panel, Settings → Work & time |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

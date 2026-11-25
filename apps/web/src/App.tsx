@@ -14,6 +14,7 @@ import { ComingSoonView } from "./views/ComingSoonView";
 import { BacklogView, UpcomingView } from "./views/ListViews";
 import { MeetingsView } from "./views/MeetingsView";
 import { PromptBookView } from "./views/PromptBookView";
+import { BoardView } from "./views/BoardView";
 import { CareerView } from "./views/CareerView";
 import { KnowledgeView } from "./views/KnowledgeView";
 import { SprintView } from "./views/SprintView";
@@ -106,6 +107,7 @@ export function App() {
   let page: JSX.Element;
   if (current.phase) page = <ComingSoonView view={view} />;
   else if (view === "today") page = <TodayView />;
+  else if (view === "board") page = <BoardView />;
   else if (view === "upcoming") page = <UpcomingView />;
   else if (view === "week") page = <WeekView initialTab={arg === "review" ? "review" : "plan"} />;
   else if (view === "sprint") page = <SprintView />;
@@ -118,7 +120,7 @@ export function App() {
   else if (view === "notes") page = <NotesView noteId={arg} />;
   else page = <SettingsView />;
 
-  const showRail = !["notes", "settings", "week", "book", "knowledge", "career"].includes(view);
+  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board"].includes(view);
 
   return (
     <UiContext.Provider value={ui}>
