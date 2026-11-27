@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from ppos.application.meaning import MeaningMatcher
 from ppos.application.ports import UnitOfWork, UnitOfWorkFactory
 from ppos.application.tasks import TaskService
 from ppos.domain.career import (
@@ -16,6 +17,7 @@ from ppos.domain.career import (
     Expectation,
     level_from_section,
     match_score,
+    meaning_matches,
 )
 from ppos.domain.facts import Fact
 from ppos.domain.tasks import Task
@@ -47,6 +49,7 @@ class Suggestion:
     document_title: str
     score: float
     shared: tuple[str, ...]
+    similarity: float | None = None  # set when the match is by meaning
 
 
 @dataclass
@@ -92,10 +95,17 @@ def _clean(text: str, what: str, limit: int) -> str:
 
 
 class CareerService:
-    def __init__(self, uow: UnitOfWorkFactory, clock: Clock, tasks: TaskService) -> None:
+    def __init__(
+        self,
+        uow: UnitOfWorkFactory,
+        clock: Clock,
+        tasks: TaskService,
+        meaning: MeaningMatcher | None = None,
+    ) -> None:
         self._uow = uow
         self._clock = clock
         self._tasks = tasks
+        self._meaning = meaning
 
     # -- framework ----------------------------------------------------------
     def sync(self) -> int:
@@ -194,27 +204,58 @@ class CareerService:
         return [f for k in EVIDENCE_KINDS for f in uow.facts.find(kind=k, status="accepted")]
 
     def suggestions(self, expectation_id: str) -> list[Suggestion]:
+        self._warm()
         with self._uow() as uow:
             e = self._require(uow, expectation_id)
             linked = {link.fact_id for link in uow.career.links() if link.expectation_id == e.id}
             titles = self._titles(uow)
             return self._suggest(e, self._evidence_facts(uow), linked, titles)
 
-    @staticmethod
+    def _by_meaning(self, query: str, pool: list[Fact]) -> dict[str, float]:
+        if self._meaning is None:
+            return {}
+        sims = self._meaning.similarities(
+            query, {f.id: f.statement for f in pool}, cached_only=True
+        )
+        return meaning_matches(sims)
+
+    def _warm(self) -> None:
+        """Embed expectations and evidence before a transaction opens (no model calls
+        happen while the database is locked; a down server just means word matching)."""
+        if self._meaning is None or not self._meaning.enabled:
+            return
+        with self._uow() as uow:
+            queries = [f"{e.text} {e.competency or ''}".strip() for e in uow.career.expectations()]
+            statements = [f.statement for f in self._evidence_facts(uow)]
+        self._meaning.warm(queries + statements)
+
     def _suggest(
-        e: Expectation, pool: list[Fact], linked: set[str], titles: dict[str, str]
+        self, e: Expectation, pool: list[Fact], linked: set[str], titles: dict[str, str]
     ) -> list[Suggestion]:
+        query = f"{e.text} {e.competency or ''}".strip()
+        candidates = [f for f in pool if f.id not in linked]
+        meaning = self._by_meaning(query, candidates)
         out = []
-        for f in pool:
-            if f.id in linked:
+        for f in candidates:
+            m = match_score(query, f"{f.statement} {f.quote}")
+            words = m if m and len(m.shared) >= MIN_SHARED_TERMS else None
+            sim = meaning.get(f.id)
+            if words is None and sim is None:
                 continue
-            m = match_score(f"{e.text} {e.competency or ''}", f"{f.statement} {f.quote}")
-            if m and len(m.shared) >= MIN_SHARED_TERMS:
-                out.append(Suggestion(f, titles.get(f.document_id, "Document"), m.score, m.shared))
+            out.append(
+                Suggestion(
+                    f,
+                    titles.get(f.document_id, "Document"),
+                    max(words.score if words else 0.0, sim or 0.0),
+                    words.shared if words else (),
+                    sim,
+                )
+            )
         out.sort(key=lambda s: (-s.score, -len(s.shared), s.fact.created_at))
         return out[:MAX_SUGGESTIONS]
 
     def link(self, expectation_id: str, fact_id: str, note: str = "") -> EvidenceLink:
+        self._warm()
         with self._uow() as uow:
             e = self._require(uow, expectation_id)
             f = uow.facts.get(fact_id)
@@ -226,8 +267,10 @@ class CareerService:
                 raise ValidationError(f"a {f.kind.replace('_', ' ')} is not evidence")
             if uow.career.get_link(e.id, f.id):
                 raise ConflictError("this fact is already linked to the expectation")
-            m = match_score(f"{e.text} {e.competency or ''}", f"{f.statement} {f.quote}")
-            score = m.score if m and len(m.shared) >= MIN_SHARED_TERMS else None
+            linked = {x.fact_id for x in uow.career.links() if x.expectation_id == e.id}
+            shown = self._suggest(e, self._evidence_facts(uow), linked, {})
+            suggested = next((x for x in shown if x.fact.id == f.id), None)
+            score = suggested.score if suggested else None
             link = EvidenceLink(
                 id=new_id(),
                 expectation_id=e.id,
@@ -254,6 +297,7 @@ class CareerService:
     # -- views --------------------------------------------------------------
     def matrix(self) -> CareerMatrix:
         self.sync()
+        self._warm()
         with self._uow() as uow:
             titles = self._titles(uow)
             pool = self._evidence_facts(uow)

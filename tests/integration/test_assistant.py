@@ -265,3 +265,22 @@ def test_improve_stream_api(client: TestClient, server: str) -> None:
     assert (
         client.post(f"/api/book-nodes/{pid}/improve/stream", json={"style": "x"}).status_code == 422
     )
+
+
+def test_career_and_skills_suggest_by_meaning(c: Container, server: str) -> None:
+    exp = c.career.add_expectation("L5", "Mentors engineers")
+    coached = c.facts.add_own(c.documents, "achievement", "Coached Ana in design reviews", "")
+    c.facts.add_own(c.documents, "achievement", "Shipped the billing migration early", "")
+    c.facts.add_own(c.documents, "achievement", "Cut the build time of the monorepo", "")
+    c.facts.add_own(c.documents, "achievement", "Wrote the incident runbook for paging", "")
+    assert c.career.suggestions(exp.id) == []  # no shared words, no embedding model
+    c.ai.apply(LLMConfig(enabled=True, base_url=server, embedding_model="fake-embed"))
+    [s] = c.career.suggestions(exp.id)
+    assert s.fact.id == coached.id and s.shared == () and s.similarity
+    assert c.career.link(exp.id, coached.id).origin == "suggestion"
+    skill = c.skills.create("Mentoring")
+    [h] = c.skills.suggestions(skill.id)
+    assert h.fact.id == coached.id and h.similarity
+    # the model goes away: word matching only, nothing breaks
+    c.ai.apply(LLMConfig(enabled=True, base_url="http://127.0.0.1:9/v1", embedding_model="x"))
+    assert c.skills.suggestions(skill.id) == []

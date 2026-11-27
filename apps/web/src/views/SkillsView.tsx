@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Brain, Check, ChevronDown, Info, Link2, Plus, Quote, Search, Sparkles, Sprout, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { OwnEvidenceForm } from "../components/OwnEvidence";
+import { MatchWhy, OwnEvidenceForm } from "../components/OwnEvidence";
 import { Dialog, EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import type { Fact, SkillMatrix, SkillRow } from "../lib/types";
@@ -385,7 +385,7 @@ function LinkDialog({ row, onClose }: { row: SkillRow | null; onClose: () => voi
                   h.fact,
                   h.document_title,
                   <span className="why">
-                    Shares: {h.shared.map((w) => <mark key={w}>{w}</mark>)}
+                    <MatchWhy shared={h.shared} similarity={h.similarity} />
                   </span>,
                 ),
               )}

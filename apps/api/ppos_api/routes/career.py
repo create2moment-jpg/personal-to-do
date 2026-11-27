@@ -71,6 +71,7 @@ class SuggestionOut(_Out):
     document_title: str
     score: float
     shared: list[str]
+    similarity: float | None = None
 
 
 class ExpectationIn(BaseModel):
@@ -141,6 +142,7 @@ def _suggestion(s: Suggestion) -> SuggestionOut:
         document_title=s.document_title,
         score=s.score,
         shared=list(s.shared),
+        similarity=s.similarity,
     )
 
 

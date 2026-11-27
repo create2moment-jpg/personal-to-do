@@ -100,7 +100,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   verbatim or it is dropped, and nothing counts until you accept it.
 - **Career** (`g c`): your level framework (L4, L5, …) from accepted
   expectations, with the accepted achievements and strengths you link as
-  evidence. Suggestions show the words they share; you confirm every link.
+  evidence. Suggestions show the words they share — or, with an embedding model
+  set, evidence *similar in meaning* (“coached Ana” for “mentors engineers”);
+  you confirm every link.
   Coverage per level is a hypothesis to guide what to collect next, never a
   promotion verdict. Gaps turn into tasks with one click. No AI needed: add
   evidence in your own words (saved as a note in Knowledge, labelled “Your note”).

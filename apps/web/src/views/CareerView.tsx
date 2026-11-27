@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Info, Target, Link2, ListPlus, Plus, Quote, Search, Sparkles, Trash2, TrendingUp, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { OwnEvidenceForm } from "../components/OwnEvidence";
+import { MatchWhy, OwnEvidenceForm } from "../components/OwnEvidence";
 import { Dialog, EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import type { CareerLevel, CareerRow, Fact } from "../lib/types";
@@ -269,7 +269,7 @@ function LinkDialog({ row, onClose }: { row: CareerRow | null; onClose: () => vo
               {suggestions.map((s) => (
                 <FactPick key={s.fact.id} f={s.fact} doc={s.document_title} onPick={() => void link(s.fact)}>
                   <span className="why">
-                    Shares: {s.shared.map((w) => <mark key={w}>{w}</mark>)}
+                    <MatchWhy shared={s.shared} similarity={s.similarity} />
                   </span>
                 </FactPick>
               ))}

@@ -71,6 +71,7 @@ class HintOut(BaseModel):
     document_title: str
     score: float
     shared: list[str]
+    similarity: float | None = None
 
 
 class SkillIn(BaseModel):
@@ -118,6 +119,7 @@ def _hint(h: EvidenceHint) -> HintOut:
         document_title=h.document_title,
         score=h.score,
         shared=list(h.shared),
+        similarity=h.similarity,
     )
 
 

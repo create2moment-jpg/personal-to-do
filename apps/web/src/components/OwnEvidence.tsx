@@ -74,3 +74,21 @@ export function OwnEvidenceForm({ expectationId, skillId, onDone }: { expectatio
     </form>
   );
 }
+
+/** Why a piece of evidence was suggested: the shared words, or similar meaning. */
+export function MatchWhy({ shared, similarity }: { shared: string[]; similarity?: number | null }) {
+  return (
+    <>
+      {shared.length > 0 && (
+        <>
+          Shares: {shared.map((w) => <mark key={w}>{w}</mark>)}
+        </>
+      )}
+      {similarity != null && (
+        <span className="chip accent" title={`Your local embedding model rates this ${Math.round(similarity * 100)}% similar in meaning`} style={{ height: "1.1rem", fontSize: "0.72rem", marginLeft: shared.length ? 6 : 0 }}>
+          Similar in meaning
+        </span>
+      )}
+    </>
+  );
+}

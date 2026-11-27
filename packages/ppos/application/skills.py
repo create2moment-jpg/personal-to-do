@@ -13,8 +13,9 @@ from datetime import timedelta
 from typing import Any
 
 from ppos.application.goals import GoalService
+from ppos.application.meaning import MeaningMatcher
 from ppos.application.ports import UnitOfWork, UnitOfWorkFactory
-from ppos.domain.career import EVIDENCE_KINDS, match_score
+from ppos.domain.career import EVIDENCE_KINDS, match_score, meaning_matches
 from ppos.domain.facts import Fact
 from ppos.domain.goals import Goal, period_of
 from ppos.domain.skills import LEVELS, Rating, Skill, check_level
@@ -38,6 +39,7 @@ class EvidenceHint:
     document_title: str
     score: float
     shared: tuple[str, ...]
+    similarity: float | None = None  # set when the match is by meaning
 
 
 @dataclass
@@ -66,10 +68,30 @@ class SkillMatrix:
 
 
 class SkillService:
-    def __init__(self, uow: UnitOfWorkFactory, clock: Clock, goals: GoalService) -> None:
+    def __init__(
+        self,
+        uow: UnitOfWorkFactory,
+        clock: Clock,
+        goals: GoalService,
+        meaning: MeaningMatcher | None = None,
+    ) -> None:
         self._uow = uow
         self._clock = clock
         self._goals = goals
+        self._meaning = meaning
+
+    @staticmethod
+    def _query(s: Skill) -> str:
+        return f"{s.name} {s.description}".strip()
+
+    def _warm(self) -> None:
+        """Embed skills and evidence before a transaction opens (see CareerService)."""
+        if self._meaning is None or not self._meaning.enabled:
+            return
+        with self._uow() as uow:
+            texts = [self._query(s) for s in uow.skills.all()]
+            texts += [f.statement for f in self._pool(uow)]
+        self._meaning.warm(texts)
 
     # -- skills -----------------------------------------------------------------
     def create(
@@ -135,19 +157,22 @@ class SkillService:
 
     # -- evidence ---------------------------------------------------------------
     def suggestions(self, skill_id: str) -> list[EvidenceHint]:
+        self._warm()
         with self._uow() as uow:
             s = self._require(uow, skill_id)
             linked = {f for sid, f, _ in uow.skills.evidence() if sid == skill_id}
             return self._hints(s, self._pool(uow), linked, self._titles(uow))
 
     def link(self, skill_id: str, fact_id: str) -> str:
+        self._warm()
         with self._uow() as uow:
             s = self._require(uow, skill_id)
             f = uow.facts.get(fact_id)
             if f is None:
                 raise NotFoundError("fact", fact_id)
-            m = match_score(f"{s.name} {s.description}", f"{f.statement} {f.quote}")
-            origin = "suggestion" if m else "user"
+            linked = {x for sid, x, _ in uow.skills.evidence() if sid == skill_id}
+            shown = self._hints(s, self._pool(uow), linked, {})
+            origin = "suggestion" if any(h.fact.id == f.id for h in shown) else "user"
             self._link(uow, skill_id, fact_id, origin)
             uow.audit.record("skill", skill_id, "link_evidence", details={"fact_id": fact_id})
             uow.commit()
@@ -193,6 +218,7 @@ class SkillService:
 
     # -- view -------------------------------------------------------------------
     def matrix(self) -> SkillMatrix:
+        self._warm()
         with self._uow() as uow:
             skills = uow.skills.all()
             ratings: dict[str, list[Rating]] = defaultdict(list)
@@ -232,19 +258,34 @@ class SkillService:
         return SkillMatrix(sorted(rows.items()), LEVELS, candidates)
 
     # -- helpers ----------------------------------------------------------------
-    @staticmethod
     def _hints(
-        s: Skill, pool: list[Fact], linked: set[str], titles: dict[str, str]
+        self, s: Skill, pool: list[Fact], linked: set[str], titles: dict[str, str]
     ) -> list[EvidenceHint]:
-        out = []
-        for f in pool:
-            if f.id in linked:
-                continue
-            m = match_score(f"{s.name} {s.description}", f"{f.statement} {f.quote}")
-            if m and len(m.shared) >= MIN_SHARED:
-                out.append(
-                    EvidenceHint(f, titles.get(f.document_id, "Document"), m.score, m.shared)
+        query = self._query(s)
+        candidates = [f for f in pool if f.id not in linked]
+        meaning: dict[str, float] = {}
+        if self._meaning is not None:
+            meaning = meaning_matches(
+                self._meaning.similarities(
+                    query, {f.id: f.statement for f in candidates}, cached_only=True
                 )
+            )
+        out = []
+        for f in candidates:
+            m = match_score(query, f"{f.statement} {f.quote}")
+            words = m if m and len(m.shared) >= MIN_SHARED else None
+            sim = meaning.get(f.id)
+            if words is None and sim is None:
+                continue
+            out.append(
+                EvidenceHint(
+                    f,
+                    titles.get(f.document_id, "Document"),
+                    max(words.score if words else 0.0, sim or 0.0),
+                    words.shared if words else (),
+                    sim,
+                )
+            )
         out.sort(key=lambda h: (-h.score, -len(h.shared)))
         return out[:5]
 

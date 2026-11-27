@@ -67,15 +67,20 @@ def extract_facts(user_message: str) -> str:
 
 
 SYNONYMS = {"coach": "mentor", "coached": "mentor", "coaching": "mentor", "mentored": "mentor",
-            "mentoring": "mentor", "retrieval": "search", "searching": "search"}  # fmt: skip
+            "mentoring": "mentor", "mentors": "mentor", "retrieval": "search",
+            "searching": "search"}  # fmt: skip
+STOPWORDS = {"the", "and", "her", "his", "their", "other", "through", "two", "for", "with",
+             "was", "that", "this", "first", "our"}  # fmt: skip
 
 
-def embed(text: str, dim: int = 64) -> list[float]:
+def embed(text: str, dim: int = 512) -> list[float]:
     """Deterministic bag-of-words vector; a few synonyms share a bucket so 'meaning' works."""
     import hashlib
 
     vec = [0.0] * dim
     for word in re.findall(r"[a-z]{3,}", text.lower()):
+        if word in STOPWORDS:
+            continue
         word = SYNONYMS.get(word, word)
         vec[int(hashlib.sha256(word.encode()).hexdigest(), 16) % dim] += 1.0
     return vec

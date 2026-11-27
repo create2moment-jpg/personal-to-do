@@ -102,3 +102,27 @@ def match_score(expectation_text: str, evidence_text: str) -> Match | None:
         if stem(w) in common:
             shown.setdefault(stem(w), w)
     return Match("", round(len(common) / len(exp), 3), tuple(sorted(shown.values())))
+
+
+SEMANTIC_FLOOR = 0.2  # below this nothing counts as "similar in meaning"
+SEMANTIC_NEAR_BEST = 0.8  # keep only candidates close to the best one
+SEMANTIC_MARGIN = 0.1  # …and clearly above the typical similarity in the pool
+
+
+def meaning_matches(sims: dict[str, float]) -> dict[str, float]:
+    """Pick the candidates that stand out by meaning, independent of the model's scale.
+
+    Embedding models differ widely in their baseline similarity, so an absolute
+    threshold is unreliable. A candidate is kept when it is near the best match and,
+    for pools of four or more, clearly above the median of the pool.
+    """
+    if not sims:
+        return {}
+    best = max(sims.values())
+    cut = max(SEMANTIC_FLOOR, best * SEMANTIC_NEAR_BEST)
+    if len(sims) >= 4:
+        ordered = sorted(sims.values())
+        mid = len(ordered) // 2
+        median = ordered[mid] if len(ordered) % 2 else (ordered[mid - 1] + ordered[mid]) / 2
+        cut = max(cut, median + SEMANTIC_MARGIN)
+    return {k: round(v, 3) for k, v in sims.items() if v >= cut}

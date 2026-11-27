@@ -560,6 +560,8 @@ export interface EvidenceSuggestion {
   document_title: string;
   score: number;
   shared: string[];
+  /** Cosine similarity when the local embedding model judged it similar in meaning. */
+  similarity?: number | null;
 }
 
 export type LlmPreset = "llamacpp" | "vllm" | "ollama" | "lmstudio" | "custom";

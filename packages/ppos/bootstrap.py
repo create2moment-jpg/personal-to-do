@@ -20,6 +20,7 @@ from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
 from ppos.application.goals import GoalService
 from ppos.application.insights import InsightsService
+from ppos.application.meaning import MeaningMatcher
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
@@ -152,6 +153,7 @@ def build_container(
         )
         return parse_change_notes(text, original, improved), model
 
+    meaning = MeaningMatcher(ai.embed, lambda: ai.embedding_model)
     job_runner: JobRunner = jobs or ThreadJobRunner()
 
     documents = DocumentService(
@@ -199,9 +201,9 @@ def build_container(
         ai=ai,
         documents=documents,
         facts=FactService(uow, clock, run_template, job_runner, enabled=lambda: ai.name != "none"),
-        career=CareerService(uow, clock, tasks),
+        career=CareerService(uow, clock, tasks, meaning),
         goals=goals,
-        skills=SkillService(uow, clock, goals),
+        skills=SkillService(uow, clock, goals, meaning),
         insights=InsightsService(uow, clock, meetings),
         assistant=assistant,
         reviews=ReviewService(
