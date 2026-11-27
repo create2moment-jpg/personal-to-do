@@ -1,8 +1,5 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
-
-const here = path.dirname(fileURLToPath(import.meta.url));
+import { docx, PAGE_BREAK, para } from "./docx";
 
 async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
@@ -38,7 +35,8 @@ test("upload a document, it gets processed and is searchable with page citations
 
 test("a Word document is imported with its headings and pages", async ({ page }) => {
   await open(page, "knowledge");
-  await page.locator('input[type="file"]').setInputFiles(path.join(here, "fixtures", "release-checklist.docx"));
+  const body = para("Release checklist", "Heading1") + para("Freeze the branch on Monday.") + PAGE_BREAK + para("Rollout", "Heading2") + para("Roll out behind a feature flag to 5 percent first.");
+  await page.locator('input[type="file"]').setInputFiles({ name: "release-checklist.docx", mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", buffer: docx(body) });
   await expect(page.locator(".editor-top .chip", { hasText: "Ready" })).toBeVisible({ timeout: 10_000 });
   await expect(page.locator(".doc-page-label", { hasText: "Page 2" })).toBeVisible();
   await page.getByLabel("Search documents").fill("feature flag");
