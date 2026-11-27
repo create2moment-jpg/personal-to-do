@@ -25,6 +25,7 @@ import type { Task, Week, WeeklyObjective } from "../lib/types";
 import { useUi } from "../lib/ui-store";
 import { addDays, clockTime, cx, formatMinutes, isoDay, mondayOf } from "../lib/util";
 import { AddRow } from "./TodayView";
+import { appendBullets, GroundedDraft } from "../components/GroundedDraft";
 
 type Tab = "plan" | "review";
 
@@ -329,7 +330,19 @@ function WeekReviewPanel({ week, onPlanNext }: { week: Week; onPlanNext: () => v
         </section>
       </div>
       <section className="card review-card">
-        <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Reflect</h3>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <h3 style={{ fontSize: "1.2143rem", fontWeight: 650 }}>Reflect</h3>
+        </div>
+        <GroundedDraft
+          fetchDraft={() => api.draftWeekReview(week.week_start)}
+          fields={[
+            { key: "review_wins", label: "Wins", from: ["highlights"] },
+            { key: "review_lessons", label: "Lessons", from: ["learnings"] },
+            { key: "review_risks", label: "Risks & blockers", from: ["challenges"] },
+            { key: "review_next_focus", label: "Next week's focus", from: ["next_focus"] },
+          ]}
+          onUse={(k, bullets) => setForm((f) => ({ ...f, [k]: appendBullets(f[k], bullets) }))}
+        />
         <div className="review-grid">
           {(
             [

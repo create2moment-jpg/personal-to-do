@@ -170,22 +170,62 @@ class ReviewService:
 
             raise AIUnavailableError("Local AI is off — turn it on in Settings → Local AI.")
         r = self.get(review_id)
-        items = {i["id"]: i["text"] for i in r.snapshot.get("items", [])}
+        return self._draft(
+            r.snapshot, period_label(r.kind, r.period), _KIND_WORD[r.kind], ("review", r.id)
+        )
+
+    def draft_week(self, monday: date) -> Draft:
+        """Grounded draft for the weekly review (Week → Review)."""
+        if monday.weekday() != 0:
+            raise ValidationError("a week starts on Monday")
+        self._require_ai()
+        end = monday + timedelta(days=6)
+        label = f"the week of {monday.strftime('%d %b %Y').lstrip('0')}"
+        return self._draft(
+            self.snapshot_range(monday, end), label, "weekly", ("week", monday.isoformat())
+        )
+
+    def draft_sprint(self, sprint_id: str) -> Draft:
+        """Grounded draft for a sprint review (summary and lessons)."""
+        self._require_ai()
+        with self._uow() as uow:
+            sp = uow.sprints.get(sprint_id)
+            if sp is None:
+                raise NotFoundError("sprint", sprint_id)
+        snap = self.snapshot_range(sp.start_date, sp.end_date)
+        return self._draft(
+            snap,
+            f"{sp.name} ({sp.start_date.isoformat()} → {sp.end_date.isoformat()})",
+            "sprint",
+            ("sprint", sp.id),
+        )
+
+    def _require_ai(self) -> None:
+        if self._run is None or not self._enabled():
+            from ppos.ai.provider import AIUnavailableError
+
+            raise AIUnavailableError("Local AI is off — turn it on in Settings → Local AI.")
+
+    def _draft(
+        self, snapshot: dict[str, Any], label: str, kind_word: str, subject: tuple[str, str]
+    ) -> Draft:
+        assert self._run is not None
+        items = {i["id"]: i["text"] for i in snapshot.get("items", [])}
         if not items:
             raise ValidationError("nothing recorded in this period to draft from")
         text, model, template, _ = self._run(
             DRAFT_TEMPLATE,
             {
-                "period_label": period_label(r.kind, r.period),
-                "kind": _KIND_WORD[r.kind],
+                "period_label": label,
+                "kind": kind_word,
                 "items": "\n".join(f"[{k}] {v}" for k, v in items.items()),
             },
         )
         checked = check_draft(parse_draft(text), items)
         with self._uow() as uow:
             uow.audit.record(
-                "review",
-                r.id,
+                subject[0],
+                subject[1],
                 "ai_draft",
                 actor="ai",
                 details={"model": model, "template": template, "dropped": len(checked.dropped)},
@@ -224,6 +264,10 @@ class ReviewService:
     # -- the numbers ----------------------------------------------------------
     def snapshot(self, kind: str, period: str) -> dict[str, Any]:
         start, end = review_bounds(kind, period)
+        return self.snapshot_range(start, end)
+
+    def snapshot_range(self, start: date, end: date) -> dict[str, Any]:
+        """The numbers and citeable items for any date range (inclusive)."""
         today = self._clock.today()
         upto = min(end, today)
         frm = datetime.combine(start, time.min, tzinfo=timezone.utc)

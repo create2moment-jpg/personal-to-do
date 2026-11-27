@@ -121,3 +121,33 @@ def test_empty_period_and_api(client: TestClient) -> None:
     assert client.delete(f"/api/reviews/{r['id']}").status_code == 204
     assert client.get("/api/reviews").json() == []
     _ = timedelta
+
+
+def test_week_and_sprint_drafts(container: Container, clock: FixedClock) -> None:
+    c = container
+    _seed_month(c)
+    seen: list[dict[str, str]] = []
+
+    def fake(path: str, values: dict[str, str]) -> tuple[str, str, str, int]:
+        seen.append(values)
+        first = values["items"].splitlines()[0]
+        item_id, text = first[1:3], first[5:]
+        return (
+            '{"highlights": ["' + text + " [" + item_id + ']"], "learnings": ["made up [Z9]"]}',
+            "m",
+            "t",
+            1,
+        )
+
+    svc = ReviewService(c.uow, clock, c.meetings, c.goals, fake)
+    d = svc.draft_week(date(2026, 11, 23))
+    assert seen[-1]["kind"] == "weekly" and "23 Nov 2026" in seen[-1]["period_label"]
+    assert len(d.sections["highlights"]) == 1 and d.dropped and d.sections["learnings"] == []
+    with pytest.raises(ValidationError):
+        svc.draft_week(date(2026, 11, 24))  # not a Monday
+    sp = c.sprints.create(
+        name="Sprint 1", start_date=date(2026, 11, 16), end_date=date(2026, 11, 29)
+    )
+    d2 = svc.draft_sprint(sp.id)
+    assert seen[-1]["kind"] == "sprint" and seen[-1]["period_label"].startswith("Sprint 1")
+    assert d2.sections["highlights"]

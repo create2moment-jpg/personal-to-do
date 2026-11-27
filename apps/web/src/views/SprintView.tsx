@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { BurndownChart } from "../components/charts";
 import { Dialog, EmptyState } from "../components/primitives";
 import { TaskCard } from "../components/TaskCard";
+import { appendBullets, GroundedDraft } from "../components/GroundedDraft";
 import { api } from "../lib/api";
 import { celebrate } from "../lib/celebrate";
 import { invalidateTasks, useProjects, useSettings, useSprints, useSprintSummary, useTasks } from "../lib/queries";
@@ -318,6 +319,14 @@ function CompleteDialog({ open, sprint, openCount, onClose, onDone }: { open: bo
             Back to backlog
           </button>
         </div>
+        <GroundedDraft
+          fetchDraft={() => api.draftSprintReview(sprint.id)}
+          fields={[
+            { key: "summary", label: "Summary", from: ["highlights", "challenges"] },
+            { key: "lessons", label: "Lessons", from: ["learnings", "next_focus"] },
+          ]}
+          onUse={(k, bullets) => (k === "summary" ? setSummary((v) => appendBullets(v, bullets)) : setLessons((v) => appendBullets(v, bullets)))}
+        />
         <label className="lc-field">
           <span>Summary — what did this sprint deliver?</span>
           <textarea className="textarea" rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} />

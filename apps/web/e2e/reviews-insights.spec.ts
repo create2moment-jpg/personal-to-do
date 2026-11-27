@@ -84,3 +84,16 @@ test("assistant: grounded answer with sources, search by meaning, plan my day wi
   await plan.getByRole("button", { name: "Approve" }).click();
   await expect(page.locator("[data-sonner-toast]", { hasText: "top priorities set" })).toBeVisible();
 });
+
+test("weekly review: grounded AI draft fills Wins only when you press Use", async ({ page }) => {
+  await open(page, "week/review");
+  await page.getByRole("button", { name: "Draft with AI" }).click();
+  await expect(page.locator("[data-sonner-toast]", { hasText: "Draft ready" })).toBeVisible({ timeout: 15_000 });
+  const wins = page.locator(".ai-suggestions", { hasText: "Wins · suggested" });
+  await expect(wins).toBeVisible();
+  await expect(page.locator(".grounded-suggestions")).not.toContainText("300 percent impact [S1]Use");
+  const winsBox = page.getByPlaceholder("What moved the needle?");
+  await expect(winsBox).toHaveValue("");
+  await wins.getByRole("button", { name: "Use" }).first().click();
+  await expect(winsBox).toHaveValue(/^- .+\[[A-Z]\d+\]/);
+});

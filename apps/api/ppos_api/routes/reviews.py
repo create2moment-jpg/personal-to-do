@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Any, Literal
 
 from fastapi import APIRouter, Response, status
@@ -123,3 +123,17 @@ def markdown(review_id: str, c: ContainerDep) -> str:
 def delete(review_id: str, c: ContainerDep) -> Response:
     c.reviews.delete(review_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/week/{monday}/draft", response_model=DraftOut)
+def draft_week(monday: date, c: ContainerDep) -> DraftOut:
+    """Grounded AI draft for Week → Review (wins, lessons, risks, next focus)."""
+    d = c.reviews.draft_week(monday)
+    return DraftOut(sections=d.sections, dropped=d.dropped, model=d.model, template=d.template)
+
+
+@router.post("/sprint/{sprint_id}/draft", response_model=DraftOut)
+def draft_sprint(sprint_id: str, c: ContainerDep) -> DraftOut:
+    """Grounded AI draft for a sprint's summary and lessons."""
+    d = c.reviews.draft_sprint(sprint_id)
+    return DraftOut(sections=d.sections, dropped=d.dropped, model=d.model, template=d.template)

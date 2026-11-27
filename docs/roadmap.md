@@ -39,7 +39,7 @@ See [design-system.md](design-system.md) for the visual language.
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | mostly done — provider layer (R-017), versioned prompts, output validation, Assistant (B-015); writing studio in Notes and AI capture still open |
-| 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | started — hybrid retrieval (keyword + meaning, B-008), grounded Q&A, plan-my-day proposal; weekly/sprint workflows next |
+| 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | ✅ done — hybrid retrieval (B-008), grounded Q&A, plan my day, grounded weekly and sprint review drafts (B-020) |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | ✅ done — local access token + Host/Origin checks, encrypted backups, hash-locked deps, installer, installable app (Postgres adapter stays deferred, D-002) |

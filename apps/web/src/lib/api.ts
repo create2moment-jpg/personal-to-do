@@ -230,6 +230,8 @@ export const api = {
   planDay: (day?: string) => request<DayPlanProposal>("POST", "/api/assistant/plan-day", { day: day ?? null }),
   applyDayPlan: (day: string, top: string[]) => request<{ top: string[] }>("POST", "/api/assistant/plan-day/apply", { day, top }),
   trends: (weeks: number) => request<Trends>("GET", `/api/insights/trends?weeks=${weeks}`),
+  draftWeekReview: (monday: string) => request<ReviewDraft>("POST", `/api/reviews/week/${monday}/draft`),
+  draftSprintReview: (sprintId: string) => request<ReviewDraft>("POST", `/api/reviews/sprint/${sprintId}/draft`),
   dueReviews: () => request<DueReview[]>("GET", "/api/reviews/due"),
   reviews: () => request<Review[]>("GET", "/api/reviews"),
   review: (id: string) => request<Review>("GET", `/api/reviews/${id}`),
