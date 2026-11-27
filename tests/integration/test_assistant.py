@@ -1,6 +1,7 @@
 import importlib.util
 import threading
 from collections.abc import Iterator
+from datetime import timedelta
 from http.server import ThreadingHTTPServer
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -191,3 +192,21 @@ def test_rewrite_api(client: TestClient) -> None:
         ).status_code
         == 503
     )
+
+
+def test_ai_capture_proposes_a_line(c: Container, server: str) -> None:
+    with pytest.raises(AIUnavailableError):
+        c.assistant.capture_line("remind me to call Ana tomorrow")
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    line, model = c.assistant.capture_line(
+        "Remind me to send the deck to Priya tomorrow, takes half an hour"
+    )
+    assert line == "Send the deck to Priya @tomorrow ~30m" and model == "fake-llm"
+    parsed, _ = c.capture.preview(line)
+    assert parsed.title == "Send the deck to Priya" and parsed.estimate_minutes == 30
+    assert parsed.scheduled_date == c.clock.today() + timedelta(days=1)
+
+
+def test_ai_capture_api_never_saves(client: TestClient) -> None:
+    assert client.post("/api/capture/ai", json={"text": "remind me to call Ana"}).status_code == 503
+    assert client.get("/api/tasks").json() == []

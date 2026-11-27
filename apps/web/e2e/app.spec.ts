@@ -150,3 +150,21 @@ test("notes writing assistant: improve the whole note, review the diff, accept",
   await expect(body).toContainText("We shipped the benchmark today");
   await expect(body).not.toContainText("basically");
 });
+
+test("AI capture: plain language becomes a capture line you confirm (and can undo)", async ({ page, request }) => {
+  await open(page, "today");
+  await page.keyboard.press("c");
+  const input = page.getByLabel("Capture text");
+  await input.fill("remind me to send the deck to Priya tomorrow, takes half an hour");
+  await page.getByRole("button", { name: "Understand" }).click();
+  await expect(input).toHaveValue("Send the deck to Priya @tomorrow ~30m");
+  await expect(page.locator(".capture-preview")).toContainText("30m");
+  await page.getByRole("button", { name: "Undo" }).click();
+  await expect(input).toHaveValue(/^remind me to send the deck/);
+  await page.keyboard.press("Control+i");
+  await expect(input).toHaveValue("Send the deck to Priya @tomorrow ~30m");
+  await input.press("Enter");
+  await expect
+    .poll(async () => ((await (await request.get("/api/tasks?limit=1000")).json()) as { title: string; estimate_minutes: number }[]).some((t) => t.title === "Send the deck to Priya" && t.estimate_minutes === 30))
+    .toBe(true);
+});

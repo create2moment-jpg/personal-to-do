@@ -79,6 +79,32 @@ def ask_answer(user_message: str) -> str:
     return f"From your records: {first} [1]"
 
 
+def capture_line(user_message: str) -> str:
+    """Very small rule-based stand-in for the model."""
+    m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
+    text = (m.group(1) if m else "").strip()
+    tokens = []
+    rules = (
+        (r"\btomorrow\b", "@tomorrow"),
+        (r"\bhalf an hour\b|\b30 minutes\b", "~30m"),
+        (r"\ban hour\b", "~1h"),
+        (r"\burgent\b|\basap\b", "!1"),
+    )
+    for pattern, token in rules:
+        if re.search(pattern, text, re.IGNORECASE):
+            tokens.append(token)
+            text = re.sub(pattern, "", text, flags=re.IGNORECASE)
+    text = re.sub(
+        r"^(please\s+)?(remind me to|i need to|i have to|don't forget to)\s+",
+        "",
+        text,
+        flags=re.IGNORECASE,
+    )
+    text = re.sub(r"\b(it )?takes\b|,", " ", text, flags=re.IGNORECASE)
+    title = " ".join(text.split()).rstrip(".")
+    return " ".join([title[:1].upper() + title[1:], *tokens])
+
+
 def rewrite_note(user_message: str) -> str:
     """Drop filler words and capitalise lines — deterministic, adds nothing."""
     m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
@@ -146,6 +172,8 @@ class Handler(BaseHTTPRequestHandler):
             answer = review_draft(user)
         elif user.startswith("Today is ") and "Sources:" in user:
             answer = ask_answer(user)
+        elif user.startswith("Convert my note into ONE capture line"):
+            answer = capture_line(user)
         elif user.startswith("Rewrite my note text"):
             answer = rewrite_note(user)
         elif user.startswith("Plan my day"):

@@ -38,6 +38,7 @@ log = logging.getLogger("ppos.assistant")
 TemplateRunner = Callable[[str, dict[str, str]], tuple[str, str, str, int]]
 ASK_TEMPLATE = "13_meta/ask/v1.md"
 REWRITE_TEMPLATE = "02_writing/improve_note/v1.md"
+CAPTURE_TEMPLATE = "01_capture/convert/v1.md"
 REWRITE_STYLES: dict[str, str] = {
     "clearer": "Make it clearer and easier to read: shorter sentences, plain words, logical order.",
     "shorter": "Make it about half as long: keep every fact and decision, "
@@ -344,6 +345,38 @@ class AssistantService:
             )
             uow.commit()
         return Rewrite(text, out, style, model, new_numbers)
+
+    # -- AI capture ------------------------------------------------------------------------
+    def capture_line(self, text: str) -> tuple[str, str]:
+        """Free text -> one capture line (a proposal; the deterministic parser decides)."""
+        text = " ".join(text.split())
+        if len(text) < 3:
+            raise ValidationError("write a few words first")
+        if len(text) > 2000:
+            raise ValidationError("keep it under 2,000 characters")
+        if self._ai.name == "none":
+            from ppos.ai.provider import AIUnavailableError
+
+            raise AIUnavailableError("Local AI is off — turn it on in Settings → Local AI.")
+        today = self._clock.today()
+        raw, model, template, _ = self._run(
+            CAPTURE_TEMPLATE,
+            {"text": text, "today": today.isoformat(), "weekday": today.strftime("%A")},
+        )
+        lines = [ln.strip().strip("`").strip('"').strip() for ln in strip_think(raw).splitlines()]
+        line = next((ln for ln in lines if ln), "")
+        if not line:
+            raise ValidationError("the model returned nothing usable — try rephrasing")
+        with self._uow() as uow:
+            uow.audit.record(
+                "capture",
+                "ai",
+                "convert",
+                actor="ai",
+                details={"model": model, "template": template},
+            )
+            uow.commit()
+        return line[:500], model
 
     # -- plan my day -------------------------------------------------------------------
     def plan_day(self, day: date | None = None) -> PlanProposal:

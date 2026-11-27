@@ -108,6 +108,14 @@ def capture_preview(body: CaptureRequest, c: ContainerDep) -> CapturePreviewOut:
     )
 
 
+@router.post("/api/capture/ai")
+def capture_ai(body: CaptureRequest, c: ContainerDep) -> dict[str, object]:
+    """AI capture: free text -> a capture line plus its deterministic preview. Nothing is saved."""
+    line, model = c.assistant.capture_line(body.text)
+    preview = capture_preview(CaptureRequest(text=line), c)
+    return {"line": line, "model": model, "preview": preview.model_dump(mode="json")}
+
+
 @router.post("/api/capture", response_model=CaptureOut, status_code=status.HTTP_201_CREATED)
 def capture(body: CaptureRequest, c: ContainerDep) -> CaptureOut:
     result = c.capture.capture(body.text)

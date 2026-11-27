@@ -43,6 +43,7 @@ with a reason).
 | B-019 | Undoable task deletes | 2026-11-27 | done (trash for 30 days, Undo in the message, Backlog → Recently deleted) | Task panel, Backlog |
 | B-020 | AI drafts for the weekly review and sprint review | 2026-11-27 | done (same grounding as periodic reviews: cite records, unsupported bullets dropped; Use to insert) | Week → Review, Sprint → Complete |
 | B-021 | Writing assistant in Notes | 2026-11-27 | done (Improve → clearer / shorter / structure / grammar / professional on the selection or whole note; diff review; accept saves a version; invented numbers flagged) | Notes → Improve |
+| B-022 | AI capture: plain language → capture line | 2026-11-27 | done (Understand / ⌘I in quick capture; the deterministic parser previews it; Undo restores your words; nothing saved until Enter) | Quick capture |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

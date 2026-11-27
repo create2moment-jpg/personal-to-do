@@ -1096,3 +1096,5 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .menu-item:hover, .menu-item:focus-visible { background: var(--bg-sunken); }
 .rewrite-review { padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; max-height: 85vh; overflow: auto; }
 .rewrite-review h3 { font-size: 1.1rem; font-weight: 640; }
+.understand-btn { flex: none; }
+.ai-line-note { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; padding: 0.45rem 1.3rem; font-size: 0.84rem; color: var(--accent-text); background: var(--accent-soft); }

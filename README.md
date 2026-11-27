@@ -72,7 +72,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   **Improve** rewrites the selection or the whole note with your local model
   (clearer, shorter, structured, grammar, professional) — you review a diff,
   and accepting keeps the previous text in History.
-- **Quick capture** from anywhere (`c`) — also meetings:
+- **Quick capture** from anywhere (`c`) — plain language works too: press
+  **Understand** (⌘/Ctrl+I) and your local AI turns it into the line below,
+  which you check before saving. Meetings too:
   `meeting: Sprint planning @mon @10:00 ~1h30 every 2 weeks with Ana, Ben #planning`
   `Review PR #code !2 ~1h30m @tomorrow due:fri +ml-platform` · `idea: …` · `note: …`
 - **Command menu** (`Ctrl/⌘+K`) with full-text search, navigation and theme

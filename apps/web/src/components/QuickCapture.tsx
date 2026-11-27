@@ -1,6 +1,6 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlarmClock, CalendarClock, CalendarPlus, CheckCircle2, Repeat, Clock, Flag, FolderKanban, Hash, Lightbulb, NotebookPen, Phone, Sparkles, SquareCheck, UserRound } from "lucide-react";
+import { AlarmClock, CalendarClock, CalendarPlus, CheckCircle2, Repeat, Clock, Flag, FolderKanban, Hash, Lightbulb, Loader2, NotebookPen, Phone, Sparkles, SquareCheck, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
@@ -23,6 +23,24 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
   const [preview, setPreview] = useState<CapturePreview | null>(null);
   const [log, setLog] = useState<{ id: number; text: string }[]>([]);
   const ref = useRef<HTMLInputElement>(null);
+  const { data: ai } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus, staleTime: 60_000 });
+  const [before, setBefore] = useState<string | null>(null); // your words, kept while an AI line is shown
+  const [understanding, setUnderstanding] = useState(false);
+
+  const understand = async () => {
+    if (!ai?.enabled || text.trim().length < 3 || understanding) return;
+    setUnderstanding(true);
+    try {
+      const r = await api.captureAi(text);
+      setBefore(text);
+      setText(r.line);
+      ref.current?.focus();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setUnderstanding(false);
+    }
+  };
 
   useEffect(() => ref.current?.focus(), []);
 
@@ -56,6 +74,7 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
       invalidateTasks(qc);
       void qc.invalidateQueries({ queryKey: ["notes"] });
       setText("");
+      setBefore(null);
       if (keepOpen) setLog((l) => [{ id: Date.now(), text: label }, ...l].slice(0, 4));
       else {
         toast.success(r.task ? "Task captured" : r.series || r.kind === "meeting" ? "Meeting added 📅" : "Captured", { description: label });
@@ -79,16 +98,44 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
           value={text}
           placeholder="Capture a task, idea:, note:, call: or meeting: …"
           aria-label="Capture text"
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (before !== null && e.target.value === "") setBefore(null);
+          }}
           onKeyDown={(e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "i") {
+              e.preventDefault();
+              void understand();
+              return;
+            }
             if (e.key === "Enter") {
               e.preventDefault();
               void submit(e.metaKey || e.ctrlKey || e.shiftKey);
             }
           }}
         />
+        {ai?.enabled && text.trim().length >= 3 && before === null && (
+          <button className="btn sm ghost understand-btn" onClick={() => void understand()} disabled={understanding} title="Turn plain language into a capture line (⌘/Ctrl+I)">
+            {understanding ? <Loader2 className="spin" /> : <Sparkles />} Understand
+          </button>
+        )}
         <Kbd>↵</Kbd>
       </div>
+      {before !== null && (
+        <div className="ai-line-note">
+          <Sparkles size={13} /> Rewritten by your local AI — check the preview, edit if needed, then press Enter.
+          <button
+            className="link-btn"
+            onClick={() => {
+              setText(before);
+              setBefore(null);
+              ref.current?.focus();
+            }}
+          >
+            Undo
+          </button>
+        </div>
+      )}
 
       <div className="capture-preview" aria-live="polite">
         <AnimatePresence initial={false}>
