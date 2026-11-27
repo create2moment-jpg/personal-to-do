@@ -719,3 +719,25 @@ export interface ReviewDraft {
   model: string;
   template: string;
 }
+
+// ------------------------------------------------------------------ Insights
+export interface WeekStat {
+  week_start: string;
+  tasks_done: number;
+  done_estimate: number;
+  actual_minutes: number;
+  accuracy: number | null;
+  planned: number;
+  planned_done: number;
+  reliability: number | null;
+  meeting_minutes: number;
+  work_minutes: number;
+  available_minutes: number;
+}
+
+export interface Trends {
+  weeks: WeekStat[];
+  by_project: [string, number, number][];
+  by_topic: [string, number, number][];
+  by_person: [string, number, number][];
+}

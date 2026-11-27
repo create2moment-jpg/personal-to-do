@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, timedelta
 
 from fastapi import APIRouter, Query, Response, status
+from pydantic import BaseModel, ConfigDict
 
 from ppos.domain.meetings import Meeting, MeetingKind, Recurrence
 from ppos_api.deps import ContainerDep
@@ -199,4 +200,37 @@ def time_insights(
         rated_minutes=r.rated_minutes,
         avg_rating=r.avg_rating,
         reconsider=r.reconsider,
+    )
+
+
+class WeekStatOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    week_start: date
+    tasks_done: int
+    done_estimate: int
+    actual_minutes: int
+    accuracy: float | None
+    planned: int
+    planned_done: int
+    reliability: float | None
+    meeting_minutes: int
+    work_minutes: int
+    available_minutes: int
+
+
+class TrendsOut(BaseModel):
+    weeks: list[WeekStatOut]
+    by_project: list[tuple[str, int, int]]
+    by_topic: list[tuple[str, int, int]]
+    by_person: list[tuple[str, int, int]]
+
+
+@router.get("/api/insights/trends", response_model=TrendsOut)
+def trends(c: ContainerDep, weeks: int = Query(default=12, ge=2, le=52)) -> TrendsOut:
+    t = c.insights.trends(weeks)
+    return TrendsOut(
+        weeks=[WeekStatOut.model_validate(w) for w in t.weeks],
+        by_project=t.by_project,
+        by_topic=t.by_topic,
+        by_person=t.by_person,
     )

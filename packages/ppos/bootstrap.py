@@ -17,6 +17,7 @@ from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
 from ppos.application.goals import GoalService
+from ppos.application.insights import InsightsService
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
@@ -62,6 +63,7 @@ class Container:
     goals: GoalService
     skills: SkillService
     reviews: ReviewService
+    insights: InsightsService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -169,6 +171,7 @@ def build_container(
         career=CareerService(uow, clock, tasks),
         goals=goals,
         skills=SkillService(uow, clock, goals),
+        insights=InsightsService(uow, clock, meetings),
         reviews=ReviewService(
             uow, clock, meetings, goals, run_template, enabled=lambda: ai.name != "none"
         ),

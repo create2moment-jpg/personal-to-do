@@ -46,3 +46,11 @@ def test_demo_skills(container: Container) -> None:
     assert rows["System design"].level == 3 and rows["System design"].previous == 2
     assert rows["System design"].evidence and rows["Technical writing"].level is None
     assert rows["Mentoring"].goal_ids  # linked to the mentoring goal
+
+
+def test_demo_history_feeds_insights(container: Container) -> None:
+    seed_demo(container)
+    t = container.insights.trends(12)
+    busy = [w for w in t.weeks if w.tasks_done]
+    assert len(busy) >= 10 and any(w.accuracy and w.accuracy > 1 for w in busy)
+    assert t.by_project[0][0] in ("Retrieval Platform", "Model Evaluation")

@@ -44,3 +44,17 @@ test("reviews: open this month, numbers from records, grounded AI draft, use a s
   await page.getByRole("button", { name: "Reopen" }).click();
   await expect(page.getByRole("button", { name: "Finalize" })).toBeVisible();
 });
+
+test("insights: weekly trends with tooltips, range switch and a table view", async ({ page }) => {
+  await open(page, "analytics");
+  await expect(page.locator(".stat", { hasText: "Tasks per week" })).toBeVisible();
+  const chart = page.getByRole("img", { name: "Tasks completed per week" });
+  await expect(chart).toBeVisible();
+  const box = (await chart.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.5);
+  await expect(page.locator(".chart-tip").first()).toContainText("Week of");
+  await expect(page.getByRole("img", { name: "Estimate accuracy per week" })).toBeVisible();
+  await page.getByRole("button", { name: "26 weeks" }).click();
+  await page.getByText("All numbers as a table").click();
+  await expect(page.locator(".insights-table tbody tr")).toHaveCount(26);
+});

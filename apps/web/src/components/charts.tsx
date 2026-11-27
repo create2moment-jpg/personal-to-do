@@ -218,3 +218,198 @@ export function RankBars({ items, empty, limit = 8 }: { items: Ranked[]; empty: 
     </ul>
   );
 }
+
+// ------------------------------------------------------------------ weekly trends
+
+export interface WeekPoint {
+  week: string; // Monday, ISO
+  label: string; // axis label, e.g. "Nov 23"
+}
+
+/** Show every k-th axis label so labels (~52px each) never overlap. */
+const labelStep = (n: number, plotWidth: number) => Math.max(1, Math.ceil((n * 52) / Math.max(plotWidth, 1)));
+
+const shortWeek = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString(undefined, { month: "short", day: "numeric", timeZone: "UTC" });
+export const weekLabel = (iso: string) => `Week of ${shortWeek(iso)}`;
+
+function niceCount(v: number): number {
+  if (v <= 4) return 4;
+  const step = v > 40 ? 10 : v > 20 ? 5 : 2;
+  return Math.ceil(v / step) * step;
+}
+
+/** Single-series weekly bars (no legend; the title names it). */
+export function WeekBars({ weeks, values, format, tip, label }: { weeks: string[]; values: number[]; format: (v: number) => string; tip: (i: number) => React.ReactNode; label: string }) {
+  const [ref, W] = useWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = 190;
+  const pad = { l: 36, r: 8, t: 14, b: 24 };
+  const max = niceCount(Math.max(...values, 0));
+  const n = weeks.length;
+  const bw = Math.min(30, ((W - pad.l - pad.r) / n) * 0.55);
+  const cx = (i: number) => pad.l + ((i + 0.5) * (W - pad.l - pad.r)) / n;
+  const y = (v: number) => pad.t + (1 - v / max) * (H - pad.t - pad.b);
+  const last = values.length - 1;
+  return (
+    <div className="chart" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} onMouseLeave={() => setHover(null)}>
+        {[0, max / 2, max].map((t) => (
+          <g key={t}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} className="grid" />
+            <text x={pad.l - 6} y={y(t) + 4} textAnchor="end" className="axis">
+              {format(t)}
+            </text>
+          </g>
+        ))}
+        {values.map((v, i) => (
+          <g key={weeks[i]} onMouseEnter={() => setHover(i)} className={hover === i ? "bar-hover" : undefined}>
+            <rect x={cx(i) - bw / 2 - 6} y={pad.t} width={bw + 12} height={H - pad.t - pad.b} fill="transparent" />
+            {v > 0 && <path d={roundedTop(cx(i) - bw / 2, y(v), bw, y(0) - y(v), 4)} fill="var(--series-1)" />}
+            {i === last && v > 0 && (
+              <text x={cx(i)} y={y(v) - 5} textAnchor="middle" className="value-label">
+                {format(v)}
+              </text>
+            )}
+            {i % labelStep(n, W - pad.l - pad.r) === 0 && (
+              <text x={cx(i)} y={H - 7} textAnchor="middle" className="axis">
+                {shortWeek(weeks[i]!)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+      {hover !== null && (
+        <Tooltip x={cx(hover)} y={8}>
+          {tip(hover)}
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
+/** Meetings (bottom) and time free for focus (top) per week, in hours. */
+export function WeekTimeChart({ weeks, meetings, focus }: { weeks: string[]; meetings: number[]; focus: number[] }) {
+  const [ref, W] = useWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = 200;
+  const pad = { l: 40, r: 8, t: 10, b: 24 };
+  const n = weeks.length;
+  const max = niceMax(Math.max(...weeks.map((_, i) => meetings[i]! + focus[i]!), 0));
+  const bw = Math.min(30, ((W - pad.l - pad.r) / n) * 0.55);
+  const cx = (i: number) => pad.l + ((i + 0.5) * (W - pad.l - pad.r)) / n;
+  const y = (v: number) => pad.t + (1 - v / max) * (H - pad.t - pad.b);
+  const base = y(0);
+  return (
+    <div className="chart" ref={ref}>
+      <Legend
+        items={[
+          { label: "Meetings", color: "var(--series-2)" },
+          { label: "Free for focus", color: "var(--series-1)" },
+        ]}
+      />
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Meeting and focus hours per week" onMouseLeave={() => setHover(null)}>
+        {[0, max / 2, max].map((t) => (
+          <g key={t}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} className="grid" />
+            <text x={pad.l - 6} y={y(t) + 4} textAnchor="end" className="axis">
+              {fmtHours(t)}
+            </text>
+          </g>
+        ))}
+        {weeks.map((w, i) => {
+          const m = meetings[i]!;
+          const f = focus[i]!;
+          const x0 = cx(i) - bw / 2;
+          return (
+            <g key={w} onMouseEnter={() => setHover(i)} className={hover === i ? "bar-hover" : undefined}>
+              <rect x={x0 - 6} y={pad.t} width={bw + 12} height={H - pad.t - pad.b} fill="transparent" />
+              {m > 0 && <path d={roundedTop(x0, y(m), bw, base - y(m), f > 0 ? 0 : 4)} fill="var(--series-2)" />}
+              {f > 0 && <path d={roundedTop(x0, y(m + f), bw, Math.max(y(m) - y(m + f) - 2, 1), 4)} fill="var(--series-1)" />}
+              {i % labelStep(n, W - pad.l - pad.r) === 0 && (
+                <text x={cx(i)} y={H - 7} textAnchor="middle" className="axis">
+                  {shortWeek(w)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {hover !== null && (
+        <Tooltip x={cx(hover)} y={8}>
+          <strong>{weekLabel(weeks[hover]!)}</strong>
+          <span>Meetings: {formatMinutes(meetings[hover]!)}</span>
+          <span>Free for focus: {formatMinutes(focus[hover]!)}</span>
+          {meetings[hover]! + focus[hover]! > 0 && <span>Meeting share: {Math.round((meetings[hover]! / (meetings[hover]! + focus[hover]!)) * 100)}%</span>}
+        </Tooltip>
+      )}
+    </div>
+  );
+}
+
+/** Single-series weekly line of a ratio (shown as %), gaps where there is no data; optional dashed reference. */
+export function WeekLine({ weeks, values, label, reference, tip }: { weeks: string[]; values: (number | null)[]; label: string; reference?: { value: number; label: string }; tip: (i: number) => React.ReactNode }) {
+  const [ref, W] = useWidth();
+  const [hover, setHover] = useState<number | null>(null);
+  const H = 190;
+  const pad = { l: 40, r: reference ? 64 : 12, t: 14, b: 24 };
+  const n = weeks.length;
+  const known = values.filter((v): v is number => v !== null);
+  const hi = Math.max(1, reference?.value ?? 0, ...known);
+  const max = Math.ceil(hi * 4) / 4; // quarter steps of 100%
+  const x = (i: number) => pad.l + (n === 1 ? 0.5 : i / (n - 1)) * (W - pad.l - pad.r);
+  const y = (v: number) => pad.t + (1 - v / max) * (H - pad.t - pad.b);
+  const segments: string[] = [];
+  let cur = "";
+  values.forEach((v, i) => {
+    if (v === null) {
+      if (cur) segments.push(cur);
+      cur = "";
+    } else cur += `${cur ? "L" : "M"}${x(i)},${y(v)}`;
+  });
+  if (cur) segments.push(cur);
+  const pct = (v: number) => `${Math.round(v * 100)}%`;
+  return (
+    <div className="chart" ref={ref}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" aria-label={label} onMouseLeave={() => setHover(null)}>
+        {[0, max / 2, max].map((t) => (
+          <g key={t}>
+            <line x1={pad.l} x2={W - pad.r} y1={y(t)} y2={y(t)} className="grid" />
+            <text x={pad.l - 6} y={y(t) + 4} textAnchor="end" className="axis">
+              {pct(t)}
+            </text>
+          </g>
+        ))}
+        {reference && (
+          <g>
+            <line x1={pad.l} x2={W - pad.r} y1={y(reference.value)} y2={y(reference.value)} className="ref-line" />
+            <text x={W - pad.r + 6} y={y(reference.value) + 4} className="axis">
+              {reference.label}
+            </text>
+          </g>
+        )}
+        {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={pad.t} y2={H - pad.b} className="crosshair" />}
+        {segments.map((d) => (
+          <path key={d} d={d} fill="none" stroke="var(--series-1)" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+        {values.map((v, i) =>
+          v === null ? null : <circle key={weeks[i]} cx={x(i)} cy={y(v)} r={hover === i ? 5 : 4} fill="var(--series-1)" stroke="var(--surface)" strokeWidth={2} />,
+        )}
+        {weeks.map((w, i) => (
+          <g key={w}>
+            <rect x={x(i) - (W - pad.l - pad.r) / n / 2} y={pad.t} width={(W - pad.l - pad.r) / n} height={H - pad.t - pad.b} fill="transparent" onMouseEnter={() => setHover(i)} />
+            {i % labelStep(n, W - pad.l - pad.r) === 0 && (
+              <text x={x(i)} y={H - 7} textAnchor="middle" className="axis">
+                {shortWeek(w)}
+              </text>
+            )}
+          </g>
+        ))}
+      </svg>
+      {hover !== null && (
+        <Tooltip x={x(hover)} y={8}>
+          {tip(hover)}
+        </Tooltip>
+      )}
+    </div>
+  );
+}

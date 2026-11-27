@@ -15,7 +15,8 @@ from ppos.application.ports import NoteQuery, TaskQuery
 from ppos.bootstrap import Container
 from ppos.domain.notes import EntityType, NoteKind
 from ppos.domain.planning import Commitment
-from ppos.domain.tasks import Priority, TaskStatus
+from ppos.domain.tasks import Priority, Task, TaskStatus
+from ppos.shared.clock import new_id
 from ppos.shared.errors import ValidationError
 
 DEMO_MARKER = "DEMO"
@@ -427,6 +428,7 @@ def _seed_documents(c: Container) -> None:
     _seed_career(c)
     _seed_goals(c)
     _seed_skills(c)
+    _seed_history(c)
 
 
 # (document title, kind, quote, statement or None to reuse the quote)
@@ -604,3 +606,46 @@ def _seed_skills(c: Container) -> None:
     )
     if goal is not None:
         c.goals.link(goal.goal.id, "skill", mentoring.id)
+
+
+_HISTORY = [  # (title, project, estimate, logged)
+    ("Profile embedding batch job", "Retrieval Platform", 90, 120),
+    ("Review chunking PR", "Retrieval Platform", 30, 25),
+    ("Fix tokenizer edge case", "Retrieval Platform", 45, 70),
+    ("Write eval dataset README", "Model Evaluation", 60, 55),
+    ("Add recall@k to the eval harness", "Model Evaluation", 120, 150),
+    ("Prepare reading-group notes", "Deep Learning Reading Group", 45, 40),
+    ("Triage flaky integration tests", "Model Evaluation", 60, 95),
+    ("Upgrade vector index library", "Retrieval Platform", 90, 80),
+]
+
+
+def _seed_history(c: Container) -> None:
+    """Ten earlier weeks of finished work so Insights and Reviews show real trends."""
+    projects = {p.name: p.id for p in c.projects.find()}
+    today = c.clock.today()
+    monday = today - timedelta(days=today.weekday())
+    with c.uow() as uow:
+        for week in range(1, 11):
+            start = monday - timedelta(weeks=week)
+            count = 3 + (week * 7) % 4  # 3–6 tasks, varying by week
+            for k in range(count):
+                title, project, est, logged = _HISTORY[(week * 3 + k) % len(_HISTORY)]
+                day = start + timedelta(days=k % 5)
+                done_at = datetime(day.year, day.month, day.day, 15, 0, tzinfo=timezone.utc)
+                factor = 0.8 + ((week + k) % 5) * 0.12
+                t = Task(
+                    id=new_id(),
+                    title=f"{title} ({start.strftime('%b %d')})",
+                    created_at=done_at - timedelta(days=2),
+                    updated_at=done_at,
+                    status=TaskStatus.DONE,
+                    estimate_minutes=est,
+                    actual_minutes=int(logged * factor),
+                    project_id=projects.get(project),
+                    scheduled_date=day,
+                    completed_at=done_at,
+                    tags=["history"],
+                )
+                uow.tasks.add(t)
+        uow.commit()

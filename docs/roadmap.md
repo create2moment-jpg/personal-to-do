@@ -41,7 +41,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer (any OpenAI-compatible local server, configured live in Settings → Local AI, R-017), prompt templates and output validation shipped |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
-| 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | |
+| 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | |
 | 10 | Advanced agentic workflows and integrations | |
 
@@ -197,6 +197,22 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
   feed career evidence (Phase 7, B-009). The quote can never be edited.
 - Chunking now starts a new passage at every heading (chunk:v2) so framework
   levels and review sections are cited separately.
+
+### Phase 8 — Reviews and Insights (B-013, B-014)
+
+- **Reviews** for a month, two months, a quarter or a year. A snapshot of the
+  numbers comes from your own records (tasks, meetings, sprints, goals, skills,
+  evidence, daily/weekly review notes); you write highlights, challenges,
+  learnings and next focus. Finalize freezes the numbers.
+- **Grounded AI drafts** (optional, local model): every bullet must cite the
+  numbered items of the snapshot and may only use numbers that appear in what
+  it cites; other bullets are dropped and listed with the reason. Text is only
+  inserted when you press *Use*.
+- **Insights**: 8 / 12 / 26-week trends — tasks completed, meetings vs time free
+  for focus, share of planned work done (days not yet over don't count),
+  estimate accuracy against 100%, work by project, meeting time by topic, and
+  every number as a table. Charts follow the validated palette and data-viz
+  rules (one axis, legends for two series, hover tooltips).
 
 ### Phase 7 — Goals and Skills (B-011)
 

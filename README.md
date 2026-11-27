@@ -104,6 +104,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   and daily/weekly reviews; you write highlights, challenges, learnings and
   next focus — or ask your local AI for a draft whose every bullet must cite
   your records (unsupported bullets are dropped and shown). Finalize to freeze.
+- **Insights** (`g i`): 8 / 12 / 26-week trends of tasks done, meetings vs
+  focus time, planned work done and estimate accuracy, plus work by project
+  and meeting time by topic — all from your own records, with a table view.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.
