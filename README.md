@@ -146,19 +146,37 @@ your attendance choices and ratings are kept.
 
 ## Quick start
 
-Requirements: Python ≥ 3.10, Node ≥ 20.
+Requirements: **Python ≥ 3.10 only.** No Node.js, Docker or other tools on
+your laptop.
 
-**One command** (macOS / Linux / WSL):
+1. Download the ready-made bundle: in GitHub open **Actions → ci → latest run
+   on your branch → Artifacts → personal-os-bundle**, and unzip it (it contains
+   the app with the web UI already built — no Node.js needed).
+2. Install and start:
 
 ```bash
-bash scripts/install.sh            # add --demo for a sample workspace
-.venv/bin/ppos serve --open        # then "Install Personal OS" from Chrome/Edge's address bar
+# macOS / Linux
+python3 scripts/install.py          # add --demo for a sample workspace
+.venv/bin/ppos serve --open
 ```
 
-It installs the pinned, hash-checked dependencies, builds the web app, sets
-your data folder (`~/PersonalProductivityData`, saved in `.env`) and runs
-`ppos doctor`. Installed as an app, it opens in its own window; the service
-worker caches only the app shell — never your data.
+```powershell
+# Windows
+py scripts\install.py              # add --demo for a sample workspace
+.venv\Scripts\ppos serve --open
+```
+
+Then choose "Install Personal OS" from Chrome/Edge's address bar to get it as
+an app window. The installer creates `.venv`, installs the pinned,
+hash-checked Python dependencies, sets your data folder
+(`~/PersonalProductivityData`, saved in `.env`) and runs `ppos doctor`. The
+service worker caches only the app shell — never your data.
+
+From a plain Git checkout the web UI is not built yet; the installer then
+builds it with Node.js 20+ if present, or tells you to use the bundle.
+(`bash scripts/install.sh` still works and calls the same installer.)
+To make a bundle yourself: `npm run build` in `apps/web`, then
+`python scripts/package.py` (only Git-tracked files plus the built UI go in).
 
 For development:
 
