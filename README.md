@@ -108,6 +108,14 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   labelled so you check quotes against the original. Optionally
   **extract facts** with your local model: each fact must quote its source
   verbatim or it is dropped, and nothing counts until you accept it.
+- **Workflows** (`g f`): multi-step helpers that propose a checklist you
+  approve — **Plan my week** (fits overdue, due and sprint work into each
+  day's free capacity, never after a due date; objectives from your goals),
+  **Prepare my weekly review** (moves unfinished work to Monday; wins from what
+  you finished, plus a cited AI draft if Local AI is on) and **Build a
+  promotion evidence pack** (links the best accepted evidence per expectation,
+  turns gaps into tasks, writes the pack as a note with quotes). Every action
+  says why; nothing changes until you apply; runs are kept for audit.
 - **Career** (`g c`): your level framework (L4, L5, …) from accepted
   expectations, with the accepted achievements and strengths you link as
   evidence. Suggestions show the words they share — or, with an embedding model

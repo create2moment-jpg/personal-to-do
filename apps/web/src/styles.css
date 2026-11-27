@@ -1149,3 +1149,29 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .emoji-foot .input { flex: 1; min-width: 0; height: 1.9rem; }
 .project-icon.emoji { background: var(--surface-2); font-size: 1.25rem; border: 1px solid var(--border); }
 .ocr-note { display: flex; gap: 8px; align-items: center; margin: 12px 0; padding: 8px 12px; border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border)); font-size: 0.86rem; }
+
+/* ---------------------------------------------------------------- workflows */
+.wf-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 14px; margin-bottom: 18px; }
+.wf-card { padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+.wf-card p { margin: 0; color: var(--text-2); font-size: 0.9rem; line-height: 1.5; flex: 1; }
+.wf-card .btn { align-self: flex-start; }
+.wf-card-head { display: flex; align-items: center; gap: 8px; }
+.wf-card-head h3 { margin: 0; font-size: 1rem; flex: 1; }
+.wf-run { padding: 16px; margin-bottom: 18px; }
+.wf-run-head { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; margin-bottom: 8px; }
+.wf-run-head h3 { margin: 0 0 2px; }
+.wf-note { display: flex; gap: 8px; align-items: flex-start; font-size: 0.85rem; color: var(--text-2); margin: 6px 0; }
+.wf-note svg { flex: none; margin-top: 2px; color: var(--orange, var(--accent)); }
+.wf-actions { list-style: none; margin: 12px 0; padding: 0; display: grid; gap: 4px; }
+.wf-actions li { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-2); }
+.wf-actions li > svg, .wf-actions li > .check { flex: none; margin-top: 2px; }
+.wf-actions .ok { color: var(--green, var(--accent)); }
+.wf-actions .bad { color: var(--red); }
+.wf-actions li.out-skipped { opacity: 0.6; }
+.wf-label { font-size: 0.92rem; }
+.wf-detail { font-size: 0.8rem; margin-top: 2px; }
+.wf-foot { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.wf-foot > .faint { margin-right: auto; font-size: 0.8rem; display: inline-flex; gap: 6px; align-items: center; }
+.wf-history { display: grid; gap: 4px; }
+.wf-hist { all: unset; cursor: pointer; display: flex; justify-content: space-between; gap: 12px; padding: 8px 10px; border-radius: var(--radius); font-size: 0.88rem; }
+.wf-hist:hover, .wf-hist:focus-visible, .wf-hist.on { background: var(--surface-2); }

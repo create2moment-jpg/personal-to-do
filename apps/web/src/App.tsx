@@ -19,6 +19,7 @@ import { BoardView } from "./views/BoardView";
 import { CareerView } from "./views/CareerView";
 import { GoalsView } from "./views/GoalsView";
 import { InsightsView } from "./views/InsightsView";
+import { WorkflowsView } from "./views/WorkflowsView";
 import { ReviewsView } from "./views/ReviewsView";
 import { SkillsView } from "./views/SkillsView";
 import { KnowledgeView } from "./views/KnowledgeView";
@@ -128,12 +129,13 @@ export function App() {
   else if (view === "reviews") page = <ReviewsView reviewId={arg} />;
   else if (view === "analytics") page = <InsightsView />;
   else if (view === "ai") page = <AssistantView />;
+  else if (view === "workflows") page = <WorkflowsView />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;
   else page = <SettingsView />;
 
-  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai"].includes(view);
+  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai", "workflows"].includes(view);
 
   return (
     <UiContext.Provider value={ui}>

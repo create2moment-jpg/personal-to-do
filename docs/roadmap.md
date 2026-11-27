@@ -43,7 +43,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | ✅ done — local access token + Host/Origin checks, encrypted backups, hash-locked deps, installer, installable app (Postgres adapter stays deferred, D-002) |
-| 10 | Advanced agentic workflows and integrations | |
+| 10 | Advanced agentic workflows and integrations | first slice ✅ — Workflows page: Plan my week, Prepare my weekly review, Promotion evidence pack; propose-only checklists with stored runs (ADR-0005). Live integrations stay deferred (D-001) |
 
 ### Phase 1 delivered
 

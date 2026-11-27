@@ -816,3 +816,25 @@ export interface TimeboxProposal {
   placements: (TimeSpan & { task: Task })[];
   unplaced: Task[];
 }
+
+export interface WorkflowAction {
+  id: string;
+  kind: string;
+  label: string;
+  detail: string;
+  selected: boolean;
+  outcome: string | null;
+  params: Record<string, unknown>;
+}
+
+export interface WorkflowRun {
+  id: string;
+  workflow: string;
+  created_at: string;
+  title: string;
+  summary: string;
+  actions: WorkflowAction[];
+  notes: string[];
+  status: "proposed" | "applied" | "dismissed";
+  applied_at: string | null;
+}

@@ -30,6 +30,7 @@ from ppos.application.settings import SettingsService
 from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
 from ppos.application.timebox import TimelineService
+from ppos.application.workflows import WorkflowService
 from ppos.domain.documents import ExtractedPage
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
@@ -78,6 +79,7 @@ class Container:
     reviews: ReviewService
     insights: InsightsService
     assistant: AssistantService
+    workflows: WorkflowService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -211,6 +213,11 @@ def build_container(
         unestimated_minutes=lambda: workspace.get().default_task_minutes,
     )  # fmt: skip
     assistant = AssistantService(uow, clock, ai, run_template, job_runner, days, workspace.tz)
+    weeks = WeekService(uow, clock, workspace, meetings, sprints)
+    career = CareerService(uow, clock, tasks, meaning)
+    reviews = ReviewService(
+        uow, clock, meetings, goals, run_template, enabled=lambda: ai.name != "none"
+    )
     if ai.embedding_model:
         assistant.start_index()  # keep search by meaning fresh in the background
 
@@ -230,7 +237,7 @@ def build_container(
         ),
         meetings=meetings,
         sprints=sprints,
-        weeks=WeekService(uow, clock, workspace, meetings, sprints),
+        weeks=weeks,
         book=BookService(
             uow,
             clock,
@@ -242,12 +249,20 @@ def build_container(
         ai=ai,
         documents=documents,
         facts=FactService(uow, clock, run_template, job_runner, enabled=lambda: ai.name != "none"),
-        career=CareerService(uow, clock, tasks, meaning),
+        career=career,
         goals=goals,
         skills=SkillService(uow, clock, goals, meaning),
         insights=InsightsService(uow, clock, meetings),
         assistant=assistant,
-        reviews=ReviewService(
-            uow, clock, meetings, goals, run_template, enabled=lambda: ai.name != "none"
+        reviews=reviews,
+        workflows=WorkflowService(
+            uow,
+            clock,
+            tasks,
+            weeks,
+            reviews,
+            career,
+            notes,
+            lambda: workspace.get().default_task_minutes,
         ),
     )

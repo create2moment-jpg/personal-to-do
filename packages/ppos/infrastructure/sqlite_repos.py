@@ -33,6 +33,7 @@ from ppos.infrastructure.sqlite_planning import (
 )
 from ppos.infrastructure.sqlite_reviews import SqliteReviewRepository
 from ppos.infrastructure.sqlite_skills import SqliteSkillRepository
+from ppos.infrastructure.sqlite_workflows import SqliteWorkflowRunRepository
 
 
 def _ts(value: datetime | None) -> str | None:
@@ -513,6 +514,7 @@ class SqliteUnitOfWork:
         self.skills = SqliteSkillRepository(conn)
         self.reviews = SqliteReviewRepository(conn)
         self.embeddings = SqliteEmbeddingStore(conn)
+        self.workflows = SqliteWorkflowRunRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

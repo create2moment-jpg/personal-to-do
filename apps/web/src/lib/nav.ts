@@ -18,6 +18,7 @@ import {
   Sun,
   Target,
   TrendingUp,
+  Workflow,
 } from "lucide-react";
 import type { ViewId } from "./ui-store";
 
@@ -50,6 +51,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "book", label: "Prompt Book", icon: BookOpenText, shortcut: "G K" },
       { id: "knowledge", label: "Knowledge", icon: Library, shortcut: "G D" },
       { id: "ai", label: "Assistant", icon: Sparkles, shortcut: "G J" },
+      { id: "workflows", label: "Workflows", icon: Workflow, shortcut: "G F" },
     ],
   },
   {
@@ -87,6 +89,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   v: "reviews",
   i: "analytics",
   j: "ai",
+  f: "workflows",
   s: "settings",
 };
 
