@@ -23,7 +23,12 @@ from ppos.shared.errors import NotFoundError, ValidationError
 
 log = logging.getLogger("ppos.documents")
 
-EXTENSIONS = {"application/pdf": ".pdf", "text/markdown": ".md", "text/plain": ".txt"}
+EXTENSIONS = {
+    "application/pdf": ".pdf",
+    "text/markdown": ".md",
+    "text/plain": ".txt",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+}
 
 
 class FileStore(Protocol):
@@ -41,7 +46,7 @@ class JobRunner(Protocol):
 class Extractor:
     sniff: Callable[[str, bytes], str]
     pages: Callable[[str, bytes], list[ExtractedPage]]
-    title: Callable[[bytes], str | None]
+    title: Callable[[str, bytes], str | None]  # (mime, data) -> title from metadata
     version: str
 
 
@@ -99,7 +104,7 @@ class DocumentService:
         now = self._clock.now()
         guessed = (
             title
-            or (self._x.title(data) if mime == "application/pdf" else None)
+            or self._x.title(mime, data)
             or (
                 first_heading(data[:20000].decode("utf-8", "replace"))
                 if mime.startswith("text/")

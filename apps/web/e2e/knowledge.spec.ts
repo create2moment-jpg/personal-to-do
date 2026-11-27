@@ -1,4 +1,8 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { expect, type Page, test } from "@playwright/test";
+
+const here = path.dirname(fileURLToPath(import.meta.url));
 
 async function open(page: Page, route: string) {
   await page.goto(`/#/${route}`);
@@ -30,6 +34,16 @@ test("upload a document, it gets processed and is searchable with page citations
   await expect(hit).toContainText("p. 2");
   await hit.click();
   await expect(page.locator(".doc-chunk.hit")).toContainText("canary");
+});
+
+test("a Word document is imported with its headings and pages", async ({ page }) => {
+  await open(page, "knowledge");
+  await page.locator('input[type="file"]').setInputFiles(path.join(here, "fixtures", "release-checklist.docx"));
+  await expect(page.locator(".editor-top .chip", { hasText: "Ready" })).toBeVisible({ timeout: 10_000 });
+  await expect(page.locator(".doc-page-label", { hasText: "Page 2" })).toBeVisible();
+  await page.getByLabel("Search documents").fill("feature flag");
+  const hit = page.locator(".note-item", { hasText: "Release checklist" });
+  await expect(hit).toContainText("p. 2");
 });
 
 test("duplicates are detected and unsupported files rejected", async ({ page }) => {

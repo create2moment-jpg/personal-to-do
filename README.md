@@ -93,7 +93,7 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   reasoning effort, temperature, output and context limits, timeout.
   **Test connection** checks `/models` and a tiny chat; **Apply** takes effect
   immediately, no restart.
-- **Knowledge** (`g d`): drop PDFs, text or Markdown — reviews, level
+- **Knowledge** (`g d`): drop PDFs, Word (.docx), text or Markdown — reviews, level
   frameworks, feedback. Originals stay untouched in your data folder; text is
   indexed per page so every search hit cites its page and section. Optionally
   **extract facts** with your local model: each fact must quote its source

@@ -98,7 +98,7 @@ export function KnowledgeView({ arg }: { arg?: string }) {
             <Search />
             <input className="input" placeholder="Search inside documents" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search documents" />
           </div>
-          <input ref={fileRef} type="file" hidden multiple accept=".pdf,.txt,.md,application/pdf,text/plain,text/markdown" onChange={(e) => e.target.files && void upload(e.target.files).then(() => { if (fileRef.current) fileRef.current.value = ""; })} />
+          <input ref={fileRef} type="file" hidden multiple accept=".pdf,.docx,.txt,.md,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" onChange={(e) => e.target.files && void upload(e.target.files).then(() => { if (fileRef.current) fileRef.current.value = ""; })} />
         </div>
         <div className="notes-items">
           {q.trim().length > 1
@@ -129,7 +129,7 @@ export function KnowledgeView({ arg }: { arg?: string }) {
               <Upload size={22} />
               <div style={{ fontWeight: 600, marginTop: 6 }}>Drop files here or click to choose</div>
               <div className="faint" style={{ fontSize: "0.9rem", marginTop: 4 }}>
-                PDF, .txt, .md · up to 50 MB · processed on this machine
+                PDF, Word (.docx), .txt, .md · up to 50 MB · processed on this machine
               </div>
             </div>
           </div>

@@ -48,7 +48,7 @@ with a reason).
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | done (suggestion streams in as the model writes, with Stop; word counts from the diff; "Explain the changes" lists grounded notes — notes quoting words in neither version are dropped) | Prompt Book → Improve with AI |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
 | B-005 | OCR for scanned PDFs (detected today as “Needs OCR”) — needs Tesseract on the machine | 2026-11-24 | planned (Phase 4b) | Knowledge |
-| B-006 | Word (.docx) import | 2026-11-24 | planned (Phase 4b) | Knowledge |
+| B-006 | Word (.docx) import | 2026-11-24 | done (headings, lists, tables and page breaks kept; title from the file or its first heading; standard library only, size-capped, DOCTYPE refused; old .doc gets a clear message) | Knowledge → Add |
 | B-007 | Extract facts (responsibilities, achievements, competencies) with provenance using the local model | 2026-11-24 | done (verbatim-quote grounding, accept/reject) | Knowledge → Facts from this document |
 | B-009 | Career view: accepted facts mapped to framework levels and competencies | 2026-11-24 | done (levels from framework facts, user-confirmed evidence links, coverage as hypothesis, gap → task) | Career (`g c`) |
 | B-010 | Career suggestions that understand synonyms (semantic matching) | 2026-11-24 | done (with an embedding model set, evidence similar in meaning is suggested for expectations and skills — kept only when it stands out from the rest of the pool; no model or a down server falls back to shared words; no model calls while the database is locked) | Career / Skills → Suggestions |

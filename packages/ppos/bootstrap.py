@@ -33,7 +33,12 @@ from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
 from ppos.infrastructure.document_store import DocumentStore
-from ppos.infrastructure.extract import EXTRACTOR_VERSION, extract_pages, pdf_title, sniff
+from ppos.infrastructure.extract import (
+    EXTRACTOR_VERSION,
+    document_title,
+    extract_pages,
+    sniff,
+)
 from ppos.infrastructure.ics import parse_ics
 from ppos.infrastructure.jobs import ThreadJobRunner
 from ppos.infrastructure.migrations import prepare_database
@@ -160,7 +165,9 @@ def build_container(
         uow,
         clock,
         DocumentStore(settings.local_data_dir),
-        Extractor(sniff=sniff, pages=extract_pages, title=pdf_title, version=EXTRACTOR_VERSION),
+        Extractor(
+            sniff=sniff, pages=extract_pages, title=document_title, version=EXTRACTOR_VERSION
+        ),
         job_runner,
     )
     documents.resume_pending()
