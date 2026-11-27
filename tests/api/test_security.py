@@ -7,6 +7,7 @@ from ppos.infrastructure.config import Settings
 from ppos.shared.clock import FixedClock
 from ppos_api.main import create_app
 from ppos_api.security import COOKIE, token_path
+from tests.conftest import POSIX_MODES
 
 
 def _app(tmp_path: Path, clock: FixedClock, **kw: object):  # type: ignore[no-untyped-def]
@@ -21,8 +22,8 @@ def test_token_cookie_host_and_origin(tmp_path: Path, clock: FixedClock) -> None
     app, settings = _app(tmp_path, clock)
     token = app.state.api_token
     path = token_path(settings)
-    assert path.read_text().strip() == token and len(token) >= 32
-    assert stat.S_IMODE(path.stat().st_mode) == 0o600
+    assert path.read_text(encoding="utf-8").strip() == token and len(token) >= 32
+    assert not POSIX_MODES or stat.S_IMODE(path.stat().st_mode) == 0o600
 
     c = TestClient(app, base_url="http://127.0.0.1:8765")
     assert c.get("/api/tasks").status_code == 401  # no token

@@ -24,6 +24,9 @@ import venv
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+for _stream in (sys.stdout, sys.stderr):  # Windows consoles may be cp1252: never crash on "▸"
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(errors="replace")
 WINDOWS = os.name == "nt"
 
 

@@ -15,6 +15,7 @@ from ppos.infrastructure.backup_crypto import (
 )
 from ppos.infrastructure.config import Settings
 from ppos.shared.clock import FixedClock
+from tests.conftest import POSIX_MODES
 
 PASS = "correct horse battery staple"
 
@@ -27,7 +28,7 @@ def test_encrypted_backup_round_trip(
     assert info.path.name.endswith(".tar.gz.enc") and is_encrypted(info.path)
     assert not list(settings.backups_dir.glob("*.tar.gz"))  # no plaintext archive left behind
     assert b"Secret plan" not in info.path.read_bytes()
-    assert info.path.stat().st_mode & 0o777 == 0o600
+    assert not POSIX_MODES or info.path.stat().st_mode & 0o777 == 0o600
 
     with pytest.raises(BackupCryptoError, match="passphrase is needed"):
         read_manifest(info.path)

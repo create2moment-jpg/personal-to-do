@@ -7,6 +7,7 @@ from ppos.infrastructure import migrations as mig
 from ppos.infrastructure.config import DEFAULT_MIGRATIONS_DIR, REPO_ROOT, Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
 from ppos.shared.errors import DataBoundaryError, MigrationRequiredError
+from tests.conftest import POSIX_MODES
 
 
 def test_up_down_up_roundtrip(tmp_path: Path) -> None:
@@ -63,5 +64,5 @@ def test_data_dir_inside_repo_is_refused() -> None:
 
 def test_data_dir_is_owner_only(tmp_path: Path) -> None:
     root = ensure_data_dir(Settings(local_data_dir=tmp_path / "d"))
-    assert oct(root.stat().st_mode & 0o777) == "0o700"
+    assert not POSIX_MODES or oct(root.stat().st_mode & 0o777) == "0o700"
     assert (root / "documents").is_dir()

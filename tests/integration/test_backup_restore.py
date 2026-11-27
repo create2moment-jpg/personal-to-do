@@ -20,7 +20,9 @@ def test_backup_restore_roundtrip(container: Container, settings: Settings, tmp_
     aside = restore_backup(settings, info.path, force=True)
     assert aside is not None and (aside / "db" / "ppos.sqlite3").exists()  # never deleted
     assert container.tasks.get(task.id).title == "keep me"
-    assert (settings.local_data_dir / "documents" / "doc.txt").read_text() == "original"
+    assert (settings.local_data_dir / "documents" / "doc.txt").read_text(
+        encoding="utf-8"
+    ) == "original"
     assert info.path.exists()  # historical backups kept with live data
 
 
@@ -82,7 +84,7 @@ def test_path_traversal_member_rejected(settings: Settings, tmp_path: Path) -> N
 
 def test_export_contains_tables(container: Container, settings: Settings) -> None:
     container.tasks.create("exported")
-    data = json.loads(export_json(settings).read_text())
+    data = json.loads(export_json(settings).read_text(encoding="utf-8"))
     assert data["tables"]["tasks"][0]["title"] == "exported"
 
 
@@ -90,7 +92,7 @@ def test_export_includes_every_feature(container: Container, settings: Settings)
     from ppos.demo import seed_demo
 
     seed_demo(container)
-    data = json.loads(export_json(settings).read_text())
+    data = json.loads(export_json(settings).read_text(encoding="utf-8"))
     assert data["format"] == 2 and data["schema_version"] >= 12
     tables = data["tables"]
     for name in ("goals", "skills", "skill_ratings", "reviews", "meetings", "meeting_series",

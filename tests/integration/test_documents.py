@@ -11,6 +11,7 @@ from ppos.infrastructure.jobs import InlineJobRunner
 from ppos.shared.clock import FixedClock
 from ppos.shared.errors import ValidationError
 from ppos_api.main import create_app
+from tests.conftest import POSIX_MODES
 from tests.pdfgen import make_pdf
 
 REVIEW = [
@@ -53,7 +54,8 @@ def test_pdf_ingest_extracts_pages_and_dedupes(docs: Container, settings: Settin
     assert doc.status.value == "ready" and doc.pages == 3 and doc.extractor_version
     assert any("benchmark" in str(c["text"]) and c["page_start"] == 2 for c in chunks)
     stored = settings.local_data_dir / doc.storage_path
-    assert stored.read_bytes() == pdf and oct(stored.stat().st_mode & 0o777) == "0o600"
+    assert stored.read_bytes() == pdf
+    assert not POSIX_MODES or oct(stored.stat().st_mode & 0o777) == "0o600"
     again = docs.documents.ingest("copy-of-review.pdf", pdf)
     assert again.duplicate and again.document.id == doc.id
 

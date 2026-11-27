@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections.abc import Iterator
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,9 @@ from ppos.bootstrap import Container, build_container
 from ppos.infrastructure.config import Settings
 from ppos.shared.clock import FixedClock
 from ppos_api.main import create_app
+
+# Unix permission bits; Windows protects the user profile with ACLs instead.
+POSIX_MODES = os.name == "posix"
 
 # Tuesday 2026-11-24 09:00 UTC
 NOW = datetime(2026, 11, 24, 9, 0, tzinfo=timezone.utc)

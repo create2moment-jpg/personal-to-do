@@ -11,7 +11,7 @@ from ppos.infrastructure.config import REPO_ROOT
 from ppos.shared.clock import FixedClock
 from ppos.shared.errors import ConflictError, ValidationError
 
-ICS = (REPO_ROOT / "fixtures" / "calendar" / "sample.ics").read_text()
+ICS = (REPO_ROOT / "fixtures" / "calendar" / "sample.ics").read_text(encoding="utf-8")
 TUE = date(2026, 11, 24)
 
 
