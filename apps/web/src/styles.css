@@ -1135,3 +1135,16 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .tl-note { margin: 8px 4px 0; font-size: 0.8rem; }
 @media (max-width: 640px) { .tl-block { font-size: 0.7rem; padding: 0 3px; } .tl-hour:nth-child(even) { display: none; } }
 .t-time { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 550; }
+
+/* ---------------------------------------------------------------- emoji picker */
+.emoji-picker { position: relative; display: inline-flex; flex: none; }
+.emoji-btn { width: 2.1rem; height: 2.1rem; display: grid; place-items: center; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); font-size: 1.05rem; cursor: pointer; color: var(--text-3); }
+.emoji-btn.empty { border-style: dashed; }
+.emoji-btn:hover, .emoji-btn:focus-visible { border-color: var(--accent); color: var(--accent); }
+.emoji-pop { position: absolute; z-index: 40; top: calc(100% + 6px); left: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg, var(--shadow-sm)); padding: 8px; width: 15.5rem; display: grid; gap: 8px; font-size: 0.9rem; font-weight: 400; }
+.emoji-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
+.emoji-grid button { all: unset; cursor: pointer; display: grid; place-items: center; height: 1.8rem; border-radius: 6px; font-size: 1.1rem; }
+.emoji-grid button:hover, .emoji-grid button:focus-visible, .emoji-grid button.on { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.emoji-foot { display: flex; gap: 6px; }
+.emoji-foot .input { flex: 1; min-width: 0; height: 1.9rem; }
+.project-icon.emoji { background: var(--surface-2); font-size: 1.25rem; border: 1px solid var(--border); }

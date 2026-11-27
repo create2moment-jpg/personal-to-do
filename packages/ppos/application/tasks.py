@@ -44,7 +44,7 @@ TASK_EDITABLE_FIELDS = frozenset(
 )
 # status and scheduled_date go through move() so invariants are applied in one place.
 
-PROJECT_EDITABLE_FIELDS = frozenset({"name", "description", "area", "status", "color"})
+PROJECT_EDITABLE_FIELDS = frozenset({"name", "description", "area", "status", "color", "emoji"})
 
 
 TRASH_DAYS = 30

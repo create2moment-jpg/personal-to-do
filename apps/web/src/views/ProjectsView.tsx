@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { FolderKanban, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { EmojiPicker } from "../components/EmojiPicker";
 import { EmptyState } from "../components/primitives";
 import { TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
@@ -22,6 +23,7 @@ export function ProjectsView() {
   const [name, setName] = useState("");
   const [area, setArea] = useState("");
   const [color, setColor] = useState(COLORS[0]!);
+  const [emoji, setEmoji] = useState<string | null>(null);
   const [overProject, setOverProject] = useState<string | null>(null);
 
   const stats = useMemo(() => {
@@ -61,16 +63,18 @@ export function ProjectsView() {
           onSubmit={async (e) => {
             e.preventDefault();
             try {
-              await api.createProject({ name, area: area || undefined, color });
+              await api.createProject({ name, area: area || undefined, color, emoji });
               void qc.invalidateQueries({ queryKey: keys.projects });
               toast.success(`Project “${name}” created`);
               setName("");
+              setEmoji(null);
               setCreating(false);
             } catch (err) {
               toast.error((err as Error).message);
             }
           }}
         >
+          <EmojiPicker value={emoji} onChange={setEmoji} label="Project emoji" />
           <input className="input" style={{ flex: 2, minWidth: 200 }} placeholder="Project name" value={name} onChange={(e) => setName(e.target.value)} autoFocus required />
           <input className="input" style={{ flex: 1, minWidth: 140 }} placeholder="Area (e.g. Engineering)" value={area} onChange={(e) => setArea(e.target.value)} list="areas" />
           <datalist id="areas">
@@ -114,8 +118,8 @@ export function ProjectsView() {
                       {...dropProps(`project:${p.id}`, (o) => setOverProject(o ? p.id : null))}
                       title="Drop a task here to move it into this project"
                     >
-                      <div className="project-icon" style={{ background: color }}>
-                        {p.name[0]}
+                      <div className={`project-icon${p.emoji ? " emoji" : ""}`} style={{ background: p.emoji ? undefined : color }}>
+                        {p.emoji ?? p.name[0]}
                       </div>
                       <h4>{p.name}</h4>
                       <div className="faint" style={{ fontSize: "0.8929rem" }}>
@@ -135,7 +139,21 @@ export function ProjectsView() {
       {selectedProject && (
         <motion.section initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: 26 }}>
           <div className="group-head">
-            <h3>{selectedProject.name}</h3>
+            <h3 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <EmojiPicker
+                value={selectedProject.emoji}
+                label="Project emoji"
+                onChange={async (e) => {
+                  try {
+                    await api.updateProject(selectedProject.id, { emoji: e });
+                    void qc.invalidateQueries({ queryKey: keys.projects });
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  }
+                }}
+              />
+              {selectedProject.name}
+            </h3>
             <span className="faint">{selectedTasks.length} tasks</span>
           </div>
           <div className="list">

@@ -118,7 +118,9 @@ def complete_sprint(sprint_id: str, body: SprintComplete, c: ContainerDep) -> Sp
 
 def _plan_out(p: object) -> WeeklyPlanOut:
     d = dict(p.__dict__)
-    d["objectives"] = [WeeklyObjectiveOut(text=o.text, done=o.done) for o in d["objectives"]]
+    d["objectives"] = [
+        WeeklyObjectiveOut(text=o.text, done=o.done, emoji=o.emoji) for o in d["objectives"]
+    ]
     d.pop("updated_at", None)
     return WeeklyPlanOut(**d)
 

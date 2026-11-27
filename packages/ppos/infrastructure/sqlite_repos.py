@@ -221,15 +221,15 @@ class SqliteProjectRepository:
         return Project(
             id=row["id"], name=row["name"], description=row["description"], area=row["area"],
             status=ProjectStatus(row["status"]), color=row["color"],
-            created_at=created, updated_at=updated,
+            created_at=created, updated_at=updated, emoji=row["emoji"],
         )  # fmt: skip
 
     def add(self, project: Project) -> None:
         self._c.execute(
             "INSERT INTO projects (id, name, description, area, status, color, created_at,"
-            " updated_at) VALUES (?,?,?,?,?,?,?,?)",
+            " updated_at, emoji) VALUES (?,?,?,?,?,?,?,?,?)",
             (project.id, project.name, project.description, project.area, project.status.value,
-             project.color, _ts(project.created_at), _ts(project.updated_at)),
+             project.color, _ts(project.created_at), _ts(project.updated_at), project.emoji),
         )  # fmt: skip
 
     def get(self, project_id: str) -> Project | None:
@@ -244,10 +244,10 @@ class SqliteProjectRepository:
 
     def update(self, project: Project) -> None:
         self._c.execute(
-            "UPDATE projects SET name=?, description=?, area=?, status=?, color=?, updated_at=?"
-            " WHERE id=?",
+            "UPDATE projects SET name=?, description=?, area=?, status=?, color=?, updated_at=?,"
+            " emoji=? WHERE id=?",
             (project.name, project.description, project.area, project.status.value,
-             project.color, _ts(project.updated_at), project.id),
+             project.color, _ts(project.updated_at), project.emoji, project.id),
         )  # fmt: skip
 
     def find(self, include_archived: bool = False) -> list[Project]:

@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from enum import Enum
 
+from ppos.domain.book import clean_emoji
 from ppos.domain.tasks import Task, TaskStatus
 from ppos.shared.errors import ValidationError
 
@@ -70,6 +71,10 @@ class ScopeEvent:
 class WeeklyObjective:
     text: str
     done: bool = False
+    emoji: str | None = None
+
+    def __post_init__(self) -> None:
+        self.emoji = clean_emoji(self.emoji)
 
 
 @dataclass

@@ -93,6 +93,7 @@ class ProjectOut(Out):
     color: str | None
     created_at: datetime
     updated_at: datetime
+    emoji: str | None = None
 
 
 class ProjectCreate(BaseModel):
@@ -100,6 +101,7 @@ class ProjectCreate(BaseModel):
     description: str = ""
     area: str | None = None
     color: str | None = None
+    emoji: str | None = Field(default=None, max_length=16)
 
 
 class ProjectUpdate(BaseModel):
@@ -108,6 +110,7 @@ class ProjectUpdate(BaseModel):
     area: str | None = None
     status: ProjectStatus | None = None
     color: str | None = None
+    emoji: str | None = Field(default=None, max_length=16)
 
 
 class NoteOut(Out):
@@ -521,6 +524,7 @@ class WeekDayOut(BaseModel):
 class WeeklyObjectiveOut(BaseModel):
     text: str
     done: bool = False
+    emoji: str | None = Field(default=None, max_length=16)
 
 
 class WeeklyPlanOut(BaseModel):

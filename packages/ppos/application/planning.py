@@ -450,7 +450,11 @@ class WeekService:
             for k, v in changes.items():
                 if k == "objectives":
                     plan.objectives = [
-                        WeeklyObjective(text=str(o["text"]), done=bool(o.get("done", False)))
+                        WeeklyObjective(
+                            text=str(o["text"]),
+                            done=bool(o.get("done", False)),
+                            emoji=o.get("emoji") or None,
+                        )
                         for o in v
                     ]
                 elif k in allowed:

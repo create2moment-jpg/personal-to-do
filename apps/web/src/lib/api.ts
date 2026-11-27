@@ -161,7 +161,7 @@ export const api = {
   restoreVersion: (id: string, v: number) => request<Note>("POST", `/api/notes/${id}/versions/${v}/restore`),
 
   projects: () => request<Project[]>("GET", "/api/projects"),
-  createProject: (data: { name: string; area?: string; description?: string; color?: string }) =>
+  createProject: (data: { name: string; area?: string; description?: string; color?: string; emoji?: string | null }) =>
     request<Project>("POST", "/api/projects", data),
 
   settings: () => request<WorkspaceSettings>("GET", "/api/settings"),

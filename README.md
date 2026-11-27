@@ -56,7 +56,7 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   estimate count as a default you choose (Settings → Work & time).
 - **Upcoming**: the next seven days with per-day load.
 - **Week**: seven-day board with load vs. capacity and meetings per day,
-  weekly objectives, sprint backlog to drag from, and a guided weekly review.
+  weekly objectives (with an optional emoji), sprint backlog to drag from, and a guided weekly review.
 - **Sprint**: goal, committed and stretch work, burndown, scope changes,
   completion with roll-over and a sprint review.
 - **Meetings & time**: import your Outlook calendar (read-only `.ics`), skip a
@@ -69,7 +69,7 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   subtasks, dependencies (completion blocked until they're done), and
   **repeats** (every day / weekday / week on chosen days / N weeks / month):
   completing one creates the next. Quick capture: `Water plants every mon`.
-- **Backlog** and **Projects & Areas** views. Deleting a task is undoable:
+- **Backlog** and **Projects & Areas** views (projects can carry an emoji). Deleting a task is undoable:
   it stays in *Recently deleted* (bottom of Backlog) for 30 days.
 - **Notes**: a rich-text editor (headings, lists, checklists, tables, code)
   that stores plain Markdown, with autosave and version history (restore is

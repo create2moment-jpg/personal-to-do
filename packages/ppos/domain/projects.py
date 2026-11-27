@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 
+from ppos.domain.book import clean_emoji
 from ppos.shared.errors import ValidationError
 
 
@@ -25,8 +26,10 @@ class Project:
     area: str | None = None
     status: ProjectStatus = ProjectStatus.ACTIVE
     color: str | None = None
+    emoji: str | None = None
 
     def __post_init__(self) -> None:
+        self.emoji = clean_emoji(self.emoji)
         self.name = " ".join(self.name.split())
         if not self.name:
             raise ValidationError("project name must not be empty")

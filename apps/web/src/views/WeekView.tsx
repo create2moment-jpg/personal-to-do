@@ -14,6 +14,7 @@ import { CalendarPlus, ArrowRight, CalendarCheck2, CalendarRange, ChevronLeft, C
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DayTimeChart } from "../components/charts";
+import { EmojiPicker } from "../components/EmojiPicker";
 import { EmptyState } from "../components/primitives";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
@@ -106,6 +107,15 @@ function Objectives({ week }: { week: Week }) {
               aria-label={`Objective ${i + 1} done`}
               onChange={() => {
                 const next = items.map((x, j) => (j === i ? { ...x, done: !x.done } : x));
+                setItems(next);
+                void save(next);
+              }}
+            />
+            <EmojiPicker
+              value={o.emoji}
+              label={`Objective ${i + 1} emoji`}
+              onChange={(e) => {
+                const next = items.map((x, j) => (j === i ? { ...x, emoji: e } : x));
                 setItems(next);
                 void save(next);
               }}
@@ -316,7 +326,10 @@ function WeekReviewPanel({ week, onPlanNext }: { week: Week; onPlanNext: () => v
             {r.objectives.map((o, i) => (
               <li key={i} className={cx(o.done && "done")}>
                 <span className="p-num">{o.done ? "✓" : i + 1}</span>
-                <span className="p-title">{o.text}</span>
+                <span className="p-title">
+                  {o.emoji && <span aria-hidden>{o.emoji} </span>}
+                  {o.text}
+                </span>
               </li>
             ))}
           </ul>

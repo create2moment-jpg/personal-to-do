@@ -92,6 +92,7 @@ export interface Project {
   color: string | null;
   created_at: string;
   updated_at: string;
+  emoji?: string | null;
 }
 
 export interface DailyReview {
@@ -308,6 +309,7 @@ export interface WeekDay {
 export interface WeeklyObjective {
   text: string;
   done: boolean;
+  emoji?: string | null;
 }
 
 export interface WeeklyPlan {

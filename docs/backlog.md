@@ -47,7 +47,7 @@ with a reason).
 | B-023 | Timeboxing on a day timeline (roadmap 3b) | 2026-11-27 | done (timeline of working hours, meetings, boxes and free slots; drag, click a slot, or a start time in the task; "Fill my free time" is a deterministic proposal you apply; migration 0014) | Today → Timeline |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | done (suggestion streams in as the model writes, with Stop; word counts from the diff; "Explain the changes" lists grounded notes — notes quoting words in neither version are dropped) | Prompt Book → Improve with AI |
-| B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
+| B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | done (emoji picker with common choices, any emoji, or None; shown on project cards, task project pills and the week review; migration 0015) | Projects, Week → objectives |
 | B-005 | OCR for scanned PDFs (detected today as “Needs OCR”) — needs Tesseract on the machine | 2026-11-24 | planned (Phase 4b) | Knowledge |
 | B-006 | Word (.docx) import | 2026-11-24 | done (headings, lists, tables and page breaks kept; title from the file or its first heading; standard library only, size-capped, DOCTYPE refused; old .doc gets a clear message) | Knowledge → Add |
 | B-007 | Extract facts (responsibilities, achievements, competencies) with provenance using the local model | 2026-11-24 | done (verbatim-quote grounding, accept/reject) | Knowledge → Facts from this document |

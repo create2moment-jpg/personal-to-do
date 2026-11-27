@@ -121,7 +121,7 @@ export function TaskCard({
           )}
           {project && (
             <span className="project-pill">
-              <span className="dot" style={{ background: project.color ?? "var(--text-3)" }} />
+              {project.emoji ? <span aria-hidden>{project.emoji}</span> : <span className="dot" style={{ background: project.color ?? "var(--text-3)" }} />}
               {project.name}
             </span>
           )}
