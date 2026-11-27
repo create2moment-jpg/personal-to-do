@@ -143,10 +143,12 @@ export interface CaptureResult {
   note: Note | null;
   warnings: string[];
   meeting?: Meeting | null;
+  series?: { series_key: string; title: string; cadence: string } | null;
 }
 
 export interface CapturePreview {
-  kind: "task" | "idea" | "note" | "call";
+  kind: "task" | "idea" | "note" | "call" | "meeting";
+  repeat?: string | null;
   people?: string[];
   start_time?: string | null;
   title: string;

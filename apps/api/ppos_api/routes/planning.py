@@ -104,6 +104,7 @@ def capture_preview(body: CaptureRequest, c: ContainerDep) -> CapturePreviewOut:
         project_name=project_name,
         people=parsed.people,
         start_time=parsed.start_time,
+        repeat=parsed.recurrence.describe() if parsed.recurrence else None,
     )
 
 
@@ -116,6 +117,13 @@ def capture(body: CaptureRequest, c: ContainerDep) -> CaptureOut:
         note=NoteOut.model_validate(result.note) if result.note else None,
         warnings=result.warnings or [],
         meeting=MeetingSerializer(c)(result.meeting, {}) if result.meeting else None,
+        series={
+            "series_key": result.series.series_key,
+            "title": result.series.title,
+            "cadence": result.series.cadence or "",
+        }
+        if result.series
+        else None,
     )
 
 

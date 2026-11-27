@@ -248,6 +248,7 @@ class CapturePreviewOut(BaseModel):
     project_name: str | None
     people: list[str] = []
     start_time: str | None = None
+    repeat: str | None = None  # human-readable, meetings only
 
 
 class CaptureOut(BaseModel):
@@ -256,6 +257,7 @@ class CaptureOut(BaseModel):
     note: NoteOut | None
     warnings: list[str]
     meeting: MeetingOut | None = None
+    series: dict[str, str] | None = None  # {series_key, title, cadence} for a recurring meeting
 
 
 class SearchHitOut(Out):

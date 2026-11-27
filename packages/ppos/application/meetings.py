@@ -209,6 +209,14 @@ class MeetingService:
             return meeting
 
     # ---------------------------------------------------------------- meetings you create
+    def default_start(self, day: date) -> str:
+        """Start time when none is given: next full hour today, else the working-day start."""
+        settings = self._settings.get()
+        now = self._clock.now().astimezone(settings.tz)
+        if day == now.date():
+            return f"{min(now.hour + 1, 23):02d}:00"
+        return settings.work_start
+
     def schedule(
         self,
         title: str,

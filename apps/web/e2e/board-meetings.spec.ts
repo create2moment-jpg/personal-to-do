@@ -127,3 +127,30 @@ test("add meetings manually from Today, the Recurring tab and the command menu",
   const series = (await (await request.get("/api/meeting-series")).json()) as { title: string; series_key: string }[];
   await request.delete(`/api/meeting-series/${encodeURIComponent(series.find((s) => s.title === "E2E weekly 1:1")!.series_key)}`);
 });
+
+test("quick capture adds one-time and recurring meetings with a live preview", async ({ page, request }) => {
+  await open(page, "today");
+  await page.keyboard.press("c");
+  const input = page.getByLabel("Capture text");
+  await input.fill("meeting: E2E capture standup @06:15 ~15m weekdays with Ana #team");
+  const preview = page.locator(".capture-preview");
+  await expect(preview).toContainText("Recurring meeting");
+  await expect(preview).toContainText("Every weekday");
+  await expect(preview).toContainText("15m");
+  await expect(preview).toContainText("Ana");
+  await input.press("Enter");
+  await expect(page.locator("[data-sonner-toast]", { hasText: "Meeting added" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Quick capture" })).toHaveCount(0);
+
+  await page.keyboard.press("c");
+  await page.getByLabel("Capture text").fill("mtg: E2E capture review @tomorrow @14:00 ~50m");
+  await expect(page.locator(".capture-preview")).toContainText("E2E capture review");
+  await expect(page.locator(".capture-preview")).toContainText("50m");
+  await page.getByLabel("Capture text").press("Enter");
+  await expect(page.locator("[data-sonner-toast]", { hasText: "E2E capture review" })).toBeVisible();
+
+  const series = (await (await request.get("/api/meeting-series")).json()) as { title: string; series_key: string; plan: { minutes: number } }[];
+  const s = series.find((x) => x.title === "E2E capture standup")!;
+  expect(s.plan.minutes).toBe(15);
+  await request.delete(`/api/meeting-series/${encodeURIComponent(s.series_key)}`);
+});

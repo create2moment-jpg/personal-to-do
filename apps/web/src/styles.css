@@ -926,3 +926,4 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .import-optional { max-width: 760px; }
 .import-optional > summary { cursor: pointer; color: var(--text-2); font-size: 0.9rem; padding: 0.4rem 0; margin-bottom: 0.6rem; }
 .series-toolbar { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }
+.capture-help .wide { grid-column: 1 / -1; }

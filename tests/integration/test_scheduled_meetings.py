@@ -141,3 +141,24 @@ def test_schedule_api(client: TestClient) -> None:
         json={"title": "x", "day": "2026-11-26", "start_time": "25:00", "minutes": 5},
     )
     assert bad.status_code == 422
+
+
+def test_quick_capture_meetings(client: TestClient) -> None:
+    pv = client.post("/api/capture/preview", json={"text": "meeting: Design sync"}).json()
+    assert (
+        pv["kind"] == "meeting" and pv["start_time"] == "11:00"
+    )  # next full hour (10:00 Berlin now)
+    assert pv["estimate_minutes"] == 30 and pv["scheduled_date"] == "2026-11-24"
+    pv = client.post(
+        "/api/capture/preview", json={"text": "meeting: Stand-up @09:30 ~15m weekdays"}
+    ).json()
+    assert pv["repeat"] == "Every weekday" and pv["estimate_minutes"] == 15
+    one = client.post("/api/capture", json={"text": "meeting: Review @thu @14:00 ~50m"}).json()
+    assert one["meeting"]["duration_minutes"] == 50 and one["series"] is None
+    rec = client.post(
+        "/api/capture", json={"text": "mtg: Stand-up @09:30 ~15m weekdays with Ana #team"}
+    ).json()
+    assert rec["series"]["cadence"] == "Every weekday" and rec["meeting"] is None
+    series = {s["title"]: s for s in client.get("/api/meeting-series").json()}
+    assert series["Stand-up"]["plan"]["people"] == ["Ana"] and series["Stand-up"]["topic"] == "team"
+    assert client.post("/api/capture", json={"text": "meeting: @mon"}).status_code == 422
