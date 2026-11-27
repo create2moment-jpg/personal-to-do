@@ -34,7 +34,7 @@ See [design-system.md](design-system.md) for the visual language.
 | **1.5** | **Premium experience foundation** (design system, interaction model, demo workspace, e2e tests) | ✅ done — see below |
 | 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | ✅ done |
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
-| 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | PWA ✅, repeating tasks ✅ (B-017); timeboxing queued |
+| 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | PWA ✅, repeating tasks ✅ (B-017), timeboxing ✅ (B-023) |
 | 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
@@ -161,7 +161,7 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
 5. **Time insights**: meeting vs. focus hours, time per person, per topic, per
    recurring series; value rating (1–5) after each meeting; "meetings to
    reconsider". Basic charts ship in Phase 3; deeper trends in Phase 8.
-6. **Timeboxing**: drag tasks into free calendar slots (moved to 3b).
+6. **Timeboxing**: drag tasks into free calendar slots (moved to 3b) ✅ — Today → Timeline.
 7. Privacy: attendee data stays local, excluded from AI by default, deletable
    per person; tokens in the OS keychain.
 

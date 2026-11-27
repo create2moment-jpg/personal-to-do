@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { DayTimeline } from "../components/DayTimeline";
 import { MeetingRow } from "../components/meetings";
 import { ProgressRing, StatusDot } from "../components/primitives";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
@@ -271,6 +272,7 @@ export function TodayView() {
       </AnimatePresence>
 
       {(data.meetings.length > 0 || isToday) && <TodayMeetings meetings={data.meetings} minutes={data.time?.meeting_minutes_total ?? 0} />}
+      <DayTimeline day={day} />
 
       <DndContext sensors={sensors} collisionDetection={collision.detect} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd} onDragCancel={() => setActiveTask(null)}>
         <div className="today-layout">

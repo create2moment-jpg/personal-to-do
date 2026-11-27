@@ -80,6 +80,11 @@ export function TaskCard({
       <div className="t-main">
         <div className="t-title">{task.title}</div>
         <div className="t-meta">
+          {task.timebox_start && (
+            <span className="t-time" title={`Timeboxed at ${task.timebox_start}`}>
+              <AlarmClock /> {task.timebox_start}
+            </span>
+          )}
           {task.priority < 4 && (
             <span className={`prio-flag p${task.priority}`} title={`Priority ${task.priority}`}>
               <Flag fill="currentColor" /> P{task.priority}

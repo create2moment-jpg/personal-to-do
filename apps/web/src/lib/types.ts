@@ -34,6 +34,8 @@ export interface Task {
   commitment?: "committed" | "stretch" | null;
   goal_id: string | null;
   deleted_at?: string | null;
+  /** "HH:MM" start on scheduled_date when timeboxed. */
+  timebox_start?: string | null;
 }
 
 export type NoteKind =
@@ -788,4 +790,27 @@ export interface DayPlanProposal {
   capacity_minutes: number;
   meeting_minutes: number;
   current_top: { id: string; title: string }[];
+}
+
+export interface TimeSpan {
+  start: string;
+  end: string;
+  minutes: number;
+}
+
+export interface DayTimeline {
+  day: string;
+  window: TimeSpan | null;
+  meetings: (TimeSpan & { id: string; title: string; kind: string; attending: boolean })[];
+  boxes: (TimeSpan & { task: Task })[];
+  free: TimeSpan[];
+  unboxed: Task[];
+  free_minutes: number;
+  default_minutes: number;
+}
+
+export interface TimeboxProposal {
+  day: string;
+  placements: (TimeSpan & { task: Task })[];
+  unplaced: Task[];
 }

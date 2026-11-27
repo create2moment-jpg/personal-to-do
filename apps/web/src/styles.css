@@ -1105,3 +1105,33 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .rewrite-review h3 { font-size: 1.1rem; font-weight: 640; }
 .understand-btn { flex: none; }
 .ai-line-note { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; padding: 0.45rem 1.3rem; font-size: 0.84rem; color: var(--accent-text); background: var(--accent-soft); }
+
+/* ---------------------------------------------------------------- timeline (timeboxing) */
+.timeline-card { padding: 10px 12px; margin-bottom: 16px; }
+.tl-strip { position: relative; height: 58px; margin: 18px 4px 4px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); }
+.tl-strip.drop-active { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent); }
+.tl-hour { position: absolute; top: -17px; transform: translateX(-50%); font-size: 0.72rem; color: var(--text-3); font-variant-numeric: tabular-nums; pointer-events: none; }
+.tl-hour::after { content: ""; position: absolute; left: 50%; top: 15px; height: 60px; border-left: 1px dashed color-mix(in srgb, var(--border) 80%, transparent); }
+.tl-work { position: absolute; top: 0; bottom: 0; background: var(--surface); border-radius: var(--radius); pointer-events: none; }
+.tl-free { position: absolute; top: 4px; bottom: 4px; border: 1px dashed transparent; border-radius: 6px; background: transparent; cursor: pointer; }
+.tl-free:hover, .tl-free:focus-visible { border-color: color-mix(in srgb, var(--accent) 55%, transparent); background: color-mix(in srgb, var(--accent) 6%, transparent); outline: none; }
+.tl-block { position: absolute; top: 6px; bottom: 6px; border-radius: 6px; font-size: 0.78rem; line-height: 1.2; display: flex; align-items: center; overflow: hidden; padding: 0 6px; gap: 2px; min-width: 6px; }
+.tl-block > span, .tl-open { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-block.meeting { background: color-mix(in srgb, var(--text) 10%, var(--surface)); color: var(--text-2); border: 1px solid var(--border); pointer-events: none; }
+.tl-block.meeting.skipped { background: transparent; border-style: dashed; opacity: 0.6; }
+.tl-block.task { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); color: var(--text); cursor: grab; }
+.tl-block.task.done { opacity: 0.55; text-decoration: line-through; }
+.tl-block.proposed { background: transparent; border: 1.5px dashed var(--accent); color: var(--accent); top: 10px; bottom: 10px; pointer-events: none; }
+.tl-open { all: unset; cursor: pointer; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tl-open:focus-visible { text-decoration: underline; }
+.tl-x { all: unset; cursor: pointer; display: none; place-items: center; width: 14px; height: 14px; border-radius: 4px; opacity: 0.6; flex: none; }
+.tl-block.task:hover .tl-x, .tl-block.task:focus-within .tl-x { display: grid; }
+.tl-x:hover, .tl-x:focus-visible { opacity: 1; background: color-mix(in srgb, var(--text) 10%, transparent); }
+.tl-now { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--red); border-radius: 1px; pointer-events: none; }
+.tl-drop { position: absolute; top: -4px; bottom: -4px; border-left: 2px solid var(--accent); pointer-events: none; font-size: 0.7rem; color: var(--accent); padding-left: 3px; }
+.tl-menu, .tl-unboxed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 4px 2px; font-size: 0.82rem; }
+.tl-chip { display: inline-flex; gap: 6px; align-items: center; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface); cursor: grab; font-size: 0.8rem; }
+.tl-chip:hover { border-color: var(--accent); }
+.tl-note { margin: 8px 4px 0; font-size: 0.8rem; }
+@media (max-width: 640px) { .tl-block { font-size: 0.7rem; padding: 0 3px; } .tl-hour:nth-child(even) { display: none; } }
+.t-time { color: var(--accent); font-variant-numeric: tabular-nums; font-weight: 550; }

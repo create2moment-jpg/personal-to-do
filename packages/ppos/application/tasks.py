@@ -20,6 +20,7 @@ from ppos.domain.tasks import (
     normalize_title,
     validate_minutes,
 )
+from ppos.domain.timebox import parse_start
 from ppos.shared.clock import Clock, new_id
 from ppos.shared.errors import NotFoundError, ValidationError
 
@@ -141,6 +142,37 @@ class TaskService:
             uow.commit()
             return task
 
+    def timebox(self, task_id: str, day: date, start: str | None) -> Task:
+        """Give a task a start time on ``day`` (scheduling it there), or clear it."""
+        return self.timebox_many(day, [(task_id, start)])[0]
+
+    def timebox_many(self, day: date, items: list[tuple[str, str | None]]) -> list[Task]:
+        """Set several start times in one transaction (all or nothing)."""
+        checked = [(task_id, parse_start(start)) for task_id, start in items]
+        now = self._clock.now()
+        out = []
+        with self._uow() as uow:
+            for task_id, start in checked:
+                task = _require_task(uow, task_id)
+                if task.status == TaskStatus.DONE and start is not None:
+                    raise ValidationError("a finished task cannot be timeboxed")
+                before = task.timebox_start
+                if start is not None and task.scheduled_date != day:
+                    task.schedule(day, now)
+                    task.position = uow.tasks.max_position(task.status, day) + 1
+                task.timebox_start = start
+                task.updated_at = now
+                uow.tasks.update(task)
+                uow.audit.record(
+                    "task",
+                    task.id,
+                    "timebox",
+                    details={"day": day.isoformat(), "from": before, "to": start},
+                )
+                out.append(task)
+            uow.commit()
+        return out
+
     def move(
         self,
         task_id: str,
@@ -215,6 +247,7 @@ class TaskService:
             recurrence=done.recurrence,
             goal_id=done.goal_id,
             position=uow.tasks.max_position(status, nxt if scheduled else None) + 1,
+            timebox_start=done.timebox_start if scheduled else None,  # same time next time
         )
         uow.tasks.add(follow)
         done.recurrence = (

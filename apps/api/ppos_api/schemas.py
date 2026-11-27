@@ -40,6 +40,7 @@ class TaskOut(Out):
     commitment: str | None = None
     goal_id: str | None = None
     deleted_at: datetime | None = None
+    timebox_start: str | None = None
 
 
 class TaskCreate(BaseModel):

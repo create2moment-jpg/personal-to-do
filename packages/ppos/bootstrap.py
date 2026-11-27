@@ -29,6 +29,7 @@ from ppos.application.reviews import ReviewService
 from ppos.application.settings import SettingsService
 from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
+from ppos.application.timebox import TimelineService
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
@@ -60,6 +61,7 @@ class Container:
     days: DayService
     capture: CaptureService
     settings_service: SettingsService
+    timeline: TimelineService
     meetings: MeetingService
     sprints: SprintService
     weeks: WeekService
@@ -194,6 +196,9 @@ def build_container(
         days=days,
         capture=CaptureService(uow, clock, tasks, notes, meetings, workspace.tz),
         settings_service=workspace,
+        timeline=TimelineService(
+            clock, tasks, days, lambda d: meetings.between(d, d), workspace.get
+        ),
         meetings=meetings,
         sprints=sprints,
         weeks=WeekService(uow, clock, workspace, meetings, sprints),

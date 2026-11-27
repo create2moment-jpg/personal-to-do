@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlarmClock,
   CalendarClock,
+  CalendarRange,
   ChevronUp,
   Clock,
   Flag,
@@ -152,6 +153,30 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
               )
             }
           />
+
+          {task.scheduled_date && task.status !== "done" && (
+            <>
+              <Label icon={CalendarRange} text="Start time" />
+              <input
+                type="time"
+                step={300}
+                className="input"
+                aria-label="Start time (timebox)"
+                {...field("timebox_start")}
+                onBlur={async (e) => {
+                  const v = e.target.value || null;
+                  if (v === (task.timebox_start ?? null)) return;
+                  try {
+                    const t = await api.timebox(task.id, task.scheduled_date!, v);
+                    qc.setQueryData<Task>(keys.task(t.id), t);
+                    invalidateTasks(qc);
+                  } catch (err) {
+                    toast.error((err as Error).message);
+                  }
+                }}
+              />
+            </>
+          )}
 
           <Label icon={AlarmClock} text="Due" />
           <input type="date" className="input" {...field("due_date")} onChange={(e) => save({ due_date: e.target.value || null })} />

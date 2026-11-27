@@ -40,6 +40,7 @@ from ppos_api.routes import (
     skills,
     sprints,
     tasks,
+    timebox,
 )
 from ppos_api.routes import time as time_routes
 from ppos_api.schemas import HealthOut
@@ -113,6 +114,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
         )
 
     app.include_router(tasks.router)
+    app.include_router(timebox.router)
     app.include_router(notes.router)
     app.include_router(planning.router)
     app.include_router(sprints.router)

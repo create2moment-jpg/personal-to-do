@@ -42,6 +42,12 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   when you overcommit, drag/drop board (Planned → In progress → Blocked → Done),
   top-3 priorities, overdue and due-but-unscheduled lists, roll unfinished work to
   tomorrow, end-of-day review, daily journal.
+- **Timeboxing** (Today → Timeline): your working hours as a strip with meetings,
+  timeboxed tasks and the free time between. Drag a task onto it, click a free
+  slot to place one, or set a start time in the task. **Fill my free time**
+  proposes start times — top priorities first, never splitting a task, never
+  in the past — and saves nothing until you apply. Moving a task to another day
+  drops its time; a repeating task keeps it.
 - **Task board** (`g a`): every task by state — Backlog, Planned, In progress,
   Blocked, Completed (last 7 / 30 days / all) — with drag and drop, filter and
   project selector.

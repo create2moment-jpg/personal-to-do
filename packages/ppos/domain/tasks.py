@@ -54,6 +54,7 @@ class Task:
     commitment: str | None = None  # committed | stretch (only with sprint_id)
     goal_id: str | None = None
     deleted_at: datetime | None = None  # in the trash since (restorable for 30 days)
+    timebox_start: str | None = None  # "HH:MM" local start on scheduled_date (timeboxing)
 
     def __post_init__(self) -> None:
         self.title = normalize_title(self.title)
@@ -78,6 +79,8 @@ class Task:
         self.updated_at = at
 
     def schedule(self, day: date | None, at: datetime) -> None:
+        if day != self.scheduled_date:
+            self.timebox_start = None  # a start time belongs to its day
         self.scheduled_date = day
         if day is not None and self.status == TaskStatus.BACKLOG:
             self.status = TaskStatus.PLANNED

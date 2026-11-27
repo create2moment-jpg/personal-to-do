@@ -25,12 +25,12 @@ export const keys = {
 
 /** Anything that changes tasks invalidates every task-shaped view. */
 export function invalidateTasks(qc: QueryClient = queryClient) {
-  for (const k of ["today", "tasks", "task", "week", "sprint", "sprints"]) void qc.invalidateQueries({ queryKey: [k] });
+  for (const k of ["today", "tasks", "task", "week", "sprint", "sprints", "timeline"]) void qc.invalidateQueries({ queryKey: [k] });
 }
 
 /** Meetings affect capacity, so they refresh day/week views too. */
 export function invalidateTime(qc: QueryClient = queryClient) {
-  for (const k of ["today", "week", "meetings", "series", "insights", "people", "topics"]) void qc.invalidateQueries({ queryKey: [k] });
+  for (const k of ["today", "week", "meetings", "series", "insights", "people", "topics", "timeline"]) void qc.invalidateQueries({ queryKey: [k] });
 }
 
 export const useSettings = () => useQuery({ queryKey: ["settings"], queryFn: api.settings, staleTime: 5 * 60_000 });
