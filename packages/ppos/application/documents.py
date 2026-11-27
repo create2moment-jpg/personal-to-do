@@ -175,12 +175,13 @@ class DocumentService:
                     version = f"{self._x.version}+ocr({engine})"
                     if scanned:
                         err = "No text layer, and OCR found no readable text on these pages."
+
                 else:
                     err = (
-                        "No text layer found — this looks like a scanned PDF. Install "
-                        "Tesseract and Poppler on this machine (e.g. `brew install tesseract "
-                        "poppler` or `apt install tesseract-ocr poppler-utils`), then press "
-                        "Re-index to read it with OCR."
+                        "No text layer found — this looks like a scanned PDF. To read it, "
+                        "turn on Local AI with a model that understands images (llama.cpp: a "
+                        "vision model started with --mmproj), or install Tesseract — then "
+                        "Re-index."
                     )
             chunks = chunk_pages(pages)
             status = DocStatus.NEEDS_OCR if scanned else DocStatus.READY

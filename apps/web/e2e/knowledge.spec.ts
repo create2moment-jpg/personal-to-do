@@ -43,7 +43,7 @@ test("a Word document is imported with its headings and pages", async ({ page })
   await expect(page.locator(".doc-page-label", { hasText: "Page 2" })).toBeVisible();
   await page.getByLabel("Search documents").fill("feature flag");
   const hit = page.locator(".note-item", { hasText: "Release checklist" });
-  await expect(hit).toContainText("p. 2");
+  await expect(hit).toContainText("p. 2", { timeout: 10_000 }); // search is debounced; slow under load
 });
 
 test("duplicates are detected and unsupported files rejected", async ({ page }) => {

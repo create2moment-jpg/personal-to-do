@@ -6,6 +6,7 @@ explicitly allowed. There is no cloud fallback.
 
 from __future__ import annotations
 
+import base64
 import json
 import time
 import urllib.error
@@ -148,6 +149,29 @@ class OllamaProvider(_HttpProvider):
         text = str(data.get("message", {}).get("content", ""))
         return LLMResult(text, self.model, int((time.perf_counter() - start) * 1000))
 
+    def generate_vision(
+        self, system: str, prompt: str, images: list[tuple[str, bytes]], *, max_tokens: int
+    ) -> LLMResult:
+        start = time.perf_counter()
+        data = self._post(
+            "/api/chat",
+            {
+                "model": self.model,
+                "stream": False,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {
+                        "role": "user",
+                        "content": prompt,
+                        "images": [base64.b64encode(b).decode() for _, b in images],
+                    },
+                ],
+                "options": {"temperature": 0, "num_predict": max_tokens},
+            },
+        )
+        text = str(data.get("message", {}).get("content", ""))
+        return LLMResult(text, self.model, int((time.perf_counter() - start) * 1000))
+
     def reachable(self) -> bool:
         return self._get_ok("/api/tags")
 
@@ -221,6 +245,34 @@ class OpenAICompatibleProvider(_HttpProvider):
                 "the model used all output tokens while reasoning and gave no answer — "
                 "raise Max output tokens or lower Reasoning effort in Settings → Local AI"
             )
+        model = str(data.get("model") or self.model)
+        return LLMResult(text, model, int((time.perf_counter() - start) * 1000))
+
+    def generate_vision(
+        self, system: str, prompt: str, images: list[tuple[str, bytes]], *, max_tokens: int
+    ) -> LLMResult:
+        """A chat turn with images (llama.cpp needs a vision model loaded with --mmproj)."""
+        start = time.perf_counter()
+        parts: list[dict[str, Any]] = [{"type": "text", "text": prompt}]
+        parts += [
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{mime};base64,{base64.b64encode(b).decode()}"},
+            }
+            for mime, b in images
+        ]
+        payload: dict[str, Any] = {
+            "model": self._resolve_model(),
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": parts},
+            ],
+            "temperature": 0,
+            "max_tokens": max_tokens,
+        }
+        data = self._post("/chat/completions", payload)
+        choice = (data.get("choices") or [{}])[0]
+        text = str((choice.get("message") or {}).get("content") or "")
         model = str(data.get("model") or self.model)
         return LLMResult(text, model, int((time.perf_counter() - start) * 1000))
 

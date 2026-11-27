@@ -22,6 +22,7 @@ from ppos.ai.provider import (
     DisabledProvider,
     LLMProvider,
     LLMResult,
+    OllamaProvider,
     OpenAICompatibleProvider,
     normalize_openai_base,
 )
@@ -263,6 +264,15 @@ class AIRuntime:
         return iter(
             [provider.generate(system, prompt, temperature=temperature, max_tokens=max_tokens).text]
         )
+
+    def generate_vision(
+        self, system: str, prompt: str, images: list[tuple[str, bytes]], *, max_tokens: int
+    ) -> LLMResult:
+        """Ask the local model about images (OCR of scanned pages)."""
+        provider = self._provider
+        if not isinstance(provider, (OpenAICompatibleProvider, OllamaProvider)):
+            raise AIUnavailableError("Local AI is off — turn it on in Settings → Local AI")
+        return provider.generate_vision(system, prompt, images, max_tokens=max_tokens)
 
     def generation_params(self, default_temperature: float, default_max: int) -> tuple[float, int]:
         if self.source == "app":

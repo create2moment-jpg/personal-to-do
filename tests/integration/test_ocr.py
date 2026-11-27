@@ -33,7 +33,7 @@ def test_scanned_pdf_without_ocr_explains_how_to_enable_it(docs: Container) -> N
     _with_ocr(docs, "", [])  # OCR not installed
     d = docs.documents.ingest("scan.pdf", make_pdf([[], []])).document
     d, _ = docs.documents.get(d.id)
-    assert d.status == DocStatus.NEEDS_OCR and "Install Tesseract" in (d.error or "")
+    assert d.status == DocStatus.NEEDS_OCR and "install Tesseract" in (d.error or "")
 
 
 def test_scanned_pdf_is_read_with_ocr_and_marked(docs: Container) -> None:

@@ -102,9 +102,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Knowledge** (`g d`): drop PDFs, Word (.docx), text or Markdown — reviews, level
   frameworks, feedback. Originals stay untouched in your data folder; text is
   indexed per page so every search hit cites its page and section. Scanned PDFs
-  are read with OCR when Tesseract and Poppler are installed on your machine
-  (`brew install tesseract poppler` / `apt install tesseract-ocr poppler-utils`;
-  `PPOS_OCR_LANG=eng+deu` for more languages) and are labelled as OCR text. Optionally
+  are read by your **local AI model** when it understands images — nothing to
+  install (llama.cpp: start a vision model with `--mmproj`, e.g. Qwen2.5-VL or
+  Gemma 3). Tesseract is used instead if it happens to be installed. OCR text is
+  labelled so you check quotes against the original. Optionally
   **extract facts** with your local model: each fact must quote its source
   verbatim or it is dropped, and nothing counts until you accept it.
 - **Career** (`g c`): your level framework (L4, L5, …) from accepted

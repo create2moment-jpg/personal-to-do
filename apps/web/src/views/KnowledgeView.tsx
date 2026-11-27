@@ -239,7 +239,8 @@ function DocumentReader({ doc, chunkId }: { doc: DocumentInfo; chunkId?: string 
         </div>
         {doc.extractor_version?.includes("+ocr(") && doc.status === "ready" && (
           <div className="ocr-note" role="note">
-            <ScanText size={14} /> Text read from the scanned pages by OCR on this machine — check quotes against the original before relying on them.
+            <ScanText size={14} />{" "}
+            {doc.extractor_version.includes("+ocr(vision-") ? "Text transcribed from the scanned pages by your local AI model" : "Text read from the scanned pages by OCR on this machine"} — check quotes against the original before relying on them.
           </div>
         )}
         {doc.error && (

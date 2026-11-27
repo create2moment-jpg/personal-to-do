@@ -30,6 +30,7 @@ from ppos.application.settings import SettingsService
 from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
 from ppos.application.timebox import TimelineService
+from ppos.domain.documents import ExtractedPage
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
@@ -43,8 +44,9 @@ from ppos.infrastructure.extract import (
 from ppos.infrastructure.ics import parse_ics
 from ppos.infrastructure.jobs import ThreadJobRunner
 from ppos.infrastructure.migrations import prepare_database
-from ppos.infrastructure.ocr import ocr_pdf, ocr_version
+from ppos.infrastructure.ocr import ocr_pdf, ocr_tools, ocr_version
 from ppos.infrastructure.sqlite_repos import SqliteUnitOfWorkFactory
+from ppos.infrastructure.vision_ocr import vision_ocr
 from ppos.shared.clock import Clock, ZonedClock
 
 log = logging.getLogger("ppos")
@@ -161,6 +163,27 @@ def build_container(
         )
         return parse_change_notes(text, original, improved), model
 
+    def ocr_engine() -> str:
+        """Tesseract when installed, else the local model (it must understand images)."""
+        if ocr_tools() is not None:
+            return ocr_version()
+        if ai.name == "none":
+            return ""
+        return f"vision-{ai.detect_model() or 'local-model'}".replace(" ", "-")
+
+    def read_scan(data: bytes) -> list[ExtractedPage]:
+        if ocr_tools() is not None:
+            return ocr_pdf(data, settings.ocr_lang)
+        template = load_template(settings.prompts_dir, "10_documents/ocr_page/v1.md")
+        return vision_ocr(
+            data,
+            lambda system, prompt, images, max_tokens: ai.generate_vision(
+                system, prompt, images, max_tokens=max_tokens
+            ),
+            template.meta.get("role", "You transcribe scanned pages."),
+            template.render(),
+        )
+
     meaning = MeaningMatcher(ai.embed, lambda: ai.embedding_model)
     job_runner: JobRunner = jobs or ThreadJobRunner()
 
@@ -173,8 +196,8 @@ def build_container(
             pages=extract_pages,
             title=document_title,
             version=EXTRACTOR_VERSION,
-            ocr_version=ocr_version if settings.ocr_enabled else lambda: "",
-            ocr=(lambda data: ocr_pdf(data, settings.ocr_lang)) if settings.ocr_enabled else None,
+            ocr_version=ocr_engine if settings.ocr_enabled else lambda: "",
+            ocr=read_scan if settings.ocr_enabled else None,
         ),
         job_runner,
     )

@@ -27,6 +27,23 @@ def improve(user_message: str) -> str:
     )
 
 
+def read_image(data: bytes) -> str:
+    """Pretend OCR: proves the image arrived intact (PNG size or JPEG marker)."""
+    import struct
+
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        w, h = struct.unpack(">II", data[16:24])
+        kind = f"PNG {w}x{h}"
+    elif data.startswith(b"\xff\xd8"):
+        kind = "JPEG"
+    else:
+        return "[illegible]"
+    return (
+        f"```\nQUARTERLY REVIEW ({kind})\nImproved recall by eleven percent.\n"
+        "Delegate more to junior engineers.\n```"
+    )
+
+
 def explain_changes(user_message: str) -> str:
     """Two grounded notes and one that quotes words from neither text (must be dropped)."""
     return (
@@ -179,10 +196,19 @@ class Handler(BaseHTTPRequestHandler):
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
         if self.path.rstrip("/").endswith("/embeddings"):
             return self._embeddings(payload)
-        user = next(
-            (m["content"] for m in payload.get("messages", []) if m.get("role") == "user"), ""
-        )
-        if "Reply with exactly: OK" in user:
+        msg = next((m for m in payload.get("messages", []) if m.get("role") == "user"), {})
+        user = msg.get("content", "")
+        if isinstance(user, list) or msg.get("images"):  # a vision request
+            import base64
+
+            if msg.get("images"):
+                blobs = [base64.b64decode(i) for i in msg["images"]]
+            else:
+                urls = [p["image_url"]["url"] for p in user if p.get("type") == "image_url"]
+                blobs = [base64.b64decode(u.split(",", 1)[1]) for u in urls]
+            user = "\n".join(read_image(b) for b in blobs)
+            answer = user
+        elif "Reply with exactly: OK" in user:
             answer = "OK"
         elif "review for" in user and "Each line is one item with its ID" in user:
             answer = review_draft(user)
