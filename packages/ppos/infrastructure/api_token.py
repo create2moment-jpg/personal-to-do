@@ -24,7 +24,7 @@ def load_or_create_token(settings: Settings) -> str:
             return value
     path.parent.mkdir(parents=True, exist_ok=True)
     value = secrets.token_urlsafe(32)
-    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0), 0o600)
     with os.fdopen(fd, "w", encoding="utf-8") as fh:
         fh.write(value + "\n")
     return value

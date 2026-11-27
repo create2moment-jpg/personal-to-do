@@ -25,6 +25,10 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from ppos.shared.errors import PposError
 
+# O_BINARY matters on Windows: without it os.write translates "\n" to "\r\n",
+# which would corrupt encrypted output. It does not exist (and is not needed) on POSIX.
+_WRITE_FLAGS = os.O_WRONLY | os.O_CREAT | os.O_TRUNC | getattr(os, "O_BINARY", 0)
+
 MAGIC = b"PPOSENC1"
 CHUNK = 1024 * 1024
 SCRYPT = (2**15, 8, 1)
@@ -56,7 +60,7 @@ def encrypt_file(src: Path, dest: Path, passphrase: str) -> None:
     salt, prefix = os.urandom(16), os.urandom(8)
     header = MAGIC + salt + struct.pack(">III", *SCRYPT) + prefix
     aead = AESGCM(_key(passphrase, salt, *SCRYPT))
-    fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    fd = os.open(dest, _WRITE_FLAGS, 0o600)
     with src.open("rb") as fin, os.fdopen(fd, "wb") as fout:
         fout.write(header)
         _write_chunks(fin, fout, aead, header, prefix)
@@ -88,7 +92,7 @@ def decrypt_file(src: Path, dest: Path, passphrase: str) -> None:
         n, r, p = struct.unpack(">III", head[24:36])
         prefix = head[36:44]
         aead = AESGCM(_key(passphrase, salt, n, r, p))
-        fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+        fd = os.open(dest, _WRITE_FLAGS, 0o600)
         with os.fdopen(fd, "wb") as fout:
             counter = 0
             while True:

@@ -66,6 +66,59 @@ jobs:
           path: build/*.zip
           retention-days: 30
 
+  backend-windows:
+    # The app runs on Windows laptops too: same tests, Windows file and path rules.
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install --require-hashes -r requirements-dev.lock
+      - run: pip install --no-deps -e .
+      - run: pytest -p no:cacheprovider
+
+  install-smoke:
+    # What a laptop does: unzip the bundle, install with Python only, start, load the app.
+    needs: [bundle]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: personal-os-bundle
+      - name: Install from the bundle (no Node.js used)
+        shell: bash
+        run: |
+          python -c "import zipfile,glob; zipfile.ZipFile(glob.glob('personal-os-*.zip')[0]).extractall('.')"
+          cd personal-os-*/
+          python scripts/install.py --no-env --data-dir "$RUNNER_TEMP/ppos-data"
+      - name: Start the app and load a page
+        shell: bash
+        run: |
+          cd personal-os-*/
+          if [ -x .venv/Scripts/ppos.exe ]; then ppos=.venv/Scripts/ppos.exe; else ppos=.venv/bin/ppos; fi
+          "$ppos" --data-dir "$RUNNER_TEMP/ppos-data" serve --port 8765 > "$RUNNER_TEMP/serve.log" 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          for _ in range(60):
+              try:
+                  html = urllib.request.urlopen("http://127.0.0.1:8765/", timeout=2).read().decode()
+                  assert "<title>Personal OS</title>" in html, html[:200]
+                  print("app is up")
+                  break
+              except OSError:
+                  time.sleep(1)
+          else:
+              raise SystemExit("app did not start")
+          PY
+
   e2e:
     runs-on: ubuntu-latest
     needs: [backend, web]
