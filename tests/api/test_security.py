@@ -81,3 +81,17 @@ def test_allowed_hosts_and_off_switch(tmp_path: Path, clock: FixedClock) -> None
     assert c.get("/api/tasks").status_code == 200
     off, _ = _app(tmp_path, clock, auth=False)
     assert TestClient(off, base_url="http://anything:1").get("/api/tasks").status_code == 200
+
+
+def test_installable_app_files_are_served(tmp_path: Path, clock: FixedClock) -> None:
+    app, _ = _app(tmp_path, clock)
+    dist = tmp_path / "web"
+    (dist / "manifest.webmanifest").write_text('{"name": "Personal OS"}', encoding="utf-8")
+    (dist / "sw.js").write_text("self.addEventListener('fetch', () => {});", encoding="utf-8")
+    c = TestClient(app, base_url="http://127.0.0.1:8765")
+    m = c.get("/manifest.webmanifest")
+    assert m.status_code == 200 and m.headers["content-type"].startswith(
+        "application/manifest+json"
+    )
+    sw = c.get("/sw.js")
+    assert sw.status_code == 200 and "javascript" in sw.headers["content-type"]

@@ -117,3 +117,20 @@ test("theme and accent switch from settings", async ({ page }) => {
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgb(11, 16, 32)");
 });
+
+test("installable app: manifest, service worker, and no API data in the cache", async ({ page }) => {
+  await open(page, "today");
+  const manifest = await page.evaluate(async () => (await fetch("/manifest.webmanifest")).json());
+  expect(manifest.display).toBe("standalone");
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.reload();
+  await page.waitForLoadState("networkidle");
+  expect(await page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  const cached = await page.evaluate(async () => {
+    const out: string[] = [];
+    for (const name of await caches.keys()) for (const req of await (await caches.open(name)).keys()) out.push(new URL(req.url).pathname);
+    return out;
+  });
+  expect(cached).toContain("/");
+  expect(cached.some((p) => p.startsWith("/api/"))).toBe(false);
+});

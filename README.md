@@ -128,6 +128,20 @@ your attendance choices and ratings are kept.
 
 Requirements: Python ≥ 3.10, Node ≥ 20.
 
+**One command** (macOS / Linux / WSL):
+
+```bash
+bash scripts/install.sh            # add --demo for a sample workspace
+.venv/bin/ppos serve --open        # then "Install Personal OS" from Chrome/Edge's address bar
+```
+
+It installs the pinned, hash-checked dependencies, builds the web app, sets
+your data folder (`~/PersonalProductivityData`, saved in `.env`) and runs
+`ppos doctor`. Installed as an app, it opens in its own window; the service
+worker caches only the app shell — never your data.
+
+For development:
+
 ```bash
 make setup          # venv + Python/Node deps + git hooks (commit author: Jimmy)
 make build          # build the web UI

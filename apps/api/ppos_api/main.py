@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import mimetypes
 import time
 from collections.abc import Awaitable, Callable
 
@@ -45,6 +46,7 @@ from ppos_api.schemas import HealthOut
 from ppos_api.security import load_or_create_token
 
 log = logging.getLogger("ppos.api")
+mimetypes.add_type("application/manifest+json", ".webmanifest")  # installable app manifest
 
 _STATUS: dict[type[Exception], int] = {
     AIUnavailableError: 503,

@@ -5,7 +5,8 @@ BIN := .venv/bin
 
 setup:            ## create venv, install deps, install git hooks
 	python3 -m venv .venv
-	$(BIN)/pip install -e ".[dev]"
+	$(BIN)/pip install --require-hashes -r requirements-dev.lock
+	$(BIN)/pip install --no-deps -e .
 	cd apps/web && npm ci
 	bash scripts/install-git-hooks.sh
 

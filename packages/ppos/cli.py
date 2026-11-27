@@ -32,8 +32,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
 
     settings = _settings(args)
     app = create_app(settings)
-    uvicorn.run(app, host=args.host or settings.host, port=args.port or settings.port,
-                log_level=settings.log_level.lower())  # fmt: skip
+    host, port = args.host or settings.host, args.port or settings.port
+    if args.open:
+        import threading
+        import webbrowser
+
+        shown = "127.0.0.1" if host in ("0.0.0.0", "::") else host  # noqa: S104
+        threading.Timer(1.5, webbrowser.open, args=(f"http://{shown}:{port}/",)).start()
+    uvicorn.run(app, host=host, port=port, log_level=settings.log_level.lower())
     return 0
 
 
@@ -169,6 +175,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("serve", help="run the API (and built web UI)")
     p.add_argument("--host")
     p.add_argument("--port", type=int)
+    p.add_argument("--open", action="store_true", help="open the app in your browser")
     p.set_defaults(func=cmd_serve)
 
     p = sub.add_parser("migrate", help="inspect or apply schema migrations")

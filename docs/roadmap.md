@@ -34,7 +34,7 @@ See [design-system.md](design-system.md) for the visual language.
 | **1.5** | **Premium experience foundation** (design system, interaction model, demo workspace, e2e tests) | ✅ done — see below |
 | 2 | Week view, sprints (2–3 weeks), weekly planning & review, capacity per week | ✅ done |
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
-| 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
+| 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | PWA ✅ (Phase 9); timeboxing and task recurrence queued |
 | 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
@@ -42,7 +42,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | started — hybrid retrieval (keyword + meaning, B-008), grounded Q&A, plan-my-day proposal; weekly/sprint workflows next |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
-| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | in progress — 9a local access token + Host/Origin checks ✅; 9b encrypted backups + locked deps ✅; 9c installer + PWA |
+| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | ✅ done — local access token + Host/Origin checks, encrypted backups, hash-locked deps, installer, installable app (Postgres adapter stays deferred, D-002) |
 | 10 | Advanced agentic workflows and integrations | |
 
 ### Phase 1 delivered
