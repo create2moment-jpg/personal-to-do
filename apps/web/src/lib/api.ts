@@ -226,6 +226,7 @@ export const api = {
   assistantStatus: () => request<AssistantStatus>("GET", "/api/assistant/status"),
   assistantIndex: () => request<AssistantStatus>("POST", "/api/assistant/index"),
   assistantSearch: (q: string) => request<{ sources: AssistantSource[]; semantic: boolean }>("GET", `/api/assistant/search?q=${encodeURIComponent(q)}`),
+  rewriteNote: (text: string, style: string) => request<{ original: string; text: string; style: string; model: string; new_numbers: string[] }>("POST", "/api/assistant/rewrite", { text, style }),
   ask: (question: string) => request<AssistantAnswer>("POST", "/api/assistant/ask", { question }),
   planDay: (day?: string) => request<DayPlanProposal>("POST", "/api/assistant/plan-day", { day: day ?? null }),
   applyDayPlan: (day: string, top: string[]) => request<{ top: string[] }>("POST", "/api/assistant/plan-day/apply", { day, top }),

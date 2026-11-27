@@ -3,6 +3,7 @@ import threading
 from collections.abc import Iterator
 from http.server import ThreadingHTTPServer
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
@@ -16,6 +17,7 @@ from ppos.domain.tasks import Priority
 from ppos.infrastructure.config import Settings
 from ppos.infrastructure.jobs import InlineJobRunner
 from ppos.shared.clock import FixedClock
+from ppos.shared.errors import ValidationError
 
 _spec = importlib.util.spec_from_file_location(
     "fake_llm", Path(__file__).parents[2] / "scripts" / "fake_llm.py"
@@ -143,3 +145,49 @@ def test_questions_still_match_keywords(c: Container) -> None:
         "hybrid",
         "retrieval",
     ]
+
+
+def test_note_rewrite(c: Container, server: str) -> None:
+    with pytest.raises(AIUnavailableError):
+        c.assistant.rewrite("some text", "clearer")
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    r = c.assistant.rewrite(
+        "we basically shipped the 2 benchmarks.\n- [ ] really follow up", "clearer"
+    )
+    assert r.text == "We shipped the 2 benchmarks.\n- [ ] follow up" and r.new_numbers == []
+    with pytest.raises(ValidationError):
+        c.assistant.rewrite("x", "poetic")
+
+
+def test_rewrite_flags_invented_numbers(c: Container, clock: FixedClock) -> None:
+    from ppos.application.assistant import AssistantService
+
+    def fake(path: str, values: dict[str, str]) -> tuple[str, str, str, int]:
+        return ("We grew usage by 40% across 3 teams.", "m", "t", 1)
+
+    class On:  # a stand-in AI runtime that reports itself as enabled
+        name = "openai_compatible"
+        embedding_model = ""
+
+    svc = AssistantService(
+        c.uow,
+        clock,
+        On(),
+        fake,
+        InlineJobRunner(),
+        c.days,
+        lambda: ZoneInfo("UTC"),
+    )  # type: ignore[arg-type]
+    r = svc.rewrite("Usage grew across 3 teams.", "professional")
+    assert r.new_numbers == ["40"]
+
+
+def test_rewrite_api(client: TestClient) -> None:
+    styles = client.get("/api/assistant/rewrite-styles").json()
+    assert set(styles) == {"clearer", "shorter", "structure", "grammar", "professional"}
+    assert (
+        client.post(
+            "/api/assistant/rewrite", json={"text": "hi there", "style": "clearer"}
+        ).status_code
+        == 503
+    )

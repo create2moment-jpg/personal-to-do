@@ -134,3 +134,19 @@ test("installable app: manifest, service worker, and no API data in the cache", 
   expect(cached).toContain("/");
   expect(cached.some((p) => p.startsWith("/api/"))).toBe(false);
 });
+
+test("notes writing assistant: improve the whole note, review the diff, accept", async ({ page }) => {
+  await open(page, "notes");
+  await page.locator(".notes-sidebar .btn.primary").click();
+  await page.getByPlaceholder("Untitled").fill("E2E assist note");
+  const body = page.locator(".ProseMirror");
+  await body.click();
+  await page.keyboard.type("we basically shipped the benchmark today");
+  await page.getByRole("button", { name: "Improve" }).click();
+  await page.getByRole("menuitem", { name: "Clearer" }).click();
+  const dialog = page.getByRole("dialog", { name: "Review the rewrite" });
+  await expect(dialog).toContainText("We shipped the benchmark today");
+  await dialog.getByRole("button", { name: "Accept" }).click();
+  await expect(body).toContainText("We shipped the benchmark today");
+  await expect(body).not.toContainText("basically");
+});

@@ -9,6 +9,7 @@ import TaskItem from "@tiptap/extension-task-item";
 import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
+import { NoteAssist } from "../components/NoteAssist";
 import StarterKit from "@tiptap/starter-kit";
 import { motion } from "framer-motion";
 import {
@@ -180,6 +181,7 @@ function NoteEditor({ noteId }: { noteId: string }) {
     };
   }, [autosave]);
 
+  const { data: aiStatus } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus, staleTime: 60_000 });
   const editor = useEditor(
     {
       extensions: [
@@ -235,6 +237,16 @@ function NoteEditor({ noteId }: { noteId: string }) {
           {note.note_date && <span>· {note.note_date}</span>}
         </div>
         {editor && <FormatBar editor={editor} />}
+        {editor && (
+          <NoteAssist
+            editor={editor}
+            enabled={!!aiStatus?.enabled}
+            saveVersion={async () => {
+              autosave.flush();
+              await persist(true);
+            }}
+          />
+        )}
         <span className="save-indicator" aria-live="polite">
           <span className="dot" style={{ background: state === "saved" ? "var(--green)" : state === "error" ? "var(--red)" : "var(--orange)" }} />
           {state === "saved" ? `Saved · v${note.version}` : state === "saving" ? "Saving…" : state === "dirty" ? "Editing" : "Save failed"}

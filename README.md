@@ -69,6 +69,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   that stores plain Markdown, with autosave and version history (restore is
   non-destructive), kinds incl. journal, meeting, technical, learning,
   career evidence and an **ideas inbox**; links between notes, tasks and projects.
+  **Improve** rewrites the selection or the whole note with your local model
+  (clearer, shorter, structured, grammar, professional) — you review a diff,
+  and accepting keeps the previous text in History.
 - **Quick capture** from anywhere (`c`) — also meetings:
   `meeting: Sprint planning @mon @10:00 ~1h30 every 2 weeks with Ana, Ben #planning`
   `Review PR #code !2 ~1h30m @tomorrow due:fri +ml-platform` · `idea: …` · `note: …`

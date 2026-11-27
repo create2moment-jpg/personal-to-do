@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date, tzinfo
 
+from ppos.ai.output import clean_improved
 from ppos.ai.runtime import AIRuntime
 from ppos.application.daily import DayService
 from ppos.application.documents import JobRunner
@@ -36,6 +37,17 @@ from ppos.shared.errors import ValidationError
 log = logging.getLogger("ppos.assistant")
 TemplateRunner = Callable[[str, dict[str, str]], tuple[str, str, str, int]]
 ASK_TEMPLATE = "13_meta/ask/v1.md"
+REWRITE_TEMPLATE = "02_writing/improve_note/v1.md"
+REWRITE_STYLES: dict[str, str] = {
+    "clearer": "Make it clearer and easier to read: shorter sentences, plain words, logical order.",
+    "shorter": "Make it about half as long: keep every fact and decision, "
+    "drop repetition and filler.",
+    "structure": "Give it structure: short headings where useful, bullet points for "
+    "lists of items, action items as a checklist.",
+    "grammar": "Only fix spelling, grammar and punctuation. Change nothing else.",
+    "professional": "Make the tone professional and concise, suitable to share with colleagues.",
+}
+MAX_REWRITE_CHARS = 12_000
 PLAN_TEMPLATE = "03_daily/plan_day/v1.md"
 MAX_SOURCE_CHARS = 1500
 EMBED_BATCH = 16
@@ -61,6 +73,21 @@ class Answer:
     grounded: bool
     model: str
     semantic: bool
+
+
+@dataclass
+class Rewrite:
+    original: str
+    text: str
+    style: str
+    model: str
+    new_numbers: list[str]  # numbers in the rewrite that the original didn't contain
+
+
+def _numbers(text: str) -> list[str]:
+    import re
+
+    return [n.replace(",", ".") for n in re.findall(r"\d+(?:[.,]\d+)?", text)]
 
 
 @dataclass
@@ -286,6 +313,37 @@ class AssistantService:
         return Answer(
             question, answer, sources, check.cited, check.invalid, check.grounded, model, semantic
         )
+
+    # -- writing assistant ---------------------------------------------------------------
+    def rewrite(self, text: str, style: str) -> Rewrite:
+        """Rewrite note text in a style; flags numbers that were not in the original."""
+        if style not in REWRITE_STYLES:
+            raise ValidationError(f"style must be one of {', '.join(REWRITE_STYLES)}")
+        if not text.strip():
+            raise ValidationError("select some text or write something first")
+        if len(text) > MAX_REWRITE_CHARS:
+            raise ValidationError(
+                "that's long for one rewrite — select a section (up to 12,000 characters)"
+            )
+        if self._ai.name == "none":
+            from ppos.ai.provider import AIUnavailableError
+
+            raise AIUnavailableError("Local AI is off — turn it on in Settings → Local AI.")
+        raw, model, template, _ = self._run(
+            REWRITE_TEMPLATE, {"style_instruction": REWRITE_STYLES[style], "text": text}
+        )
+        out = clean_improved(raw)
+        new_numbers = sorted(set(_numbers(out)) - set(_numbers(text)))
+        with self._uow() as uow:
+            uow.audit.record(
+                "note",
+                "rewrite",
+                style,
+                actor="ai",
+                details={"model": model, "template": template, "new_numbers": len(new_numbers)},
+            )
+            uow.commit()
+        return Rewrite(text, out, style, model, new_numbers)
 
     # -- plan my day -------------------------------------------------------------------
     def plan_day(self, day: date | None = None) -> PlanProposal:

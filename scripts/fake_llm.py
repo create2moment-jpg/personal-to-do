@@ -79,6 +79,14 @@ def ask_answer(user_message: str) -> str:
     return f"From your records: {first} [1]"
 
 
+def rewrite_note(user_message: str) -> str:
+    """Drop filler words and capitalise lines — deterministic, adds nothing."""
+    m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
+    text = m.group(1) if m else ""
+    text = re.sub(r"\b(really|basically|just|very)\s+", "", text, flags=re.IGNORECASE)
+    return "\n".join(line[:1].upper() + line[1:] for line in text.splitlines())
+
+
 def plan_answer(user_message: str) -> str:
     """Pick the first two task ids offered, plus one invented id (must be dropped)."""
     ids = re.findall(r"^([0-9a-f]{32}) \|", user_message, re.MULTILINE)
@@ -138,6 +146,8 @@ class Handler(BaseHTTPRequestHandler):
             answer = review_draft(user)
         elif user.startswith("Today is ") and "Sources:" in user:
             answer = ask_answer(user)
+        elif user.startswith("Rewrite my note text"):
+            answer = rewrite_note(user)
         elif user.startswith("Plan my day"):
             answer = plan_answer(user)
         elif 'Allowed "kind" values' in user:

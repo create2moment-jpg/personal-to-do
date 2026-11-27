@@ -69,3 +69,21 @@ def plan_day(body: PlanIn, c: ContainerDep) -> dict[str, object]:
 @router.post("/plan-day/apply")
 def apply_plan(body: ApplyIn, c: ContainerDep) -> dict[str, object]:
     return {"top": c.assistant.apply_plan(body.day, body.top)}
+
+
+class RewriteIn(BaseModel):
+    text: str = Field(min_length=1, max_length=12_000)
+    style: str = Field(max_length=20)
+
+
+@router.get("/rewrite-styles")
+def rewrite_styles() -> dict[str, str]:
+    from ppos.application.assistant import REWRITE_STYLES
+
+    return REWRITE_STYLES
+
+
+@router.post("/rewrite")
+def rewrite(body: RewriteIn, c: ContainerDep) -> dict[str, object]:
+    """Writing assistant for notes: returns a proposal; nothing is saved."""
+    return asdict(c.assistant.rewrite(body.text, body.style))

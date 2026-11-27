@@ -1087,3 +1087,12 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .trash-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .grounded-draft { display: flex; flex-direction: column; gap: 0.6rem; margin: 0.4rem 0 0.8rem; align-items: flex-start; }
 .grounded-suggestions { display: flex; flex-direction: column; gap: 0.5rem; align-self: stretch; }
+
+/* ---------- Note writing assistant ---------- */
+.note-assist { position: relative; }
+.note-assist-menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 12rem; padding: 0.4rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg, 0 12px 32px rgba(0,0,0,.25)); display: flex; flex-direction: column; }
+.note-assist-menu .section-label { padding: 0.25rem 0.5rem 0.35rem; }
+.menu-item { text-align: left; border: 0; background: none; padding: 0.45rem 0.55rem; border-radius: var(--radius-sm); font: inherit; color: var(--text); cursor: pointer; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--bg-sunken); }
+.rewrite-review { padding: 1.1rem 1.2rem; display: flex; flex-direction: column; gap: 0.6rem; max-height: 85vh; overflow: auto; }
+.rewrite-review h3 { font-size: 1.1rem; font-weight: 640; }
