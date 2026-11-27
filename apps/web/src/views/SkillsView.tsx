@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownRight, ArrowUpRight, Brain, Check, ChevronDown, Info, Link2, Plus, Quote, Search, Sparkles, Sprout, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { OwnEvidenceForm } from "../components/OwnEvidence";
 import { Dialog, EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import type { Fact, SkillMatrix, SkillRow } from "../lib/types";
@@ -254,6 +255,11 @@ function SkillLine({ row, levels, categories, onLink }: { row: SkillRow; levels:
                       {ev.fact.page ? `, p. ${ev.fact.page}` : ""}
                     </button>
                   </div>
+                  {ev.fact.epistemic === "self_reported" && (
+                    <span className="chip" title="Written by you, not taken from a document">
+                      Your note
+                    </span>
+                  )}
                   <button className="btn icon sm ghost" aria-label="Unlink evidence" onClick={() => void api.linkSkillEvidence(s.id, ev.fact.id, false).then(() => refresh(qc))}>
                     <X />
                   </button>
@@ -385,6 +391,7 @@ function LinkDialog({ row, onClose }: { row: SkillRow | null; onClose: () => voi
               )}
             </>
           )}
+          <OwnEvidenceForm skillId={row.skill.id} onDone={onClose} />
           <div className="section-label" style={{ marginTop: "1rem" }}>
             All accepted evidence
           </div>

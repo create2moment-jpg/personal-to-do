@@ -228,3 +228,22 @@ def list_facts(
 @router.patch("/api/facts/{fact_id}", response_model=FactOut)
 def review_fact(fact_id: str, body: FactPatch, c: ContainerDep) -> FactOut:
     return _fact(c.facts.review(fact_id, body.status, body.statement, body.note))
+
+
+class OwnEvidenceIn(BaseModel):
+    kind: str = Field(pattern="^(achievement|responsibility|competency|strength)$")
+    statement: str = Field(min_length=8, max_length=400)
+    detail: str = Field(default="", max_length=4000)
+    expectation_id: str | None = None  # link it right away (optional)
+    skill_id: str | None = None
+
+
+@router.post("/api/facts/own", response_model=FactOut, status_code=status.HTTP_201_CREATED)
+def add_own_evidence(body: OwnEvidenceIn, c: ContainerDep) -> FactOut:
+    """Evidence you write yourself: stored as a note in your library, then accepted."""
+    f = c.facts.add_own(c.documents, body.kind, body.statement, body.detail)
+    if body.expectation_id:
+        c.career.link(body.expectation_id, f.id)
+    if body.skill_id:
+        c.skills.link(body.skill_id, f.id)
+    return _fact(f)

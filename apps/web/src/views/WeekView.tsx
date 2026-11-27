@@ -10,7 +10,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, CalendarCheck2, CalendarRange, ChevronLeft, ChevronRight, ClipboardCheck, Rocket, Sparkles, Target } from "lucide-react";
+import { CalendarPlus, ArrowRight, CalendarCheck2, CalendarRange, ChevronLeft, ChevronRight, ClipboardCheck, Rocket, Sparkles, Target } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DayTimeChart } from "../components/charts";
@@ -180,6 +180,14 @@ function WeekPlan({ week }: { week: Week }) {
                   <div className="wd-head">
                     <span className="wd-name">{new Date(`${d.day}T12:00:00Z`).toLocaleDateString(undefined, { weekday: "short", timeZone: "UTC" })}</span>
                     <span className="wd-date">{Number(d.day.slice(8))}</span>
+                    <button
+                      className="btn icon sm ghost wd-add-meeting"
+                      aria-label={`Add meeting on ${d.day}`}
+                      title="Add a meeting on this day"
+                      onClick={() => ui.openScheduleMeeting({ day: d.day })}
+                    >
+                      <CalendarPlus />
+                    </button>
                   </div>
                   {!off && (
                     <>

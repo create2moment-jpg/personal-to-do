@@ -93,7 +93,8 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   expectations, with the accepted achievements and strengths you link as
   evidence. Suggestions show the words they share; you confirm every link.
   Coverage per level is a hypothesis to guide what to collect next, never a
-  promotion verdict. Gaps turn into tasks with one click.
+  promotion verdict. Gaps turn into tasks with one click. No AI needed: add
+  evidence in your own words (saved as a note in Knowledge, labelled “Your note”).
 - **Goals** (`g g`): year → quarter → month goals with progress from linked
   tasks, a number you track or your own estimate, and a pace hint; link them to
   career expectations and skills.

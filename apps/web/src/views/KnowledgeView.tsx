@@ -16,6 +16,7 @@ const KINDS: [string, string][] = [
   ["framework", "Level framework"],
   ["feedback", "Manager feedback"],
   ["technical", "Technical document"],
+  ["own_note", "My evidence note"],
 ];
 const KIND_LABEL = Object.fromEntries(KINDS);
 

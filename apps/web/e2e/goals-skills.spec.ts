@@ -89,3 +89,24 @@ test("skills: demo matrix, rate with the dots, add a skill, link evidence, make 
   await open(page, "goals");
   await expect(page.getByRole("article", { name: /Goal: Grow E2E Retrieval evaluation: Working \(2\) → Advanced \(4\)/ })).toBeVisible();
 });
+
+test("career: add evidence in your own words; week view adds a meeting on a day", async ({ page }) => {
+  await open(page, "career");
+  const exp = page.locator(".expectation", { hasText: "Writes tests and reviews code within the team." });
+  await exp.getByRole("button", { name: /Link evidence/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Link evidence" });
+  await dialog.getByRole("button", { name: "Add evidence in your own words" }).click();
+  await dialog.getByLabel("Evidence statement").fill("Reviewed 40 pull requests for the retrieval team this quarter");
+  await dialog.getByRole("button", { name: "Add & link" }).click();
+  await expect(page.locator("[data-sonner-toast]", { hasText: "Evidence added and linked" })).toBeVisible();
+  await expect(exp.locator(".evidence")).toContainText("Your note");
+  await expect(exp.locator(".evidence")).toContainText("Reviewed 40 pull requests");
+
+  await open(page, "week");
+  await page.getByRole("button", { name: /Add meeting on/ }).first().click();
+  const m = page.getByRole("dialog", { name: "New meeting" });
+  await m.getByPlaceholder(/Team stand-up/).fill("E2E week meeting");
+  await m.getByLabel("Duration").fill("40");
+  await m.getByRole("button", { name: "Add meeting" }).click();
+  await expect(page.locator(".wd-meeting", { hasText: "E2E week meeting" })).toBeVisible();
+});

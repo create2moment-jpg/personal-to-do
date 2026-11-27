@@ -215,6 +215,7 @@ export const api = {
   facts: (params: { kind?: string; status?: string } = {}) => request<Fact[]>("GET", `/api/facts${qs(params)}`),
   reviewFact: (id: string, changes: { status?: FactStatus; statement?: string; note?: string }) => request<Fact>("PATCH", `/api/facts/${id}`, changes),
   career: () => request<CareerMatrix>("GET", "/api/career"),
+  addOwnEvidence: (body: { kind: string; statement: string; detail: string; expectation_id: string | null; skill_id: string | null }) => request<Fact>("POST", "/api/facts/own", body),
   trends: (weeks: number) => request<Trends>("GET", `/api/insights/trends?weeks=${weeks}`),
   dueReviews: () => request<DueReview[]>("GET", "/api/reviews/due"),
   reviews: () => request<Review[]>("GET", "/api/reviews"),

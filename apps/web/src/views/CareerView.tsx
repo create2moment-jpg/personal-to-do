@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Info, Target, Link2, ListPlus, Plus, Quote, Search, Sparkles, Trash2, TrendingUp, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { OwnEvidenceForm } from "../components/OwnEvidence";
 import { Dialog, EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import type { CareerLevel, CareerRow, Fact } from "../lib/types";
@@ -175,6 +176,11 @@ function ExpectationCard({ row, onLink }: { row: CareerRow; onLink: () => void }
           <span className="chip" title={ev.origin === "suggestion" ? "Suggested by word overlap, confirmed by you" : "Linked by you"}>
             {KIND_ONE[ev.fact.kind] ?? ev.fact.kind}
           </span>
+          {ev.fact.epistemic === "self_reported" && (
+            <span className="chip" title="Written by you, not taken from a document">
+              Your note
+            </span>
+          )}
           <button
             className="btn icon sm ghost"
             aria-label="Unlink evidence"
@@ -269,6 +275,7 @@ function LinkDialog({ row, onClose }: { row: CareerRow | null; onClose: () => vo
               ))}
             </>
           )}
+          <OwnEvidenceForm expectationId={row.expectation.id} onDone={onClose} />
           <div className="section-label" style={{ marginTop: "1rem" }}>
             All accepted evidence
           </div>

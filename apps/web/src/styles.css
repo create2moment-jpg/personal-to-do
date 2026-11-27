@@ -1026,3 +1026,15 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .insights-table th:first-child, .insights-table td:first-child { text-align: left; }
 .insights-table th { color: var(--text-3); font-weight: 600; font-size: 0.78rem; }
 @media (max-width: 700px) { .insights-grid { grid-template-columns: 1fr; } }
+
+/* ---------- Own evidence ---------- */
+.own-evidence-toggle { margin-top: 0.8rem; }
+.own-evidence { margin-top: 0.8rem; padding: 0.7rem 0.8rem; border-radius: var(--radius); background: var(--bg-sunken); display: flex; flex-direction: column; gap: 0.45rem; }
+.own-evidence .section-label { display: flex; gap: 5px; align-items: center; }
+.own-evidence-row { display: flex; gap: 0.45rem; align-items: center; }
+.own-evidence-row .input { flex: 1; }
+.own-evidence-row .select { width: auto; }
+.own-evidence textarea { resize: vertical; }
+.wd-head .wd-date { margin-left: auto; }
+.wd-add-meeting { width: 1.5rem; height: 1.5rem; margin-left: 0.15rem; align-self: center; opacity: 0.35; }
+.wd-head:hover .wd-add-meeting, .wd-add-meeting:focus-visible { opacity: 1; }

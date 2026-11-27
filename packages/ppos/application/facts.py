@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import date
 
-from ppos.application.documents import JobRunner
+from ppos.application.documents import DocumentService, JobRunner
 from ppos.application.ports import UnitOfWorkFactory
 from ppos.domain.documents import DocStatus
 from ppos.domain.facts import FACT_KINDS, Fact, FactRun, is_grounded, parse_candidates
@@ -169,6 +170,59 @@ class FactService:
             return FactSummary(
                 uow.facts.latest_run(document_id), uow.facts.find(document_id=document_id)
             )
+
+    def add_own(
+        self,
+        documents: DocumentService,
+        kind: str,
+        statement: str,
+        detail: str = "",
+        on: date | None = None,
+    ) -> Fact:
+        """Evidence you write yourself (B-012).
+
+        It is stored as a small Markdown note in your library — searchable, with an
+        original you can open — and becomes an accepted fact that quotes that note
+        verbatim, labelled ``self_reported`` so it is never mistaken for a document claim.
+        """
+        from ppos.domain.career import EVIDENCE_KINDS
+
+        if kind not in EVIDENCE_KINDS:
+            raise ValidationError(f"kind must be one of {', '.join(EVIDENCE_KINDS)}")
+        statement = " ".join(statement.split())
+        if not 8 <= len(statement) <= 400:
+            raise ValidationError("describe the evidence in 8–400 characters")
+        day = on or self._clock.today()
+        label = kind.replace("_", " ").capitalize()
+        footer = f"_{label}, recorded by me on {day.isoformat()}._"
+        body = f"# {statement}\n\n{detail.strip()}\n\n{footer}\n"
+        title = f"My note: {statement[:80]}"
+        doc = documents.ingest(
+            f"evidence-{day.isoformat()}.md", body.encode(), kind="own_note", title=title
+        ).document
+        now = self._clock.now()
+        with self._uow() as uow:
+            existing = [f for f in uow.facts.find(document_id=doc.id) if f.statement == statement]
+            if existing:
+                return existing[0]
+            f = Fact(
+                id=new_id(),
+                document_id=doc.id,
+                kind=kind,
+                statement=statement,
+                quote=statement,
+                confidence=1.0,
+                model="you",
+                prompt_template="manual",
+                created_at=now,
+                updated_at=now,
+                epistemic="self_reported",
+                status="accepted",
+            )
+            uow.facts.add(f)
+            uow.audit.record("fact", f.id, "add_own", details={"kind": kind})
+            uow.commit()
+            return f
 
     def find(self, kind: str | None = None, status: str | None = None) -> list[Fact]:
         if kind is not None and kind not in FACT_KINDS:

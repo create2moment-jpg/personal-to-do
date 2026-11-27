@@ -160,3 +160,53 @@ def test_career_api_serialises_linked_evidence(client: TestClient) -> None:
         json={"fact_id": s[0]["fact"]["id"]},
     )
     assert r.status_code == 201 and r.json()["origin"] == "suggestion"
+
+
+def test_own_evidence_is_a_grounded_note(container: Container, clock: FixedClock) -> None:
+    c = container
+    exp = c.career.add_expectation("L5", "Mentors engineers")
+    f = c.facts.add_own(
+        c.documents,
+        "achievement",
+        "Mentored Ana through her first design review",
+        "Weekly pairing in October.",
+    )
+    assert f.status == "accepted" and f.epistemic == "self_reported" and f.quote == f.statement
+    doc, _ = c.documents.get(f.document_id)
+    assert doc.kind == "own_note" and doc.title.startswith("My note:")
+    c.career.link(exp.id, f.id)
+    assert c.career.matrix().levels[0].covered == 1
+    again = c.facts.add_own(
+        c.documents,
+        "achievement",
+        "Mentored Ana through her first design review",
+        "Weekly pairing in October.",
+    )
+    assert again.id == f.id  # same note → same fact, no duplicates
+    with pytest.raises(ValidationError):
+        c.facts.add_own(c.documents, "goal", "Not evidence at all")
+
+
+def test_own_evidence_api_links(client: TestClient) -> None:
+    e = client.post(
+        "/api/career/expectations", json={"level": "L5", "text": "Leads design reviews"}
+    ).json()
+    s = client.post("/api/skills", json={"name": "Design reviews"}).json()
+    r = client.post(
+        "/api/facts/own",
+        json={
+            "kind": "responsibility",
+            "statement": "I run the weekly design review",
+            "expectation_id": e["id"],
+            "skill_id": s["id"],
+        },
+    )
+    assert r.status_code == 201 and r.json()["epistemic"] == "self_reported"
+    assert client.get("/api/career").json()["levels"][0]["covered"] == 1
+    assert (
+        client.get("/api/skills").json()["categories"][0]["rows"][0]["evidence"][0]["fact"]["id"]
+        == r.json()["id"]
+    )
+    client.app.state.container.documents.jobs.wait_idle()  # type: ignore[attr-defined]
+    hits = client.get("/api/documents/search", params={"q": "weekly design review"}).json()
+    assert hits and hits[0]["document_title"].startswith("My note:")

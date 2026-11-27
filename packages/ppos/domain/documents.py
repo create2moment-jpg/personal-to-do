@@ -29,6 +29,7 @@ DOC_KINDS = (
     "feedback",
     "technical",
     "other",
+    "own_note",  # evidence you wrote yourself (created by the app, shown as "My evidence note")
 )
 
 
