@@ -280,6 +280,10 @@ class BookService:
                 yield {"type": "done", **r.__dict__}
             except Exception as exc:  # reported to the client; nothing is stored
                 yield {"type": "error", "message": str(exc) or type(exc).__name__}
+            finally:  # stopped or disconnected: release the model server right away
+                close = getattr(chunks, "close", None)
+                if close is not None:
+                    close()
 
         return events()
 

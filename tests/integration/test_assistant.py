@@ -284,3 +284,12 @@ def test_career_and_skills_suggest_by_meaning(c: Container, server: str) -> None
     # the model goes away: word matching only, nothing breaks
     c.ai.apply(LLMConfig(enabled=True, base_url="http://127.0.0.1:9/v1", embedding_model="x"))
     assert c.skills.suggestions(skill.id) == []
+
+
+def test_stopping_a_stream_closes_the_model_connection(c: Container, server: str) -> None:
+    pid = _page(c, "refactor the parser pls")
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    events = c.book.improve_stream(pid, "clearer")
+    assert next(events)["type"] == "delta"
+    events.close()  # what the server does when the browser stops reading
+    assert c.book.versions(pid) == [] or all(v.source.value != "ai" for v in c.book.versions(pid))
