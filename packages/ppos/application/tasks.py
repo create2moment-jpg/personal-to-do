@@ -37,6 +37,7 @@ TASK_EDITABLE_FIELDS = frozenset(
         "due_date",
         "recurrence",
         "position",
+        "goal_id",
     }
 )
 # status and scheduled_date go through move() so invariants are applied in one place.
@@ -79,6 +80,8 @@ class TaskService:
         with self._uow() as uow:
             if fields.get("project_id"):
                 _require_project(uow, fields["project_id"])
+            if fields.get("goal_id") and uow.goals.get(fields["goal_id"]) is None:
+                raise NotFoundError("goal", fields["goal_id"])
             if fields.get("parent_id"):
                 _require_task(uow, fields["parent_id"])
             if scheduled_date is not None and status == TaskStatus.BACKLOG:
@@ -119,6 +122,8 @@ class TaskService:
                     value = Priority(value)
                 elif key == "project_id" and value:
                     _require_project(uow, value)
+                elif key == "goal_id" and value and uow.goals.get(value) is None:
+                    raise NotFoundError("goal", value)
                 elif key == "parent_id" and value:
                     _validate_parent(uow, task, value)
                 setattr(task, key, value)

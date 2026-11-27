@@ -16,11 +16,13 @@ from ppos.application.career import CareerService
 from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
+from ppos.application.goals import GoalService
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
 from ppos.application.ports import SearchHit
 from ppos.application.settings import SettingsService
+from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
 from ppos.infrastructure.config import Settings, ensure_data_dir
@@ -56,6 +58,8 @@ class Container:
     documents: DocumentService
     facts: FactService
     career: CareerService
+    goals: GoalService
+    skills: SkillService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -134,6 +138,8 @@ def build_container(
     documents.resume_pending()
     meetings.top_up_series()  # open-ended series you created stay filled ahead
 
+    goals = GoalService(uow, clock, tasks)
+
     return Container(
         settings=settings,
         clock=clock,
@@ -159,4 +165,6 @@ def build_container(
         documents=documents,
         facts=FactService(uow, clock, run_template, job_runner, enabled=lambda: ai.name != "none"),
         career=CareerService(uow, clock, tasks),
+        goals=goals,
+        skills=SkillService(uow, clock, goals),
     )

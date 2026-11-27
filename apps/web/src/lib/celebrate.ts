@@ -1,6 +1,6 @@
 import { loadAppearance } from "./theme";
 
-export type Celebration = "top3" | "sprint" | "week" | "day";
+export type Celebration = "top3" | "sprint" | "week" | "day" | "goal";
 
 const KEY = "ppos.celebrated";
 

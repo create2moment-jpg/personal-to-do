@@ -21,6 +21,7 @@ from ppos.infrastructure.sqlite_book import SqliteBookRepository
 from ppos.infrastructure.sqlite_career import SqliteCareerRepository
 from ppos.infrastructure.sqlite_documents import SqliteDocumentRepository
 from ppos.infrastructure.sqlite_facts import SqliteFactRepository
+from ppos.infrastructure.sqlite_goals import SqliteGoalRepository
 from ppos.infrastructure.sqlite_planning import (
     SqliteMeetingRepository,
     SqlitePeopleRepository,
@@ -29,6 +30,7 @@ from ppos.infrastructure.sqlite_planning import (
     SqliteTopicRepository,
     SqliteWeeklyPlanRepository,
 )
+from ppos.infrastructure.sqlite_skills import SqliteSkillRepository
 
 
 def _ts(value: datetime | None) -> str | None:
@@ -50,7 +52,7 @@ def _ds(value: date | None) -> str | None:
 _TASK_COLS = (
     "id, title, description, notes, status, priority, estimate_minutes, actual_minutes, "
     "project_id, area, parent_id, tags, due_date, scheduled_date, recurrence, position, "
-    "created_at, updated_at, completed_at, sprint_id, commitment"
+    "created_at, updated_at, completed_at, sprint_id, commitment, goal_id"
 )
 
 
@@ -60,7 +62,7 @@ def _task_row(t: Task) -> tuple[Any, ...]:
         t.estimate_minutes, t.actual_minutes, t.project_id, t.area, t.parent_id,
         json.dumps(t.tags), _ds(t.due_date), _ds(t.scheduled_date), t.recurrence,
         t.position, _ts(t.created_at), _ts(t.updated_at), _ts(t.completed_at),
-        t.sprint_id, t.commitment,
+        t.sprint_id, t.commitment, t.goal_id,
     )  # fmt: skip
 
 
@@ -90,6 +92,7 @@ def _task_from(row: sqlite3.Row) -> Task:
         completed_at=_dt(row["completed_at"]),
         sprint_id=row["sprint_id"],
         commitment=row["commitment"],
+        goal_id=row["goal_id"],
     )
 
 
@@ -98,7 +101,7 @@ class SqliteTaskRepository:
         self._c = conn
 
     def add(self, task: Task) -> None:
-        placeholders = ",".join("?" * 21)
+        placeholders = ",".join("?" * len(_TASK_COLS.split(",")))  # derived, never hard-coded
         self._c.execute(
             f"INSERT INTO tasks ({_TASK_COLS}) VALUES ({placeholders})", _task_row(task)
         )
@@ -138,6 +141,9 @@ class SqliteTaskRepository:
             args.append(query.parent_id)
         elif query.top_level_only:
             where.append("parent_id IS NULL")
+        if query.goal_id is not None:
+            where.append("goal_id = ?")
+            args.append(query.goal_id)
         if query.sprint_id is not None:
             where.append("sprint_id = ?")
             args.append(query.sprint_id)
@@ -497,6 +503,8 @@ class SqliteUnitOfWork:
         self.documents = SqliteDocumentRepository(conn)
         self.facts = SqliteFactRepository(conn)
         self.career = SqliteCareerRepository(conn)
+        self.goals = SqliteGoalRepository(conn)
+        self.skills = SqliteSkillRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

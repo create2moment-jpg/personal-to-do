@@ -52,6 +52,7 @@ class Task:
     completed_at: datetime | None = None
     sprint_id: str | None = None
     commitment: str | None = None  # committed | stretch (only with sprint_id)
+    goal_id: str | None = None
 
     def __post_init__(self) -> None:
         self.title = normalize_title(self.title)

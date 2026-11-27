@@ -25,7 +25,18 @@ from ppos.shared.errors import (
     PposError,
     ValidationError,
 )
-from ppos_api.routes import ai, book, career, documents, notes, planning, sprints, tasks
+from ppos_api.routes import (
+    ai,
+    book,
+    career,
+    documents,
+    goals,
+    notes,
+    planning,
+    skills,
+    sprints,
+    tasks,
+)
 from ppos_api.routes import time as time_routes
 from ppos_api.schemas import HealthOut
 
@@ -99,6 +110,8 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(documents.router)
     app.include_router(career.router)
     app.include_router(ai.router)
+    app.include_router(goals.router)
+    app.include_router(skills.router)
     app.include_router(time_routes.router)
 
     dist = settings.web_dist_dir

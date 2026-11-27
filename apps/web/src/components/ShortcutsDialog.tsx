@@ -16,6 +16,8 @@ const SHORTCUTS: [string, string][] = [
   ["Go to Knowledge", "G D"],
   ["Go to Career", "G C"],
   ["Go to Task board", "G A"],
+  ["Go to Goals", "G G"],
+  ["Go to Skills", "G L"],
   ["Prompt Book: previous / next page", "← →"],
   ["Go to Settings", "G S"],
   ["Open focused task", "↵"],

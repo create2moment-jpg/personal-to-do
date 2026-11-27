@@ -94,6 +94,11 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   evidence. Suggestions show the words they share; you confirm every link.
   Coverage per level is a hypothesis to guide what to collect next, never a
   promotion verdict. Gaps turn into tasks with one click.
+- **Goals** (`g g`): year → quarter → month goals with progress from linked
+  tasks, a number you track or your own estimate, and a pace hint; link them to
+  career expectations and skills.
+- **Skills** (`g l`): rate yourself 1–5 with history and trend, set targets,
+  link evidence from your reviews, turn gaps into goals.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.

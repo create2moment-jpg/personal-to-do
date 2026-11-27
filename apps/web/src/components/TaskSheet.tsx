@@ -1,4 +1,4 @@
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlarmClock,
   CalendarClock,
@@ -12,6 +12,7 @@ import {
   Plus,
   Repeat,
   Rocket,
+  Target,
   Trash2,
   X,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { api } from "../lib/api";
 import { invalidateTasks, keys, useMoveTask, useProjects, useSprints, useTask, useTasks, useUpdateTask } from "../lib/queries";
 import { STATUS_LABEL, type Task, type TaskStatus } from "../lib/types";
 import { relativeTime } from "../lib/util";
+import { periodLabel } from "../views/GoalsView";
 import { DurationInput } from "./DurationPicker";
 import { Sheet, StatusDot } from "./primitives";
 
@@ -39,6 +41,7 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
   const { data: task } = useTask(taskId);
   const { data: subtasks = [] } = useTasks({ parent_id: taskId });
   const { data: projects = [] } = useProjects();
+  const { data: goals = [] } = useQuery({ queryKey: ["goals", "flat"], queryFn: api.goalsFlat });
   const { data: sprints = [] } = useSprints();
   const update = useUpdateTask();
   const move = useMoveTask();
@@ -155,6 +158,19 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
                 {p.name}
               </option>
             ))}
+          </select>
+
+          <Label icon={Target} text="Goal" />
+          <select className="select" value={task.goal_id ?? ""} aria-label="Goal" onChange={(e) => save({ goal_id: e.target.value || null })}>
+            <option value="">No goal</option>
+            {goals
+              .filter((g) => g.status === "active" || g.id === task.goal_id)
+              .map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.emoji ? `${g.emoji} ` : ""}
+                  {g.title} · {periodLabel(g.period)}
+                </option>
+              ))}
           </select>
 
           <Label icon={Rocket} text="Sprint" />

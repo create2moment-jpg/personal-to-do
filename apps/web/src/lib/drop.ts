@@ -14,7 +14,7 @@ import { addDays, isoDay, relativeDay } from "./util";
 export const TASK_MIME = "application/x-ppos-task";
 export const NOTE_MIME = "application/x-ppos-note";
 
-export type DropTarget = "today" | "tomorrow" | "backlog" | "sprint" | "book" | `day:${string}` | `project:${string}`;
+export type DropTarget = "today" | "tomorrow" | "backlog" | "sprint" | "book" | `day:${string}` | `project:${string}` | `goal:${string}`;
 
 export function startTaskDrag(e: DragEvent, taskId: string, title: string) {
   e.dataTransfer.setData(TASK_MIME, taskId);
@@ -45,6 +45,10 @@ export async function dropTask(target: DropTarget, taskId: string): Promise<void
       }
       await api.addToSprint(sprint.id, [taskId], "committed");
       toast.success(`Committed to ${sprint.name}`);
+    } else if (target.startsWith("goal:")) {
+      await api.updateTask(taskId, { goal_id: target.slice(5) });
+      void queryClient.invalidateQueries({ queryKey: ["goals"] });
+      toast.success("Linked to the goal 🎯");
     } else if (target.startsWith("project:")) {
       const projectId = target.slice(8);
       await api.updateTask(taskId, { project_id: projectId });

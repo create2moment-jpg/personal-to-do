@@ -38,6 +38,7 @@ class TaskOut(Out):
     completed_at: datetime | None
     sprint_id: str | None = None
     commitment: str | None = None
+    goal_id: str | None = None
 
 
 class TaskCreate(BaseModel):
@@ -48,6 +49,7 @@ class TaskCreate(BaseModel):
     priority: int = Field(default=4, ge=1, le=4)
     estimate_minutes: int | None = Field(default=None, ge=0)
     project_id: str | None = None
+    goal_id: str | None = None
     area: str | None = None
     parent_id: str | None = None
     tags: list[str] = []
@@ -64,6 +66,7 @@ class TaskUpdate(BaseModel):
     estimate_minutes: int | None = Field(default=None, ge=0)
     actual_minutes: int | None = Field(default=None, ge=0)
     project_id: str | None = None
+    goal_id: str | None = None
     area: str | None = None
     parent_id: str | None = None
     tags: list[str] | None = None

@@ -38,10 +38,19 @@ class EvidenceOut(_Out):
     note: str
 
 
+class GoalRefOut(BaseModel):
+    id: str
+    title: str
+    period: str
+    progress: float | None
+    status: str
+
+
 class RowOut(_Out):
     expectation: ExpectationOut
     evidence: list[EvidenceOut]
     suggestion_count: int
+    goals: list[GoalRefOut] = []
 
 
 class LevelOut(_Out):
@@ -87,7 +96,17 @@ def _matrix(m: CareerMatrix) -> MatrixOut:
 
 @router.get("", response_model=MatrixOut)
 def matrix(c: ContainerDep) -> MatrixOut:
-    return _matrix(c.career.matrix())
+    out = _matrix(c.career.matrix())
+    by_exp: dict[str, list[GoalRefOut]] = {}
+    for n in c.goals.all_nodes().values():
+        for e in n.expectation_ids:
+            ref = GoalRefOut(id=n.goal.id, title=n.goal.title, period=n.goal.period,
+                             progress=n.progress.value, status=n.goal.status)  # fmt: skip
+            by_exp.setdefault(e, []).append(ref)
+    for lvl in out.levels:
+        for row in lvl.rows:
+            row.goals = by_exp.get(row.expectation.id, [])
+    return out
 
 
 @router.post("/expectations", response_model=ExpectationOut, status_code=status.HTTP_201_CREATED)

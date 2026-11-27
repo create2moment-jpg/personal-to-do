@@ -425,6 +425,8 @@ def _seed_documents(c: Container) -> None:
     )
     c.documents.jobs.wait_idle()
     _seed_career(c)
+    _seed_goals(c)
+    _seed_skills(c)
 
 
 # (document title, kind, quote, statement or None to reuse the quote)
@@ -490,3 +492,115 @@ def _seed_career(c: Container) -> None:
         rows["Sets technical direction across several teams."].id,
         facts["Led the hybrid retrieval benchmark adopted by two teams."].id,
     )
+
+
+def _seed_goals(c: Container) -> None:
+    """A year → quarter → month goal tree linked to tasks, a project and career expectations."""
+    from ppos.application.ports import TaskQuery
+    from ppos.domain.goals import period_of
+
+    today = c.clock.today()
+    year, quarter, month = (period_of(h, today) for h in ("year", "quarter", "month"))
+    tasks = {t.title: t for t in c.tasks.find(TaskQuery(limit=1000))}
+    rows = {r.expectation.text: r.expectation for g in c.career.matrix().levels for r in g.rows}
+    projects = {p.name: p for p in c.projects.find()}
+
+    senior = c.goals.create(
+        "Grow into a senior engineer",
+        "year",
+        year,
+        emoji="🚀",
+        description="Lead work across the team and make it visible: launches, design docs, mentoring.",
+    )
+    launch = c.goals.create(
+        "Take hybrid retrieval to internal beta",
+        "quarter",
+        quarter,
+        parent_id=senior.id,
+        emoji="🔎",
+        description="Two teams using it, with an evaluation they trust.",
+    )
+    bench = c.goals.create(
+        "Publish the retrieval benchmark", "month", month, parent_id=launch.id, emoji="📊"
+    )
+    for title in tasks:
+        if any(k in title for k in ("Benchmark", "regression evals", "ADR")):
+            c.tasks.update(tasks[title].id, {"goal_id": bench.id})
+    mentor = c.goals.create(
+        "Mentor a junior engineer through their first design",
+        "quarter",
+        quarter,
+        parent_id=senior.id,
+        emoji="🤝",
+        progress_mode="manual",
+        manual_progress=65,
+    )
+    talks = c.goals.create(
+        "Share what we learn outside the team",
+        "year",
+        year,
+        emoji="🎤",
+        progress_mode="metric",
+        metric_unit="talks",
+        metric_start=0,
+        metric_target=4,
+        metric_current=3,
+    )
+    if "Retrieval Platform" in projects:
+        c.goals.link(launch.id, "project", projects["Retrieval Platform"].id)
+    for goal, text in (
+        (launch, "Leads projects across a team."),
+        (
+            mentor,
+            "Breaks down ambiguous problems, mentors others and improves engineering practices.",
+        ),
+        (talks, "Sets technical direction across several teams."),
+    ):
+        if text in rows:
+            c.goals.link(goal.id, "expectation", rows[text].id)
+
+
+def _seed_skills(c: Container) -> None:
+    """A small skills matrix with history, targets, evidence and one growth goal."""
+    facts = {f.statement: f for f in c.facts.find(status="accepted")}
+    plan = [
+        (
+            "System design",
+            "Engineering",
+            2,
+            3,
+            4,
+            "Led the hybrid retrieval benchmark adopted by two teams.",
+        ),
+        ("Information retrieval", "Engineering", 3, 3, 4, "Improved recall@10 by 11 percent."),
+        ("Python", "Engineering", 4, 4, 4, None),
+        ("Mentoring", "Leadership", 1, 2, 3, None),
+        ("Communicating trade-offs", "Communication", 3, 3, 4, "Communicates trade-offs clearly."),
+        ("Technical writing", "Communication", None, None, 3, None),
+    ]
+    for name, category, before, now_level, target, evidence in plan:
+        s = c.skills.create(name, category, target_level=target)
+        if before is not None:
+            c.skills.rate(s.id, before, "start of the year")
+        if now_level is not None and now_level != before:
+            c.skills.rate(s.id, now_level, "after the retrieval launch")
+        if evidence and evidence in facts:
+            c.skills.link(s.id, facts[evidence].id)
+    early = (datetime.now(timezone.utc) - timedelta(days=150)).isoformat()
+    with c.uow() as uow:  # spread the early ratings over the past months for a real trend
+        uow.conn.execute(
+            "UPDATE skill_ratings SET rated_at = ? WHERE note = 'start of the year'", (early,)
+        )
+        uow.commit()
+    mentoring = next(
+        r.skill
+        for _, rows in c.skills.matrix().categories
+        for r in rows
+        if r.skill.name == "Mentoring"
+    )
+    goal = next(
+        (n for n in c.goals.all_nodes().values() if n.goal.title.startswith("Mentor a junior")),
+        None,
+    )
+    if goal is not None:
+        c.goals.link(goal.goal.id, "skill", mentoring.id)

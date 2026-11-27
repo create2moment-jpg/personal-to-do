@@ -36,11 +36,11 @@ See [design-system.md](design-system.md) for the visual language.
 | 3 | **Calendar, meetings & time**: read-only Outlook (ICS) import, attendance per meeting and per series, call logging, time per person/topic, value ratings, automatic capacity — [spec](specs/meetings-and-time.md) | ✅ done |
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | queued |
 | 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
-| N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | queued |
-| 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ core done — OCR, .docx and AI fact extraction queued (B-005…B-007) |
+| N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
+| 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer (any OpenAI-compatible local server, configured live in Settings → Local AI, R-017), prompt templates and output validation shipped |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
-| 7 | Goals hierarchy, skills, performance frameworks, career evidence | started — Career view (framework levels × accepted evidence, B-009) done; goals and skills next |
+| 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | |
 | 10 | Advanced agentic workflows and integrations | |
@@ -197,6 +197,22 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
   feed career evidence (Phase 7, B-009). The quote can never be edited.
 - Chunking now starts a new passage at every heading (chunk:v2) so framework
   levels and review sections are cited separately.
+
+### Phase 7 — Goals and Skills (B-011)
+
+- **Goals:** year → quarter → month, each sub-goal inside its parent's period.
+  Progress is computed and explained: from linked tasks (directly or through a
+  linked project), from a number you track (e.g. 3 of 4 talks), from your own
+  estimate, or as the average of sub-goals. A pace hint compares progress with
+  the share of the period that has passed (ahead / on track / behind) and is
+  labelled as a hint. Goals link to career expectations (shown in Career) and
+  to skills; drag a task onto a goal to link it; deleting a goal keeps its
+  tasks and sub-goals.
+- **Skills:** self-rated 1–5 (Aware → Expert) with a full history and a
+  three-month trend, a target and gap, evidence from accepted facts (suggested
+  by shared words, confirmed by you), accepted competencies offered as new
+  skills, and "Make it a goal" that creates a linked quarter goal.
+- Demo workspace ships goals and skills so both views are populated.
 
 ### Phase 7 started — Career view (B-009)
 

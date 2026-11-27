@@ -32,6 +32,7 @@ export interface Task {
   completed_at: string | null;
   sprint_id?: string | null;
   commitment?: "committed" | "stretch" | null;
+  goal_id: string | null;
 }
 
 export type NoteKind =
@@ -535,6 +536,7 @@ export interface CareerRow {
   expectation: Expectation;
   evidence: Evidence[];
   suggestion_count: number;
+  goals: { id: string; title: string; period: string; progress: number | null; status: string }[];
 }
 
 export interface CareerLevel {
@@ -589,4 +591,78 @@ export interface AiTestReport {
   error: string;
   models: string[];
   checks: { name: string; ok: boolean; ms: number; detail: string }[];
+}
+
+// ------------------------------------------------------------------ Goals
+export type GoalHorizon = "year" | "quarter" | "month";
+export type GoalStatus = "active" | "achieved" | "paused" | "dropped";
+export type GoalMode = "auto" | "manual" | "metric";
+export type GoalPace = "ahead" | "on track" | "behind" | "not started" | "upcoming" | "ended" | GoalStatus;
+
+export interface Goal {
+  id: string;
+  title: string;
+  description: string;
+  horizon: GoalHorizon;
+  period: string;
+  parent_id: string | null;
+  status: GoalStatus;
+  progress_mode: GoalMode;
+  manual_progress: number | null;
+  metric_unit: string | null;
+  metric_start: number | null;
+  metric_target: number | null;
+  metric_current: number | null;
+  emoji: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+  achieved_at: string | null;
+}
+
+export interface GoalNode {
+  goal: Goal;
+  progress: { value: number | null; basis: string; done: number; total: number };
+  pace: GoalPace;
+  period_start: string;
+  period_end: string;
+  expectation_ids: string[];
+  project_ids: string[];
+  skill_ids: string[];
+  children: GoalNode[];
+}
+
+export interface GoalTree {
+  year: number;
+  roots: GoalNode[];
+}
+
+// ------------------------------------------------------------------ Skills
+export interface Skill {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  target_level: number | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SkillRow {
+  skill: Skill;
+  level: number | null;
+  previous: number | null;
+  rated_at: string | null;
+  gap: number | null;
+  history: { id: string; level: number; note: string; rated_at: string }[];
+  evidence: { fact: Fact; document_title: string; origin: string }[];
+  suggestion_count: number;
+  goal_ids: string[];
+}
+
+export interface SkillMatrix {
+  categories: { category: string; rows: SkillRow[] }[];
+  levels: Record<string, [string, string]>;
+  candidates: Fact[];
 }

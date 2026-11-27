@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Info, Link2, ListPlus, Plus, Quote, Search, Sparkles, Trash2, TrendingUp, X } from "lucide-react";
+import { Check, Info, Target, Link2, ListPlus, Plus, Quote, Search, Sparkles, Trash2, TrendingUp, X } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Dialog, EmptyState } from "../components/primitives";
@@ -188,6 +188,15 @@ function ExpectationCard({ row, onLink }: { row: CareerRow; onLink: () => void }
         </div>
       ))}
 
+      {row.goals.length > 0 && (
+        <div className="exp-goals">
+          {row.goals.map((g) => (
+            <button key={g.id} className="chip accent" onClick={() => ui.navigate("goals")} title="A goal working toward this expectation">
+              <Target /> {g.title} · {g.progress === null ? "not measured" : `${Math.round(g.progress * 100)}%`}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="exp-actions">
         {row.evidence.length === 0 && <span className="faint gap-label">No evidence yet</span>}
         <button className="btn sm" onClick={onLink}>
