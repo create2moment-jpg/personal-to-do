@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from datetime import datetime
 
 from fastapi import APIRouter, Response, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from ppos.domain.book import Book, BookNode, NodeKind, PromptVersion
@@ -224,6 +227,31 @@ def use(node_id: str, body: UseIn, c: ContainerDep) -> dict[str, str]:
 def improve(node_id: str, body: ImproveIn, c: ContainerDep) -> dict[str, object]:
     r = c.book.improve(node_id, body.style, body.body)
     return r.__dict__
+
+
+@router.post("/api/book-nodes/{node_id}/improve/stream")
+def improve_stream(node_id: str, body: ImproveIn, c: ContainerDep) -> StreamingResponse:
+    """Newline-delimited JSON: ``delta`` events while the model writes, then ``done``."""
+    events = c.book.improve_stream(node_id, body.style, body.body)  # validates before streaming
+
+    def lines() -> Iterator[bytes]:
+        for e in events:
+            yield (json.dumps(e) + "\n").encode()
+
+    return StreamingResponse(
+        lines(), media_type="application/x-ndjson", headers={"Cache-Control": "no-store"}
+    )
+
+
+class ExplainIn(BaseModel):
+    original: str = Field(min_length=1, max_length=40_000)
+    improved: str = Field(min_length=1, max_length=40_000)
+
+
+@router.post("/api/book/explain-changes")
+def explain_changes(body: ExplainIn, c: ContainerDep) -> dict[str, object]:
+    notes, model = c.book.explain(body.original, body.improved)
+    return {"notes": notes, "model": model}
 
 
 @router.post("/api/book-nodes/{node_id}/versions/{version}/accept", response_model=PageOut)

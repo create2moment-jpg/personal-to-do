@@ -49,6 +49,7 @@ import type {
   CapturePreview,
   CaptureResult,
   Health,
+  ImproveEvent,
   DailyPlan,
   DailyReview,
   Note,
@@ -71,24 +72,48 @@ export class ApiError extends Error {
   }
 }
 
+async function apiError(res: Response): Promise<ApiError> {
+  let message = res.statusText;
+  try {
+    const data = (await res.json()) as { detail?: unknown };
+    if (typeof data.detail === "string") message = data.detail;
+    else if (Array.isArray(data.detail)) message = data.detail.map((d: { msg: string }) => d.msg).join("; ");
+  } catch {
+    /* non-JSON error body */
+  }
+  if (res.status === 401) message = "Your session with the local app expired — reload the page.";
+  return new ApiError(res.status, message);
+}
+
+/** POST that answers newline-delimited JSON events; calls onEvent for each one. */
+async function streamEvents<E>(path: string, body: unknown, onEvent: (e: E) => void, signal?: AbortSignal): Promise<void> {
+  const res = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), signal });
+  if (!res.ok) throw await apiError(res);
+  if (!res.body) throw new ApiError(500, "the local app sent no answer");
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    buf += decoder.decode(value, { stream: !done });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (line) onEvent(JSON.parse(line) as E);
+    }
+    if (done) break;
+  }
+  if (buf.trim()) onEvent(JSON.parse(buf) as E);
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
     method,
     headers: body === undefined ? undefined : { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) {
-    let message = res.statusText;
-    try {
-      const data = (await res.json()) as { detail?: unknown };
-      if (typeof data.detail === "string") message = data.detail;
-      else if (Array.isArray(data.detail)) message = data.detail.map((d) => d.msg).join("; ");
-    } catch {
-      /* non-JSON error body */
-    }
-    if (res.status === 401) message = "Your session with the local app expired — reload the page.";
-    throw new ApiError(res.status, message);
-  }
+  if (!res.ok) throw await apiError(res);
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);
 }
 
@@ -198,6 +223,9 @@ export const api = {
   usePage: (id: string, values: Record<string, string>, body?: string) =>
     request<{ text: string }>("POST", `/api/book-nodes/${id}/use`, { values, body }),
   improvePage: (id: string, style: string, body?: string) => request<Improvement>("POST", `/api/book-nodes/${id}/improve`, { style, body }),
+  improvePageStream: (id: string, style: string, body: string | undefined, onEvent: (e: ImproveEvent) => void, signal?: AbortSignal) =>
+    streamEvents<ImproveEvent>(`/api/book-nodes/${id}/improve/stream`, { style, body }, onEvent, signal),
+  explainChanges: (original: string, improved: string) => request<{ notes: string[]; model: string }>("POST", "/api/book/explain-changes", { original, improved }),
   acceptVersion: (id: string, v: number) => request<Page>("POST", `/api/book-nodes/${id}/versions/${v}/accept`),
   aiStatus: () => request<AiStatus>("GET", "/api/ai/status"),
   aiConfig: () => request<AiConfigState>("GET", "/api/ai/config"),

@@ -10,6 +10,7 @@ import json
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import Any, Protocol
 from urllib.parse import urlparse
@@ -222,6 +223,56 @@ class OpenAICompatibleProvider(_HttpProvider):
             )
         model = str(data.get("model") or self.model)
         return LLMResult(text, model, int((time.perf_counter() - start) * 1000))
+
+    def stream(
+        self, system: str, prompt: str, *, temperature: float, max_tokens: int
+    ) -> Iterator[str]:
+        """Yield answer text as the server produces it (server-sent events).
+
+        Reasoning tokens (``reasoning_content``) are not yielded: only the answer.
+        """
+        payload: dict[str, Any] = {
+            "model": self._resolve_model(),
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "stream": True,
+        }
+        if self.reasoning_effort:
+            payload["reasoning_effort"] = self.reasoning_effort
+        req = urllib.request.Request(  # noqa: S310 - scheme/host validated in __init__
+            f"{self.base_url}/chat/completions",
+            data=json.dumps(payload).encode(),
+            headers=self._headers(),
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:  # noqa: S310
+                for raw in resp:
+                    line = raw.decode("utf-8", "replace").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    data = line[5:].strip()
+                    if data == "[DONE]":
+                        return
+                    try:
+                        event = json.loads(data)
+                    except ValueError:
+                        continue
+                    choice = (event.get("choices") or [{}])[0]
+                    piece = (choice.get("delta") or {}).get("content")
+                    if piece:
+                        yield str(piece)
+        except urllib.error.HTTPError as exc:
+            hint = " — check the API key" if exc.code in (401, 403) else ""
+            raise AIUnavailableError(
+                f"model server returned HTTP {exc.code}{hint}: {exc.read()[:200]!r}"
+            ) from exc
+        except (urllib.error.URLError, TimeoutError, OSError) as exc:
+            raise AIUnavailableError(f"cannot reach the model at {self.base_url}: {exc}") from exc
 
     def embed(self, texts: list[str], model: str) -> list[list[float]]:
         """Vectors from the server's /embeddings endpoint (llama.cpp needs --embeddings)."""

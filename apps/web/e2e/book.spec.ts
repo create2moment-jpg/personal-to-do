@@ -59,6 +59,12 @@ test("book: improve with local AI keeps the original", async ({ page }) => {
   await page.getByRole("radio", { name: /More specific/ }).click();
   await page.getByRole("button", { name: "Improve", exact: true }).click();
   await expect(page.locator(".compare")).toContainText("Goal:");
+  await expect(page.getByRole("button", { name: "Use suggestion" })).toBeVisible();
+  await expect(page.locator(".change-counts")).toContainText(/\+\d+ words/);
+  await page.getByRole("button", { name: "Explain the changes" }).click();
+  const notes = page.locator(".change-notes");
+  await expect(notes).toContainText("Split the request into Goal, Context");
+  await expect(notes).not.toContainText("300 percent"); // ungrounded note dropped
   await page.getByRole("button", { name: "Use suggestion" }).click();
   await expect(page.locator(".page-body")).toHaveValue(/^Goal:/);
   await page.getByRole("button", { name: "History" }).click();

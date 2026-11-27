@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from ppos.ai.output import clean_improved
+from ppos.ai.output import clean_improved, parse_change_notes
 from ppos.ai.prompts import load_template
 from ppos.ai.provider import build_provider
 from ppos.ai.runtime import AIRuntime, env_config
@@ -132,6 +133,25 @@ def build_container(
         )
         return clean_improved(text), model, ref, latency
 
+    def improver_stream(original: str, style_instruction: str) -> tuple[Iterator[str], str, str]:
+        template = load_template(settings.prompts_dir, "02_writing/improve_prompt/v1.md")
+        temperature, max_tokens = ai.generation_params(
+            settings.llm_temperature, settings.llm_max_tokens
+        )
+        chunks = ai.stream(
+            template.meta.get("role", "You are a careful assistant."),
+            template.render(style_instruction=style_instruction, prompt=original),
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return chunks, ai.detect_model() or ai.model, template.ref
+
+    def explainer(original: str, improved: str) -> tuple[list[str], str]:
+        text, model, _ref, _ms = run_template(
+            "02_writing/explain_changes/v1.md", {"original": original, "improved": improved}
+        )
+        return parse_change_notes(text, original, improved), model
+
     job_runner: JobRunner = jobs or ThreadJobRunner()
 
     documents = DocumentService(
@@ -168,7 +188,14 @@ def build_container(
         meetings=meetings,
         sprints=sprints,
         weeks=WeekService(uow, clock, workspace, meetings, sprints),
-        book=BookService(uow, clock, improver),
+        book=BookService(
+            uow,
+            clock,
+            improver,
+            improver_stream=improver_stream,
+            explainer=explainer,
+            cleaner=clean_improved,
+        ),
         ai=ai,
         documents=documents,
         facts=FactService(uow, clock, run_template, job_runner, enabled=lambda: ai.name != "none"),

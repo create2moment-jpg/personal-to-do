@@ -430,6 +430,8 @@ export interface Improvement {
   version: number;
 }
 
+export type ImproveEvent = { type: "delta"; text: string } | ({ type: "done" } & Improvement) | { type: "error"; message: string };
+
 export interface AiStatus {
   enabled: boolean;
   provider: string;

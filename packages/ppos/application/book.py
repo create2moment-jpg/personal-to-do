@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+import time
+from collections.abc import Callable, Iterator, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -53,15 +54,29 @@ class Improvement:
 
 # (system, prompt, style) -> (text, model, template_ref, latency_ms)
 Improver = Callable[[str, str], tuple[str, str, str, int]]
+# (original, style_instruction) -> (text chunks, model, template_ref)
+ImproverStream = Callable[[str, str], tuple[Iterator[str], str, str]]
+# (original, improved) -> (bullet points, model)
+Explainer = Callable[[str, str], tuple[list[str], str]]
 
 
 class BookService:
     def __init__(
-        self, uow_factory: UnitOfWorkFactory, clock: Clock, improver: Improver | None = None
+        self,
+        uow_factory: UnitOfWorkFactory,
+        clock: Clock,
+        improver: Improver | None = None,
+        *,
+        improver_stream: ImproverStream | None = None,
+        explainer: Explainer | None = None,
+        cleaner: Callable[[str], str] = str.strip,
     ) -> None:
         self._uow = uow_factory
         self._clock = clock
         self._improver = improver
+        self._improver_stream = improver_stream
+        self._explainer = explainer
+        self._clean = cleaner
 
     # books --------------------------------------------------------------
     def books(self) -> list[Book]:
@@ -220,18 +235,72 @@ class BookService:
             uow.commit()
             return text
 
-    def improve(self, node_id: str, style: str, body: str | None = None) -> Improvement:
+    def _improve_input(self, node_id: str, style: str, body: str | None) -> str:
         if style not in IMPROVE_STYLES:
             raise ValidationError(f"style must be one of {sorted(IMPROVE_STYLES)}")
-        if self._improver is None:
-            from ppos.ai.provider import AIUnavailableError
-
-            raise AIUnavailableError("Local AI is not configured.")
         with self._uow() as uow:
             original = body if body is not None else self._page(uow, node_id).body
         if not original.strip():
             raise ValidationError("write something first — there is nothing to improve")
+        return original
+
+    @staticmethod
+    def _no_ai() -> Exception:
+        from ppos.ai.provider import AIUnavailableError
+
+        return AIUnavailableError("Local AI is not configured.")
+
+    def improve(self, node_id: str, style: str, body: str | None = None) -> Improvement:
+        original = self._improve_input(node_id, style, body)
+        if self._improver is None:
+            raise self._no_ai()
         text, model, template, latency = self._improver(original, IMPROVE_STYLES[style])
+        return self._store_suggestion(node_id, original, text, style, model, template, latency)
+
+    def improve_stream(
+        self, node_id: str, style: str, body: str | None = None
+    ) -> Iterator[dict[str, Any]]:
+        """Validate now, then yield ``delta`` events while the model writes and one
+        final ``done`` event carrying the stored suggestion (or an ``error`` event)."""
+        original = self._improve_input(node_id, style, body)
+        if self._improver_stream is None:
+            raise self._no_ai()
+        chunks, model, template = self._improver_stream(original, IMPROVE_STYLES[style])
+
+        def events() -> Iterator[dict[str, Any]]:
+            start = time.perf_counter()
+            parts: list[str] = []
+            try:
+                for piece in chunks:
+                    parts.append(piece)
+                    yield {"type": "delta", "text": piece}
+                text = self._clean("".join(parts))
+                latency = int((time.perf_counter() - start) * 1000)
+                r = self._store_suggestion(node_id, original, text, style, model, template, latency)
+                yield {"type": "done", **r.__dict__}
+            except Exception as exc:  # reported to the client; nothing is stored
+                yield {"type": "error", "message": str(exc) or type(exc).__name__}
+
+        return events()
+
+    def explain(self, original: str, improved: str) -> tuple[list[str], str]:
+        """Short, plain-language list of what the suggestion changed (AI, read-only)."""
+        if not original.strip() or not improved.strip():
+            raise ValidationError("both the original and the suggestion are needed")
+        if self._explainer is None:
+            raise self._no_ai()
+        return self._explainer(original, improved)
+
+    def _store_suggestion(
+        self,
+        node_id: str,
+        original: str,
+        text: str,
+        style: str,
+        model: str,
+        template: str,
+        latency: int,
+    ) -> Improvement:
         with self._uow() as uow:
             n = self._page(uow, node_id)
             v = self._add_version(

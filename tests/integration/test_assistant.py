@@ -210,3 +210,58 @@ def test_ai_capture_proposes_a_line(c: Container, server: str) -> None:
 def test_ai_capture_api_never_saves(client: TestClient) -> None:
     assert client.post("/api/capture/ai", json={"text": "remind me to call Ana"}).status_code == 503
     assert client.get("/api/tasks").json() == []
+
+
+def _page(c: Container, body: str) -> str:
+    from ppos.domain.book import NodeKind
+
+    b = c.book.create_book("Prompts")
+    return c.book.create_node(b.id, NodeKind.PAGE, "Refactor", body=body).id
+
+
+def test_improve_streams_then_stores_a_version(c: Container, server: str) -> None:
+    pid = _page(c, "refactor the parser pls")
+    with pytest.raises(AIUnavailableError):
+        list(c.book.improve_stream(pid, "clearer"))
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    events = list(c.book.improve_stream(pid, "clearer"))
+    deltas = [e["text"] for e in events if e["type"] == "delta"]
+    done = events[-1]
+    assert len(deltas) > 5, "the answer arrives in pieces"
+    assert done["type"] == "done" and done["improved"] == "".join(deltas).strip()
+    assert done["improved"].startswith("Goal: Refactor the parser pls")
+    assert done["model"] == "fake-llm" and done["template"] == "writing.improve_prompt@v1"
+    assert c.book.node(pid).body == "refactor the parser pls"  # original untouched
+    assert c.book.versions(pid)[0].version == done["version"]
+    with pytest.raises(ValidationError):
+        c.book.improve_stream(pid, "nonsense")
+
+
+def test_explain_changes_drops_ungrounded_notes(c: Container, server: str) -> None:
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    original = "refactor the parser pls"
+    improved = fake_llm.improve(f"<<<\n{original}\n>>>")
+    notes, model = c.book.explain(original, improved)
+    assert model == "fake-llm" and len(notes) == 3
+    assert not any("300 percent" in n for n in notes), "quotes words found in neither text"
+    assert notes[0].startswith("Split the request")
+
+
+def test_improve_stream_api(client: TestClient, server: str) -> None:
+    c: Container = client.app.state.container  # type: ignore[attr-defined]
+    c.ai.apply(LLMConfig(enabled=True, base_url=server))
+    pid = _page(c, "add tests for the cache")
+    with client.stream("POST", f"/api/book-nodes/{pid}/improve/stream", json={}) as r:
+        assert r.headers["content-type"].startswith("application/x-ndjson")
+        import json
+
+        events = [json.loads(line) for line in r.iter_lines() if line]
+    assert events[-1]["type"] == "done" and events[-1]["version"] >= 1
+    r2 = client.post(
+        "/api/book/explain-changes",
+        json={"original": "add tests", "improved": events[-1]["improved"]},
+    )
+    assert r2.status_code == 200 and r2.json()["notes"]
+    assert (
+        client.post(f"/api/book-nodes/{pid}/improve/stream", json={"style": "x"}).status_code == 422
+    )

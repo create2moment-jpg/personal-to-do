@@ -27,6 +27,17 @@ def improve(user_message: str) -> str:
     )
 
 
+def explain_changes(user_message: str) -> str:
+    """Two grounded notes and one that quotes words from neither text (must be dropped)."""
+    return (
+        "Here is what changed:\n"
+        "- Split the request into Goal, Context, Constraints and Output sections.\n"
+        '- Added "Context:" placeholders so you can name the files instead of the model guessing.\n'
+        '- Promised "a 300 percent speed-up" for the code.\n'
+        "- Asked for a short explanation of each step."
+    )
+
+
 def extract_facts(user_message: str) -> str:
     """Return one grounded fact (first sentence, verbatim) and one ungrounded one."""
     m = re.search(r"<<<\n(.*)\n>>>", user_message, re.DOTALL)
@@ -174,6 +185,8 @@ class Handler(BaseHTTPRequestHandler):
             answer = ask_answer(user)
         elif user.startswith("Convert my note into ONE capture line"):
             answer = capture_line(user)
+        elif user.startswith("Explain the changes between"):
+            answer = explain_changes(user)
         elif user.startswith("Rewrite my note text"):
             answer = rewrite_note(user)
         elif user.startswith("Plan my day"):
@@ -184,6 +197,8 @@ class Handler(BaseHTTPRequestHandler):
             answer = improve(user)
         model = payload.get("model") or "fake-llm"
         message = {"role": "assistant", "content": answer}
+        if payload.get("stream") and self.path.rstrip("/").endswith("/chat/completions"):
+            return self._stream(answer, str(model))
         if self.path.rstrip("/").endswith("/chat/completions"):
             self._json(
                 {
@@ -194,6 +209,21 @@ class Handler(BaseHTTPRequestHandler):
             )
         else:
             self._json({"model": model, "message": message})
+
+    def _stream(self, answer: str, model: str) -> None:
+        """Server-sent events in small word chunks, like llama.cpp / vLLM."""
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream")
+        self.end_headers()
+        pieces = re.findall(r"\S+\s*|\s+", answer)
+        first = {"choices": [{"index": 0, "delta": {"role": "assistant"}}], "model": model}
+        self.wfile.write(f"data: {json.dumps(first)}\n\n".encode())
+        for piece in pieces:
+            event = {"choices": [{"index": 0, "delta": {"content": piece}}], "model": model}
+            self.wfile.write(f"data: {json.dumps(event)}\n\n".encode())
+            self.wfile.flush()
+        self.wfile.write(b"data: [DONE]\n\n")
+        self.close_connection = True
 
     def _json(self, data: dict[str, object]) -> None:
         body = json.dumps(data).encode()

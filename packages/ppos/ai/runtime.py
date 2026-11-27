@@ -12,6 +12,7 @@ import os
 import re
 import threading
 import time
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field, replace
 from typing import Any
 
@@ -235,16 +236,32 @@ class AIRuntime:
     def generate(
         self, system: str, prompt: str, *, temperature: float, max_tokens: int
     ) -> LLMResult:
+        self._check_budget(system, prompt, max_tokens)
+        return self._provider.generate(
+            system, prompt, temperature=temperature, max_tokens=max_tokens
+        )
+
+    def _check_budget(self, system: str, prompt: str, max_tokens: int) -> None:
         budget = self._config.context_limit - max_tokens
-        if (
-            len(system) + len(prompt)
-        ) / 3.5 > budget:  # rough token estimate, errs on the safe side
+        if (len(system) + len(prompt)) / 3.5 > budget:  # rough estimate, errs on the safe side
             raise AIOutputError(
                 "this request is larger than the model's context limit — "
                 "raise Context limit in Settings → Local AI if your server allows it"
             )
-        return self._provider.generate(
-            system, prompt, temperature=temperature, max_tokens=max_tokens
+
+    def stream(
+        self, system: str, prompt: str, *, temperature: float, max_tokens: int
+    ) -> Iterator[str]:
+        """Answer text as it arrives; servers without streaming yield it in one piece.
+
+        Configuration problems (AI off, request too large) raise here, before any text.
+        """
+        self._check_budget(system, prompt, max_tokens)
+        provider = self._provider
+        if isinstance(provider, OpenAICompatibleProvider):
+            return provider.stream(system, prompt, temperature=temperature, max_tokens=max_tokens)
+        return iter(
+            [provider.generate(system, prompt, temperature=temperature, max_tokens=max_tokens).text]
         )
 
     def generation_params(self, default_temperature: float, default_max: int) -> tuple[float, int]:

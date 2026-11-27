@@ -83,6 +83,8 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   chapters and sections nested freely, diary-style pages you flip with ← →,
   `{{variables}}` filled in when you **Copy for Copilot**, every version kept,
   and **Improve with AI** using your *local* model with a side-by-side diff.
+  The suggestion streams in as the model writes (Stop any time); **Explain the
+  changes** lists what changed, keeping only notes grounded in the two texts.
   The original is never overwritten.
 - **Local AI settings** (Settings → Local AI): point the app at any
   OpenAI-compatible server on your machine — llama.cpp (`http://127.0.0.1:8080/v1`),

@@ -45,7 +45,7 @@ with a reason).
 | B-021 | Writing assistant in Notes | 2026-11-27 | done (Improve → clearer / shorter / structure / grammar / professional on the selection or whole note; diff review; accept saves a version; invented numbers flagged) | Notes → Improve |
 | B-022 | AI capture: plain language → capture line | 2026-11-27 | done (Understand / ⌘I in quick capture; the deterministic parser previews it; Undo restores your words; nothing saved until Enter) | Quick capture |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
-| B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
+| B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | done (suggestion streams in as the model writes, with Stop; word counts from the diff; "Explain the changes" lists grounded notes — notes quoting words in neither version are dropped) | Prompt Book → Improve with AI |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
 | B-005 | OCR for scanned PDFs (detected today as “Needs OCR”) — needs Tesseract on the machine | 2026-11-24 | planned (Phase 4b) | Knowledge |
 | B-006 | Word (.docx) import | 2026-11-24 | planned (Phase 4b) | Knowledge |

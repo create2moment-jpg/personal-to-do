@@ -11,6 +11,8 @@ import {
   FolderPlus,
   GripVertical,
   History,
+  Loader2,
+  MessageSquareText,
   Plus,
   Sparkles,
   Trash2,
@@ -607,23 +609,92 @@ function VariablesDialog({ vars, onClose, onSubmit }: { vars: string[] | null; o
   );
 }
 
+/** What a suggestion changed: counted from the diff, explained by the model on request. */
+function ChangeSummary({ original, improved, notes, explaining, onExplain }: { original: string; improved: string; notes: { notes: string[]; model: string } | null; explaining: boolean; onExplain: () => void }) {
+  const parts = wordDiff(original, improved);
+  const count = (k: string) => parts.filter((p) => p.kind === k).reduce((n, p) => n + (p.text.match(/\S+/g)?.length ?? 0), 0);
+  const added = count("add");
+  const removed = count("del");
+  const kept = count("same");
+  return (
+    <div className="change-summary" aria-label="What changed">
+      <div className="change-counts">
+        <span className="chip green">+{added} words</span>
+        <span className="chip orange">−{removed} words</span>
+        <span className="chip">{kept} kept</span>
+        {!notes && (
+          <button className="btn sm ghost" disabled={explaining} onClick={onExplain}>
+            {explaining ? <Loader2 className="spin" /> : <MessageSquareText />} Explain the changes
+          </button>
+        )}
+      </div>
+      {notes && (
+        <ul className="change-notes">
+          {notes.notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+          <li className="faint">Explained by {notes.model} — notes quoting words found in neither version are left out.</li>
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ImproveDialog({ open, pageId, body, onClose, onAccepted }: { open: boolean; pageId: string; body: string; onClose: () => void; onAccepted: (p: Page) => void }) {
   const { data: status } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus, enabled: open, staleTime: 30_000 });
   const [style, setStyle] = useState("clearer");
   const [result, setResult] = useState<Improvement | null>(null);
   const [busy, setBusy] = useState(false);
+  const [live, setLive] = useState("");
+  const [notes, setNotes] = useState<{ notes: string[]; model: string } | null>(null);
+  const [explaining, setExplaining] = useState(false);
+  const abort = useRef<AbortController | null>(null);
   useEffect(() => {
-    if (!open) setResult(null);
+    if (!open) {
+      abort.current?.abort();
+      setResult(null);
+      setLive("");
+      setNotes(null);
+    }
   }, [open]);
 
   const run = async () => {
     setBusy(true);
+    setResult(null);
+    setNotes(null);
+    setLive("");
+    const ctl = new AbortController();
+    abort.current = ctl;
     try {
-      setResult(await api.improvePage(pageId, style, body));
+      await api.improvePageStream(
+        pageId,
+        style,
+        body,
+        (e) => {
+          if (e.type === "delta") setLive((t) => t + e.text);
+          else if (e.type === "done") setResult(e);
+          else toast.error(e.message);
+        },
+        ctl.signal,
+      );
+    } catch (e) {
+      if (!ctl.signal.aborted) toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+      setLive("");
+      abort.current = null;
+    }
+  };
+
+  const explain = async () => {
+    if (!result) return;
+    setExplaining(true);
+    try {
+      setNotes(await api.explainChanges(result.original, result.improved));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
-      setBusy(false);
+      setExplaining(false);
     }
   };
 
@@ -644,11 +715,9 @@ function ImproveDialog({ open, pageId, body, onClose, onAccepted }: { open: bool
           <div className="ai-off">
             <strong>Runs entirely on your machine — nothing is sent to the cloud.</strong>
             <ol>
+              <li>Start a local model server — llama.cpp, vLLM, Ollama or LM Studio.</li>
               <li>
-                Install <a href="https://ollama.com" target="_blank" rel="noreferrer">Ollama</a> and pull a model, e.g. <code>ollama pull qwen3:8b</code>.
-              </li>
-              <li>
-                Start the app with <code>PPOS_LLM_PROVIDER=ollama</code> and <code>PPOS_LLM_MODEL=qwen3:8b</code> (or put them in <code>.env</code>).
+                Point the app at it in <strong>Settings → Local AI</strong> (e.g. <code>http://127.0.0.1:8080/v1</code>), test and apply.
               </li>
             </ol>
             <span className="faint">Your original prompt is never overwritten — every suggestion is kept as a version.</span>
@@ -664,14 +733,34 @@ function ImproveDialog({ open, pageId, body, onClose, onAccepted }: { open: bool
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button className="btn primary" disabled={busy || !status?.enabled} onClick={() => void run()}>
-            <Wand2 /> {busy ? "Thinking…" : result ? "Try again" : "Improve"}
+            <Wand2 /> {busy ? (live ? "Writing…" : "Thinking…") : result ? "Try again" : "Improve"}
           </button>
+          {busy && (
+            <button className="btn ghost" onClick={() => abort.current?.abort()}>
+              Stop
+            </button>
+          )}
           {result && (
             <span className="faint" style={{ fontSize: "0.857rem", alignSelf: "center" }}>
               {result.model} · {result.template} · {(result.latency_ms / 1000).toFixed(1)} s
             </span>
           )}
         </div>
+        {busy && (
+          <div className="compare">
+            <section>
+              <div className="section-label">Original</div>
+              <pre>{body}</pre>
+            </section>
+            <section aria-live="polite">
+              <div className="section-label">Suggestion · writing</div>
+              <pre className="streaming">
+                {live}
+                <span className="caret" aria-hidden />
+              </pre>
+            </section>
+          </div>
+        )}
         {result && (
           <>
             <div className="compare">
@@ -692,6 +781,7 @@ function ImproveDialog({ open, pageId, body, onClose, onAccepted }: { open: bool
                 </pre>
               </section>
             </div>
+            <ChangeSummary original={result.original} improved={result.improved} notes={notes} explaining={explaining} onExplain={() => void explain()} />
             <div className="lc-foot">
               <span className="faint" style={{ fontSize: "0.857rem" }}>
                 Saved as version {result.version}. Accepting keeps the original in History.
