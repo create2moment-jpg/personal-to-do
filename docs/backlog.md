@@ -40,6 +40,7 @@ with a reason).
 | B-016 | Hardening: local API token, Host/Origin checks, encrypted backups, locked dependencies, installer, installable app | 2026-11-27 | done (Phase 9) | README → Security, Quick start |
 | B-017 | Repeating tasks that actually repeat (the RRULE field did nothing) | 2026-11-27 | done (repeat picker; completing creates the next occurrence; `every mon` in capture) | Task panel → Repeats, quick capture |
 | B-018 | Full data export (only 9 of 38 tables were exported) | 2026-11-27 | done (tables discovered from the schema) | `ppos export` |
+| B-019 | Undoable task deletes | 2026-11-27 | done (trash for 30 days, Undo in the message, Backlog → Recently deleted) | Task panel, Backlog |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

@@ -53,6 +53,7 @@ class Task:
     sprint_id: str | None = None
     commitment: str | None = None  # committed | stretch (only with sprint_id)
     goal_id: str | None = None
+    deleted_at: datetime | None = None  # in the trash since (restorable for 30 days)
 
     def __post_init__(self) -> None:
         self.title = normalize_title(self.title)

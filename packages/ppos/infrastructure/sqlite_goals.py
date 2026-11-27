@@ -82,7 +82,7 @@ class SqliteGoalRepository:
     def task_states(self) -> list[tuple[str | None, str | None, str]]:
         """(goal_id, project_id, status) of every top-level task linked to a goal or project."""
         rows = self._c.execute(
-            "SELECT goal_id, project_id, status FROM tasks WHERE parent_id IS NULL"
+            "SELECT goal_id, project_id, status FROM tasks WHERE parent_id IS NULL AND deleted_at IS NULL"
             " AND (goal_id IS NOT NULL OR project_id IN (SELECT project_id FROM goal_projects))"
         )
         return [(r[0], r[1], r[2]) for r in rows]

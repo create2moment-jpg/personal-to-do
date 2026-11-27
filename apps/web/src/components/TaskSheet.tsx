@@ -79,11 +79,22 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
             aria-label="Delete task"
             title="Delete task"
             onClick={async () => {
-              if (!confirm(`Delete “${task.title}”${subtasks.length ? " and its subtasks" : ""}?`)) return;
               await api.deleteTask(task.id);
+              onClose(); // close first: the panel must not re-fetch a task that is now in the trash
+              qc.removeQueries({ queryKey: keys.task(task.id) });
               invalidateTasks(qc);
-              toast(`Deleted “${task.title}”`);
-              onClose();
+              void qc.invalidateQueries({ queryKey: ["trash"] });
+              toast(`Moved “${task.title}”${subtasks.length ? " and its subtasks" : ""} to the trash`, {
+                description: "Kept for 30 days — restore it from Backlog → Recently deleted.",
+                action: {
+                  label: "Undo",
+                  onClick: () =>
+                    void api.restoreTask(task.id).then(() => {
+                      invalidateTasks(qc);
+                      void qc.invalidateQueries({ queryKey: ["trash"] });
+                    }),
+                },
+              });
             }}
           >
             <Trash2 />

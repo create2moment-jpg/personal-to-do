@@ -1,15 +1,16 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, CalendarDays, Inbox, Search, SunMedium } from "lucide-react";
+import { ArrowRight, CalendarDays, Inbox, RotateCcw, Search, SunMedium, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { EmptyState } from "../components/primitives";
 import { TaskCard } from "../components/TaskCard";
 import { api } from "../lib/api";
-import { keys, useCreateTask, useMoveTask, useProjects, useTasks } from "../lib/queries";
+import { invalidateTasks, keys, useCreateTask, useMoveTask, useProjects, useTasks } from "../lib/queries";
 import type { Task } from "../lib/types";
 import { useUi } from "../lib/ui-store";
 import { dropProps } from "../lib/drop";
-import { addDays, formatMinutes, isoDay, relativeDay } from "../lib/util";
+import { addDays, formatMinutes, isoDay, relativeDay, relativeTime } from "../lib/util";
 import { AddRow } from "./TodayView";
 
 type Sort = "priority" | "due" | "newest";
@@ -96,7 +97,41 @@ export function BacklogView() {
           </AnimatePresence>
         </div>
       )}
+      <RecentlyDeleted />
     </div>
+  );
+}
+
+/** Deleted tasks stay here for 30 days; restore puts them (and their subtasks) back. */
+function RecentlyDeleted() {
+  const qc = useQueryClient();
+  const { data: trash = [] } = useQuery({ queryKey: ["trash"], queryFn: api.trash });
+  if (trash.length === 0) return null;
+  const top = trash.filter((t) => !t.parent_id || !trash.some((p) => p.id === t.parent_id));
+  return (
+    <details className="card panel trash-panel">
+      <summary>
+        <Trash2 size={14} /> Recently deleted · {top.length}
+        <span className="faint"> — kept for 30 days</span>
+      </summary>
+      {top.map((t) => (
+        <div key={t.id} className="trash-row">
+          <span className="trash-title">{t.title}</span>
+          <span className="faint">{t.deleted_at ? relativeTime(t.deleted_at) : ""}</span>
+          <button
+            className="btn sm"
+            onClick={async () => {
+              await api.restoreTask(t.id);
+              invalidateTasks(qc);
+              void qc.invalidateQueries({ queryKey: ["trash"] });
+              toast.success("Restored", { description: t.title });
+            }}
+          >
+            <RotateCcw /> Restore
+          </button>
+        </div>
+      ))}
+    </details>
   );
 }
 

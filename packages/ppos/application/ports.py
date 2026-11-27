@@ -36,6 +36,7 @@ class TaskQuery:
     tag: str | None = None
     sprint_id: str | None = None
     goal_id: str | None = None
+    trashed: bool = False  # True: only tasks in the trash
     scheduled_from: date | None = None
     scheduled_to: date | None = None
     completed_from: datetime | None = None

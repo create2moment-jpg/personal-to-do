@@ -39,6 +39,7 @@ class TaskOut(Out):
     sprint_id: str | None = None
     commitment: str | None = None
     goal_id: str | None = None
+    deleted_at: datetime | None = None
 
 
 class TaskCreate(BaseModel):

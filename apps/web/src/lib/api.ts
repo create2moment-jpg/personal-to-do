@@ -121,6 +121,8 @@ export const api = {
   moveTask: (id: string, move: { status?: TaskStatus; scheduled_date?: string; unschedule?: boolean; position?: number }) =>
     request<Task>("POST", `/api/tasks/${id}/move`, move),
   deleteTask: (id: string) => request<void>("DELETE", `/api/tasks/${id}`),
+  restoreTask: (id: string) => request<Task>("POST", `/api/tasks/${id}/restore`),
+  trash: () => request<Task[]>("GET", "/api/tasks/trash"),
 
   notes: (params: { kind?: NoteKind } = {}) => request<NoteSummary[]>("GET", `/api/notes${qs(params)}`),
   note: (id: string) => request<Note>("GET", `/api/notes/${id}`),

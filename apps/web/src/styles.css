@@ -1078,3 +1078,10 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .repeat-custom .input { width: 4rem; height: 1.9rem; }
 .repeat-custom .select { width: auto; height: 1.9rem; }
 .repeat-help { font-size: 0.8rem; }
+
+/* ---------- Trash ---------- */
+.trash-panel { margin-top: 1.5rem; font-size: 0.9rem; }
+.trash-panel summary { cursor: pointer; display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.trash-row { display: flex; align-items: center; gap: 0.8rem; padding: 0.45rem 0; border-top: 1px solid var(--border); }
+.trash-row:first-of-type { margin-top: 0.6rem; }
+.trash-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -390,7 +390,6 @@ product bar above.
 - Typing `[ ]` *inside* an existing bullet list produces a literal `[ ]`
   (TipTap input-rule behaviour); start a checklist on a new line or use the
   toolbar.
-- Deleting a task has no undo yet (confirm dialog instead) — soft delete queued.
 - Week view on narrow screens scrolls horizontally; a single-day agenda layout
   for phones is queued.
 - Insights range is up to 30 days in the UI (API supports a year); monthly /

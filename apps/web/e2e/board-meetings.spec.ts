@@ -171,3 +171,24 @@ test("repeating task: set a repeat in the task panel; completing it creates the 
     .toBe(1);
   expect(created.id).toBeTruthy();
 });
+
+test("delete a task with undo, then restore another from Recently deleted", async ({ page, request }) => {
+  await request.post("/api/tasks", { data: { title: "E2E trash me" } });
+  await request.post("/api/tasks", { data: { title: "E2E trash me too" } });
+  await open(page, "backlog");
+  // delete + Undo from the toast
+  await page.locator(".task-card", { hasText: "E2E trash me" }).first().click();
+  await page.getByRole("dialog", { name: "Task details" }).getByRole("button", { name: "Delete task" }).click();
+  const toastEl = page.locator("[data-sonner-toast]", { hasText: "to the trash" });
+  await expect(toastEl).toBeVisible();
+  await toastEl.getByRole("button", { name: "Undo" }).click();
+  await expect(page.locator(".list .task-card", { hasText: "E2E trash me" }).first()).toBeVisible();
+
+  // delete the other one, restore it from the Recently deleted panel
+  await page.locator(".task-card", { hasText: "E2E trash me too" }).click();
+  await page.getByRole("dialog", { name: "Task details" }).getByRole("button", { name: "Delete task" }).click();
+  await expect(page.locator(".list .task-card", { hasText: "E2E trash me too" })).toHaveCount(0);
+  await page.locator(".trash-panel summary").click();
+  await page.locator(".trash-row", { hasText: "E2E trash me too" }).getByRole("button", { name: "Restore" }).click();
+  await expect(page.locator(".list .task-card", { hasText: "E2E trash me too" })).toBeVisible();
+});

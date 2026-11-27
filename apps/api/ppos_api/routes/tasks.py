@@ -53,6 +53,17 @@ def create_task(body: TaskCreate, c: ContainerDep) -> TaskOut:
     )
 
 
+@router.get("/trash", response_model=list[TaskOut])
+def trash(c: ContainerDep) -> list[TaskOut]:
+    """Deleted tasks, newest first; kept for 30 days."""
+    return [TaskOut.model_validate(t) for t in c.tasks.trash()]
+
+
+@router.post("/{task_id}/restore", response_model=TaskOut)
+def restore_task(task_id: str, c: ContainerDep) -> TaskOut:
+    return TaskOut.model_validate(c.tasks.restore(task_id))
+
+
 @router.get("/{task_id}", response_model=TaskOut)
 def get_task(task_id: str, c: ContainerDep) -> TaskOut:
     return TaskOut.model_validate(c.tasks.get(task_id))

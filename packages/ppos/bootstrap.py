@@ -143,6 +143,7 @@ def build_container(
     )
     documents.resume_pending()
     meetings.top_up_series()  # open-ended series you created stay filled ahead
+    tasks.purge_trash()  # deleted tasks are kept 30 days, then removed for good
 
     goals = GoalService(uow, clock, tasks)
     days = DayService(

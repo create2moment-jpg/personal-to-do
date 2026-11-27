@@ -63,7 +63,8 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   subtasks, dependencies (completion blocked until they're done), and
   **repeats** (every day / weekday / week on chosen days / N weeks / month):
   completing one creates the next. Quick capture: `Water plants every mon`.
-- **Backlog** and **Projects & Areas** views.
+- **Backlog** and **Projects & Areas** views. Deleting a task is undoable:
+  it stays in *Recently deleted* (bottom of Backlog) for 30 days.
 - **Notes**: a rich-text editor (headings, lists, checklists, tables, code)
   that stores plain Markdown, with autosave and version history (restore is
   non-destructive), kinds incl. journal, meeting, technical, learning,

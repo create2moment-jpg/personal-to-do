@@ -33,6 +33,7 @@ export interface Task {
   sprint_id?: string | null;
   commitment?: "committed" | "stretch" | null;
   goal_id: string | null;
+  deleted_at?: string | null;
 }
 
 export type NoteKind =

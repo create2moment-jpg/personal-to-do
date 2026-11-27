@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from ppos.application.ports import TaskQuery, UnitOfWork, UnitOfWorkFactory
@@ -44,6 +44,9 @@ TASK_EDITABLE_FIELDS = frozenset(
 # status and scheduled_date go through move() so invariants are applied in one place.
 
 PROJECT_EDITABLE_FIELDS = frozenset({"name", "description", "area", "status", "color"})
+
+
+TRASH_DAYS = 30
 
 
 class TaskService:
@@ -223,13 +226,81 @@ class TaskService:
         )
         return follow
 
-    def delete(self, task_id: str) -> None:
+    def delete(self, task_id: str) -> list[str]:
+        """Move a task and its subtasks to the trash (restorable for TRASH_DAYS days)."""
+        now = self._clock.now()
         with self._uow() as uow:
             task = _require_task(uow, task_id)
-            uow.tasks.delete(task_id)
-            uow.links.delete_for_entity(EntityType.TASK, task_id)
-            uow.audit.record("task", task_id, "delete", details={"title": task.title})
+            ids = [task.id, *self._descendants(uow, task.id)]
+            for tid in ids:
+                t = uow.tasks.get(tid)
+                if t is not None and t.deleted_at is None:
+                    t.deleted_at, t.updated_at = now, now
+                    uow.tasks.update(t)
+            uow.audit.record(
+                "task", task_id, "delete", details={"title": task.title, "count": len(ids)}
+            )
             uow.commit()
+            return ids
+
+    def restore(self, task_id: str) -> Task:
+        """Take a task (with the subtasks deleted together with it) out of the trash."""
+        now = self._clock.now()
+        with self._uow() as uow:
+            task = uow.tasks.get(task_id)
+            if task is None or task.deleted_at is None:
+                raise NotFoundError("deleted task", task_id)
+            stamp = task.deleted_at
+            chain = [task]
+            parent_id = task.parent_id
+            while parent_id:  # a subtask needs its parent back too
+                parent = uow.tasks.get(parent_id)
+                if parent is None or parent.deleted_at is None:
+                    break
+                chain.append(parent)
+                parent_id = parent.parent_id
+            subtasks = [
+                t for t in uow.tasks.find(TaskQuery(parent_id=task.id, trashed=True, limit=500))
+                if t.deleted_at == stamp
+            ]  # fmt: skip
+            for t in [*chain, *subtasks]:
+                t.deleted_at, t.updated_at = None, now
+                uow.tasks.update(t)
+            uow.audit.record("task", task_id, "restore")
+            uow.commit()
+            return task
+
+    def trash(self) -> list[Task]:
+        with self._uow() as uow:
+            items = uow.tasks.find(TaskQuery(trashed=True, top_level_only=False, limit=500))
+        return sorted(items, key=lambda t: t.deleted_at or t.updated_at, reverse=True)
+
+    def purge_trash(self, days: int = TRASH_DAYS) -> int:
+        """Delete for good what has been in the trash longer than ``days``."""
+        cutoff = self._clock.now() - timedelta(days=days)
+        removed = 0
+        with self._uow() as uow:
+            for t in uow.tasks.find(TaskQuery(trashed=True, limit=10000)):
+                if t.deleted_at is not None and t.deleted_at < cutoff:
+                    uow.tasks.delete(t.id)
+                    uow.links.delete_for_entity(EntityType.TASK, t.id)
+                    removed += 1
+            if removed:
+                uow.audit.record(
+                    "task", "trash", "purge", actor="system", details={"removed": removed}
+                )
+            uow.commit()
+        return removed
+
+    @staticmethod
+    def _descendants(uow: UnitOfWork, task_id: str) -> list[str]:
+        out: list[str] = []
+        stack = [task_id]
+        while stack:
+            for child in uow.tasks.find(TaskQuery(parent_id=stack.pop(), limit=500)):
+                out.append(child.id)
+                stack.append(child.id)
+        return out
 
     def add_dependency(self, task_id: str, depends_on: str) -> None:
         with self._uow() as uow:
@@ -250,7 +321,7 @@ class TaskService:
     def _assert_dependencies_done(uow: UnitOfWork, task: Task) -> None:
         for dep_id in uow.tasks.dependencies_of(task.id):
             dep = uow.tasks.get(dep_id)
-            if dep is not None and dep.is_open:
+            if dep is not None and dep.is_open and dep.deleted_at is None:
                 raise ValidationError(f"blocked by unfinished dependency: {dep.title!r}")
 
 
@@ -295,7 +366,7 @@ class ProjectService:
 
 def _require_task(uow: UnitOfWork, task_id: str) -> Task:
     task = uow.tasks.get(task_id)
-    if task is None:
+    if task is None or task.deleted_at is not None:  # trashed tasks are only reachable via restore
         raise NotFoundError("task", task_id)
     return task
 

@@ -54,7 +54,7 @@ def _ds(value: date | None) -> str | None:
 _TASK_COLS = (
     "id, title, description, notes, status, priority, estimate_minutes, actual_minutes, "
     "project_id, area, parent_id, tags, due_date, scheduled_date, recurrence, position, "
-    "created_at, updated_at, completed_at, sprint_id, commitment, goal_id"
+    "created_at, updated_at, completed_at, sprint_id, commitment, goal_id, deleted_at"
 )
 
 
@@ -64,7 +64,7 @@ def _task_row(t: Task) -> tuple[Any, ...]:
         t.estimate_minutes, t.actual_minutes, t.project_id, t.area, t.parent_id,
         json.dumps(t.tags), _ds(t.due_date), _ds(t.scheduled_date), t.recurrence,
         t.position, _ts(t.created_at), _ts(t.updated_at), _ts(t.completed_at),
-        t.sprint_id, t.commitment, t.goal_id,
+        t.sprint_id, t.commitment, t.goal_id, _ts(t.deleted_at),
     )  # fmt: skip
 
 
@@ -95,6 +95,7 @@ def _task_from(row: sqlite3.Row) -> Task:
         sprint_id=row["sprint_id"],
         commitment=row["commitment"],
         goal_id=row["goal_id"],
+        deleted_at=_dt(row["deleted_at"]),
     )
 
 
@@ -143,6 +144,7 @@ class SqliteTaskRepository:
             args.append(query.parent_id)
         elif query.top_level_only:
             where.append("parent_id IS NULL")
+        where.append("deleted_at IS NOT NULL" if query.trashed else "deleted_at IS NULL")
         if query.goal_id is not None:
             where.append("goal_id = ?")
             args.append(query.goal_id)
