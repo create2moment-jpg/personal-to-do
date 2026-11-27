@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { BookOpenText, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Search, SquareCheck, Sun } from "lucide-react";
+import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
@@ -86,7 +86,13 @@ function MenuBody({ onClose }: { onClose: () => void }) {
           <Command.Item value="new task capture" onSelect={run(() => ui.openCapture())}>
             <Plus /> New task or capture <span className="cmd-hint"><Kbd>C</Kbd></span>
           </Command.Item>
-          <Command.Item value="log a call meeting" onSelect={run(() => ui.openLogCall())}>
+          <Command.Item value="new meeting add schedule one-time" onSelect={run(() => ui.openScheduleMeeting())}>
+            <CalendarPlus /> New meeting
+          </Command.Item>
+          <Command.Item value="new recurring meeting series repeat weekly daily" onSelect={run(() => ui.openScheduleMeeting({ recurring: true }))}>
+            <Repeat /> New recurring meeting
+          </Command.Item>
+          <Command.Item value="log a call" onSelect={run(() => ui.openLogCall())}>
             <Phone /> Log a call
           </Command.Item>
           <Command.Item value="new idea inbox" onSelect={run(() => ui.openCapture("idea: "))}>

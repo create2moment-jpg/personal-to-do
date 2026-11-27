@@ -95,3 +95,35 @@ test("one-off meeting with an odd duration shows up in the week's log", async ({
   await page.getByRole("tab", { name: "Meetings & calls" }).click();
   await expect(page.locator(".meeting-row, [class*=meeting]", { hasText: "E2E one-off review" }).first()).toBeVisible();
 });
+
+test("add meetings manually from Today, the Recurring tab and the command menu", async ({ page, request }) => {
+  // Today: one-time meeting
+  await open(page, "today");
+  await page.getByRole("button", { name: "Add meeting" }).click();
+  let dialog = page.getByRole("dialog", { name: "New meeting" });
+  await expect(dialog.getByRole("group", { name: "Repeat" }).getByRole("button", { name: "Once" })).toHaveAttribute("aria-pressed", "true");
+  await dialog.getByPlaceholder(/Team stand-up/).fill("E2E today sync");
+  await dialog.getByLabel("Duration").fill("35");
+  await dialog.getByRole("button", { name: "Add meeting" }).click();
+  await expect(page.locator("[data-sonner-toast]", { hasText: "Meeting added" })).toBeVisible();
+
+  // Recurring tab: dedicated button opens the dialog already set to repeat
+  await open(page, "meetings");
+  await page.getByRole("tab", { name: "Recurring" }).click();
+  await page.getByRole("button", { name: "Add recurring meeting" }).click();
+  dialog = page.getByRole("dialog", { name: "New meeting" });
+  await expect(dialog.getByRole("group", { name: "Repeat" }).getByRole("button", { name: "Weekly" })).toHaveAttribute("aria-pressed", "true");
+  await dialog.getByPlaceholder(/Team stand-up/).fill("E2E weekly 1:1");
+  await dialog.getByRole("button", { name: "Add meeting" }).click();
+  await expect(page.locator(".series-row", { hasText: "E2E weekly 1:1" })).toBeVisible();
+
+  // Command menu
+  await page.keyboard.press("Control+k");
+  await page.getByPlaceholder(/Search/).first().fill("recurring meeting");
+  await page.getByRole("option", { name: "New recurring meeting" }).click();
+  await expect(page.getByRole("dialog", { name: "New meeting" })).toBeVisible();
+  await page.keyboard.press("Escape");
+
+  const series = (await (await request.get("/api/meeting-series")).json()) as { title: string; series_key: string }[];
+  await request.delete(`/api/meeting-series/${encodeURIComponent(series.find((s) => s.title === "E2E weekly 1:1")!.series_key)}`);
+});

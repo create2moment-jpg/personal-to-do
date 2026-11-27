@@ -5,7 +5,6 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { DayTimeChart, RankBars } from "../components/charts";
 import { MeetingRow, Stars } from "../components/meetings";
-import { ScheduleMeetingDialog } from "../components/ScheduleMeeting";
 import { EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
 import { invalidateTime, useInsights, useMeetings, useSeries } from "../lib/queries";
@@ -19,8 +18,7 @@ type Tab = "insights" | "recurring" | "log";
 export function MeetingsView() {
   const ui = useUi();
   const [tab, setTab] = useState<Tab>("insights");
-  const [schedule, setSchedule] = useState<{ open: boolean; series: MeetingSeries | null }>({ open: false, series: null });
-  const edit = (series: MeetingSeries | null) => setSchedule({ open: true, series });
+  const edit = (series: MeetingSeries | null) => ui.openScheduleMeeting(series ? { series } : {});
   return (
     <div className="page">
       <header className="page-head">
@@ -52,7 +50,6 @@ export function MeetingsView() {
       {tab === "insights" && <Insights />}
       {tab === "recurring" && <Recurring onEdit={edit} />}
       {tab === "log" && <MeetingLog />}
-      <ScheduleMeetingDialog open={schedule.open} series={schedule.series} onClose={() => setSchedule({ open: false, series: null })} />
     </div>
   );
 }
@@ -137,16 +134,18 @@ function Insights() {
 }
 
 function Recurring({ onEdit }: { onEdit: (s: MeetingSeries | null) => void }) {
+  const ui = useUi();
   const { data: series = [], isLoading } = useSeries();
   const { data: last } = useQuery({ queryKey: ["series", "last-import"], queryFn: api.lastImport });
   if (isLoading) return <div className="faint">Loading…</div>;
   if (series.length === 0)
     return (
       <>
-        <ImportPanel />
-        <div className="own-series-hint">
-          No calendar to import? <button className="link-btn" onClick={() => onEdit(null)}>Add your recurring meetings yourself</button> — stand-ups, 1:1s, planning — with their real durations.
-        </div>
+        <AddYourOwn />
+        <details className="import-optional">
+          <summary>Optional: import recurring meetings from an Outlook calendar file</summary>
+          <ImportPanel />
+        </details>
       </>
     );
   const totalMonth = series.filter((s) => s.default_status === "attending").reduce((a, s) => a + s.minutes_per_month, 0);
@@ -156,6 +155,14 @@ function Recurring({ onEdit }: { onEdit: (s: MeetingSeries | null) => void }) {
         <Kpi label="Recurring meetings" value={String(series.length)} sub={`${series.filter((s) => s.default_status === "skipped").length} not attending`} />
         <Kpi label="Cost per month" value={formatMinutes(totalMonth)} sub="attended recurring time" warn={totalMonth > 40 * 60} />
         <Kpi label="Calendar imported" value={last ? relativeTime(last.imported_at) : "—"} sub={last ? `${last.filename}` : undefined} />
+      </div>
+      <div className="series-toolbar">
+        <button className="btn primary" onClick={() => ui.openScheduleMeeting({ recurring: true })}>
+          <Repeat /> Add recurring meeting
+        </button>
+        <button className="btn" onClick={() => ui.openScheduleMeeting()}>
+          <CalendarPlus /> One-time meeting
+        </button>
       </div>
       <section className="card" style={{ overflow: "hidden" }}>
         {series.map((s) => (
@@ -232,6 +239,7 @@ function SeriesRow({ s, onEdit }: { s: MeetingSeries; onEdit: () => void }) {
 }
 
 function MeetingLog() {
+  const ui = useUi();
   const [monday, setMonday] = useState(mondayOf(isoDay()));
   const { data: meetings = [] } = useMeetings(monday, addDays(monday, 6));
   const byDay = new Map<string, Meeting[]>();
@@ -251,8 +259,17 @@ function MeetingLog() {
         <button className="btn icon sm ghost" aria-label="Next week" onClick={() => setMonday(addDays(monday, 7))}>
           <ChevronRight />
         </button>
+        <button className="btn sm" style={{ marginLeft: "auto" }} onClick={() => ui.openScheduleMeeting()}>
+          <CalendarPlus /> Add meeting
+        </button>
       </div>
-      {meetings.length === 0 && <EmptyState icon={CalendarClock} title="No meetings or calls this week" />}
+      {meetings.length === 0 && (
+        <EmptyState icon={CalendarClock} title="No meetings or calls this week">
+          <button className="btn primary" style={{ marginTop: 10 }} onClick={() => ui.openScheduleMeeting({ day: monday < isoDay() && addDays(monday, 6) >= isoDay() ? isoDay() : monday })}>
+            <CalendarPlus /> Add a meeting
+          </button>
+        </EmptyState>
+      )}
       {[...byDay.entries()].map(([d, ms]) => (
         <section key={d} style={{ marginBottom: 14 }}>
           <div className="group-head" style={{ marginTop: 8 }}>
@@ -300,6 +317,30 @@ function ImportButton() {
         <Upload /> Import calendar
       </button>
     </>
+  );
+}
+
+/** The main way in: add meetings yourself; calendar import is optional. */
+function AddYourOwn() {
+  const ui = useUi();
+  return (
+    <section className="card add-own">
+      <h3>
+        <CalendarPlus size={16} /> Add your meetings
+      </h3>
+      <p>Stand-ups, 1:1s, planning, reviews — add them once or as a recurring series with their real duration. They count against your capacity and show up in Today, Week and your time insights.</p>
+      <div className="add-own-actions">
+        <button className="btn primary" onClick={() => ui.openScheduleMeeting({ recurring: true })}>
+          <Repeat /> Add recurring meeting
+        </button>
+        <button className="btn" onClick={() => ui.openScheduleMeeting()}>
+          <CalendarPlus /> Add one-time meeting
+        </button>
+        <button className="btn ghost" onClick={() => ui.openLogCall()}>
+          <Phone /> Log a call that already happened
+        </button>
+      </div>
+    </section>
   );
 }
 

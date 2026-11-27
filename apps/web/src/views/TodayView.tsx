@@ -17,6 +17,7 @@ import {
   ArrowRight,
   BookOpen,
   CalendarClock,
+  CalendarPlus,
   CalendarCheck2,
   ChevronLeft,
   ChevronRight,
@@ -551,15 +552,18 @@ function TodayMeetings({ meetings, minutes }: { meetings: Meeting[]; minutes: nu
           <button className="btn sm ghost" onClick={() => ui.navigate("meetings")}>
             Insights
           </button>
-          <button className="btn sm" onClick={() => ui.openLogCall()}>
+          <button className="btn sm ghost" onClick={() => ui.openLogCall()}>
             <Phone /> Log call
+          </button>
+          <button className="btn sm" onClick={() => ui.openScheduleMeeting({ day: isoDay() })}>
+            <CalendarPlus /> Add meeting
           </button>
         </div>
       </div>
       {open &&
         (meetings.length === 0 ? (
           <div className="faint" style={{ fontSize: "0.8929rem", padding: "2px 4px 4px" }}>
-            No meetings today — a full day for focus. Import your calendar on the Meetings page to see recurring meetings here.
+            No meetings today — a full day for focus. Use “Add meeting” for one-time or recurring meetings.
           </div>
         ) : (
           <div className="meeting-list">

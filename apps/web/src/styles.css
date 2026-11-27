@@ -917,3 +917,12 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .sr-own .link-btn { text-decoration: none; color: var(--text-3); display: inline-flex; align-items: center; gap: 3px; }
 .sr-own .link-btn:hover { color: var(--accent-text); }
 .own-series-hint { margin-top: 0.8rem; font-size: 0.9rem; color: var(--text-2); }
+
+/* ---------- Add your own meetings ---------- */
+.add-own { padding: 1.3rem 1.5rem; max-width: 760px; margin-bottom: 1rem; }
+.add-own h3 { display: flex; gap: 8px; align-items: center; font-size: 1.07rem; font-weight: 620; }
+.add-own p { color: var(--text-2); font-size: 0.93rem; margin: 0.4rem 0 1rem; }
+.add-own-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.import-optional { max-width: 760px; }
+.import-optional > summary { cursor: pointer; color: var(--text-2); font-size: 0.9rem; padding: 0.4rem 0; margin-bottom: 0.6rem; }
+.series-toolbar { display: flex; gap: 0.5rem; margin-bottom: 0.8rem; }

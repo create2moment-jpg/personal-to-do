@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { api } from "../lib/api";
 import { invalidateTime, usePeople, useTopics } from "../lib/queries";
 import type { MeetingSeries, RecurrenceRule } from "../lib/types";
+import type { ScheduleOptions } from "../lib/ui-store";
 import { cx, formatMinutes, isoDay, parseDuration } from "../lib/util";
 import { Dialog } from "./primitives";
 
@@ -14,10 +15,11 @@ const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const QUICK = [15, 25, 30, 45, 60, 90];
 
 /** Add a meeting yourself — once or recurring — or edit a series you created. */
-export function ScheduleMeetingDialog({ open, series, onClose }: { open: boolean; series?: MeetingSeries | null; onClose: () => void }) {
+export function ScheduleMeetingDialog({ open, options, onClose }: { open: boolean; options: ScheduleOptions; onClose: () => void }) {
+  const series = options.series ?? null;
   return (
     <Dialog open={open} onClose={onClose} label={series ? "Edit recurring meeting" : "New meeting"} width={600}>
-      {open && <Body series={series ?? null} onClose={onClose} />}
+      {open && <Body series={series} initialDay={options.day} recurring={!!options.recurring} onClose={onClose} />}
     </Dialog>
   );
 }
@@ -28,7 +30,7 @@ function repeatOf(r: RecurrenceRule | undefined): Repeat {
   return r.freq;
 }
 
-function Body({ series, onClose }: { series: MeetingSeries | null; onClose: () => void }) {
+function Body({ series, initialDay, recurring, onClose }: { series: MeetingSeries | null; initialDay?: string; recurring: boolean; onClose: () => void }) {
   const qc = useQueryClient();
   const { data: people = [] } = usePeople();
   const { data: topics = [] } = useTopics();
@@ -36,13 +38,13 @@ function Body({ series, onClose }: { series: MeetingSeries | null; onClose: () =
   const today = isoDay();
   const [title, setTitle] = useState(series?.title ?? "");
   const [kind, setKind] = useState<"meeting" | "call">(plan?.kind ?? "meeting");
-  const [day, setDay] = useState(today);
+  const [day, setDay] = useState(initialDay ?? today);
   const [time, setTime] = useState(plan?.start_time ?? "10:00");
   const [duration, setDuration] = useState(plan ? formatMinutes(plan.minutes) : "30m");
   const [who, setWho] = useState((plan?.people ?? []).join(", "));
   const [topic, setTopic] = useState(plan?.topic ?? "");
   const [location, setLocation] = useState(plan?.location ?? "");
-  const [repeat, setRepeat] = useState<Repeat>(series ? repeatOf(plan?.recurrence) : "never");
+  const [repeat, setRepeat] = useState<Repeat>(series ? repeatOf(plan?.recurrence) : recurring ? "weekly" : "never");
   const [interval, setInterval] = useState(plan?.recurrence.interval ?? 1);
   const [weekdays, setWeekdays] = useState<number[]>(plan?.recurrence.weekdays.length ? plan.recurrence.weekdays : [new Date().getDay() === 0 ? 6 : new Date().getDay() - 1]);
   const [ends, setEnds] = useState<Ends>(plan?.recurrence.until ? "on" : plan?.recurrence.count ? "after" : "never");

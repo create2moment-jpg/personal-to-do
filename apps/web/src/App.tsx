@@ -8,7 +8,7 @@ import { ShortcutsDialog } from "./components/ShortcutsDialog";
 import { Sidebar } from "./components/Sidebar";
 import { TaskSheet } from "./components/TaskSheet";
 import { ALL_NAV, GOTO_KEYS } from "./lib/nav";
-import { UiContext, type UiActions, type ViewId } from "./lib/ui-store";
+import { type ScheduleOptions, UiContext, type UiActions, type ViewId } from "./lib/ui-store";
 import { cx, isTypingTarget } from "./lib/util";
 import { ComingSoonView } from "./views/ComingSoonView";
 import { BacklogView, UpcomingView } from "./views/ListViews";
@@ -20,6 +20,7 @@ import { KnowledgeView } from "./views/KnowledgeView";
 import { SprintView } from "./views/SprintView";
 import { WeekView } from "./views/WeekView";
 import { LogCallDialog, type CallDraft } from "./components/meetings";
+import { ScheduleMeetingDialog } from "./components/ScheduleMeeting";
 import { useSettings } from "./lib/queries";
 import { setWorkspaceTimeZone } from "./lib/util";
 import { ProjectsView } from "./views/ProjectsView";
@@ -42,6 +43,7 @@ export function App() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [callDraft, setCallDraft] = useState<CallDraft | null>(null);
+  const [schedule, setSchedule] = useState<ScheduleOptions | null>(null);
   const { data: settings } = useSettings();
   if (settings) setWorkspaceTimeZone(settings.timezone);
   const gPressed = useRef(0);
@@ -58,6 +60,7 @@ export function App() {
       openPalette: () => setPaletteOpen(true),
       openShortcuts: () => setShortcutsOpen(true),
       openLogCall: (draft) => setCallDraft(draft ?? {}),
+      openScheduleMeeting: (opts) => setSchedule(opts ?? {}),
     }),
     [navigate],
   );
@@ -75,7 +78,7 @@ export function App() {
         setPaletteOpen((o) => !o);
         return;
       }
-      const overlayOpen = capture.open || paletteOpen || shortcutsOpen || taskId !== null || callDraft !== null;
+      const overlayOpen = capture.open || paletteOpen || shortcutsOpen || taskId !== null || callDraft !== null || schedule !== null;
       if (overlayOpen || isTypingTarget(e.target) || e.metaKey || e.ctrlKey || e.altKey) return;
       if (Date.now() - gPressed.current < 900) {
         const target = GOTO_KEYS[e.key.toLowerCase()];
@@ -101,7 +104,7 @@ export function App() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [navigate, capture.open, paletteOpen, shortcutsOpen, taskId, callDraft]);
+  }, [navigate, capture.open, paletteOpen, shortcutsOpen, taskId, callDraft, schedule]);
 
   const current = ALL_NAV.find((n) => n.id === view)!;
   let page: JSX.Element;
@@ -160,6 +163,7 @@ export function App() {
       <CommandMenu open={paletteOpen} onClose={() => setPaletteOpen(false)} />
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <LogCallDialog open={callDraft !== null} draft={callDraft ?? undefined} onClose={() => setCallDraft(null)} />
+      <ScheduleMeetingDialog open={schedule !== null} options={schedule ?? {}} onClose={() => setSchedule(null)} />
       <TaskSheet taskId={taskId} onClose={() => setTaskId(null)} onOpenTask={setTaskId} />
     </UiContext.Provider>
   );

@@ -1,4 +1,5 @@
 import { createContext, useContext } from "react";
+import type { MeetingSeries } from "./types";
 
 export type ViewId =
   | "today"
@@ -28,6 +29,14 @@ export interface UiActions {
   openPalette: () => void;
   openShortcuts: () => void;
   openLogCall: (draft?: { start?: string; minutes?: number }) => void;
+  /** Add a meeting yourself (once or recurring), or edit a series you created. */
+  openScheduleMeeting: (opts?: ScheduleOptions) => void;
+}
+
+export interface ScheduleOptions {
+  recurring?: boolean;
+  day?: string;
+  series?: MeetingSeries;
 }
 
 export const UiContext = createContext<UiActions | null>(null);
