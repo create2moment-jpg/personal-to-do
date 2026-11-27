@@ -666,3 +666,56 @@ export interface SkillMatrix {
   levels: Record<string, [string, string]>;
   candidates: Fact[];
 }
+
+// ------------------------------------------------------------------ Reviews
+export type ReviewKind = "month" | "bimonth" | "quarter" | "year";
+export type ReviewSection = "highlights" | "challenges" | "learnings" | "next_focus";
+
+export interface ReviewSnapshot {
+  start: string;
+  end: string;
+  computed_at: string;
+  complete: boolean;
+  tasks: { completed: number; estimated_minutes: number; actual_minutes: number; accuracy: number | null; on_time: number; with_due: number; by_project: [string, number, number][]; top: string[] };
+  time: { meeting_minutes?: number; work_minutes?: number; meeting_share?: number; meetings?: number; calls?: number; by_person?: [string, number, number][]; by_topic?: [string, number, number][]; avg_rating?: number | null };
+  sprints: { name: string; goal: string; committed: number; done: number; status: string }[];
+  goals: { title: string; horizon: string; period: string; status: string; progress: number | null; pace: string; basis: string; achieved_in_period: boolean }[];
+  skills: { name: string; from: number | null; to: number }[];
+  evidence: { kind: string; statement: string; document: string }[];
+  notes: { wins: [string, string][]; learnings: [string, string][]; blockers: [string, string][] };
+  items: { id: string; text: string }[];
+}
+
+export interface Review {
+  id: string;
+  kind: ReviewKind;
+  period: string;
+  label: string;
+  status: "draft" | "final";
+  highlights: string;
+  challenges: string;
+  learnings: string;
+  next_focus: string;
+  snapshot: ReviewSnapshot;
+  ai_model: string | null;
+  ai_template: string | null;
+  created_at: string;
+  updated_at: string;
+  finalized_at: string | null;
+}
+
+export interface DueReview {
+  kind: ReviewKind;
+  period: string;
+  label: string;
+  review_id: string | null;
+  status: "draft" | "final" | null;
+  in_progress: boolean;
+}
+
+export interface ReviewDraft {
+  sections: Partial<Record<ReviewSection, string[]>>;
+  dropped: [string, string][];
+  model: string;
+  template: string;
+}

@@ -30,6 +30,7 @@ from ppos.infrastructure.sqlite_planning import (
     SqliteTopicRepository,
     SqliteWeeklyPlanRepository,
 )
+from ppos.infrastructure.sqlite_reviews import SqliteReviewRepository
 from ppos.infrastructure.sqlite_skills import SqliteSkillRepository
 
 
@@ -505,6 +506,7 @@ class SqliteUnitOfWork:
         self.career = SqliteCareerRepository(conn)
         self.goals = SqliteGoalRepository(conn)
         self.skills = SqliteSkillRepository(conn)
+        self.reviews = SqliteReviewRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

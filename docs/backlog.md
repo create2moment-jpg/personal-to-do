@@ -34,6 +34,7 @@ with a reason).
 | R-020 | Custom durations instead of a fixed 30 min | 2026-11-25 | done (time chip on every card with presets + free entry like 50 / 1h20 / 1.5h; `~50m` in quick add; any-minute meetings; default for unestimated tasks is a setting) | cards, task panel, Settings → Work & time |
 | R-021 | Adding meetings manually (one-time or recurring) must be the obvious path, not hidden behind calendar import | 2026-11-27 | done (Add meeting on Today, Meetings header, Recurring tab, Meetings & calls tab, command menu; import is optional and collapsed) | Meetings & time, Today, ⌘K |
 | R-022 | Add meetings from quick capture too | 2026-11-27 | done (`meeting:` / `mtg:` prefix: @day @HH:MM ~duration, repeats daily/weekdays/weekly/monthly/every N/every tue,thu, until/N times, with people, #topic; live preview) | Quick capture (`c`) |
+| B-013 | Periodic reviews: monthly, bi-monthly, quarterly, annual — from own data, optional grounded AI draft | 2026-11-27 | done (numbers snapshot, your four sections, AI bullets must cite records and only use their numbers, finalize/reopen, copy as Markdown) | Reviews (`g v`) |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

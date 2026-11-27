@@ -988,3 +988,29 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
   .skill-main { grid-template-columns: auto 1fr; }
   .skill-cols { grid-template-columns: 1fr; }
 }
+
+/* ---------- Reviews ---------- */
+.review-group { padding: 0.8rem 0.9rem 0.3rem; }
+.review-doc { max-width: 70rem; }
+.review-doc .page-sub { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.review-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.review-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr)); gap: 0.8rem; margin-bottom: 1rem; }
+.review-grid .panel h3 { font-size: 0.95rem; font-weight: 620; margin-bottom: 0.5rem; }
+.review-goal { display: flex; justify-content: space-between; gap: 0.8rem; align-items: center; padding: 0.3rem 0; border-top: 1px solid var(--border); font-size: 0.9rem; }
+.review-goal:first-of-type { border-top: 0; }
+.done-text { color: var(--text-2); }
+.review-notes { margin-bottom: 1rem; font-size: 0.9rem; }
+.review-notes summary { cursor: pointer; color: var(--text-2); }
+.review-notes ul { margin: 0.3rem 0 0; padding-left: 1.1rem; }
+.dropped-box { margin: 0 0 1rem; font-size: 0.85rem; color: var(--text-2); }
+.dropped-box summary { cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.dropped-box ul { list-style: none; padding: 0.3rem 0 0; margin: 0; display: flex; flex-direction: column; gap: 0.25rem; }
+.dropped-box s { color: var(--text-3); }
+.review-section { margin-bottom: 1.2rem; }
+.review-section-label { display: block; font-weight: 640; font-size: 1.02rem; margin-bottom: 0.4rem; }
+.review-text { width: 100%; resize: vertical; line-height: 1.55; font-size: 0.95rem; padding: 0.6rem 0.75rem; min-height: 5rem; height: auto; }
+.ai-suggestions { border: 1px dashed color-mix(in srgb, var(--accent) 50%, var(--border)); background: var(--accent-soft); border-radius: var(--radius); padding: 0.6rem 0.75rem; margin-bottom: 0.5rem; display: flex; flex-direction: column; gap: 0.35rem; }
+.ai-suggestions .section-label { display: flex; gap: 5px; align-items: center; }
+.ai-suggestion { display: flex; justify-content: space-between; gap: 0.6rem; align-items: center; font-size: 0.92rem; }
+.cite { display: inline-block; font-size: 0.72rem; font-weight: 650; padding: 0 0.3rem; margin: 0 1px; border-radius: 4px; background: var(--surface); border: 1px solid var(--border); color: var(--accent-text); cursor: help; vertical-align: 1px; }
+.review-foot { display: flex; gap: 6px; align-items: flex-start; font-size: 0.82rem; margin-top: 1.5rem; }

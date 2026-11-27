@@ -99,6 +99,11 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   career expectations and skills.
 - **Skills** (`g l`): rate yourself 1–5 with history and trend, set targets,
   link evidence from your reviews, turn gaps into goals.
+- **Reviews** (`g v`): monthly, bi-monthly, quarterly and annual reviews.
+  Numbers come from your own tasks, meetings, sprints, goals, skills, evidence
+  and daily/weekly reviews; you write highlights, challenges, learnings and
+  next focus — or ask your local AI for a draft whose every bullet must cite
+  your records (unsupported bullets are dropped and shown). Finalize to freeze.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.

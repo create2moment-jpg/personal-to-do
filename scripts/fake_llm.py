@@ -55,6 +55,28 @@ def extract_facts(user_message: str) -> str:
     )
 
 
+def review_draft(user_message: str) -> str:
+    """Cite the first items verbatim; add one bullet that invents a number (must be dropped)."""
+    items = re.findall(r"^\[([A-Z]\d+)\] (.+)$", user_message, re.MULTILINE)
+    by_prefix: dict[str, list[tuple[str, str]]] = {}
+    for item_id, text in items:
+        by_prefix.setdefault(item_id[0], []).append((item_id, text))
+
+    def bullet(prefix: str) -> list[str]:
+        return [f"{text} [{item_id}]" for item_id, text in by_prefix.get(prefix, [])[:2]]
+
+    return json.dumps(
+        {
+            "highlights": bullet("S")
+            + bullet("G")
+            + ["Was promoted to principal engineer with 300 percent impact [S1]"],
+            "challenges": bullet("M")[:1] + bullet("B"),
+            "learnings": bullet("L") or ["No new learnings recorded"],
+            "next_focus": bullet("G")[:1],
+        }
+    )
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.path.rstrip("/").endswith("/v1/models"):
@@ -69,6 +91,8 @@ class Handler(BaseHTTPRequestHandler):
         )
         if "Reply with exactly: OK" in user:
             answer = "OK"
+        elif "review for" in user and "Each line is one item with its ID" in user:
+            answer = review_draft(user)
         elif 'Allowed "kind" values' in user:
             answer = extract_facts(user)
         else:

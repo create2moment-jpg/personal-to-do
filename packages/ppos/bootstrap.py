@@ -21,6 +21,7 @@ from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
 from ppos.application.planning import SprintService, WeekService
 from ppos.application.ports import SearchHit
+from ppos.application.reviews import ReviewService
 from ppos.application.settings import SettingsService
 from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
@@ -60,6 +61,7 @@ class Container:
     career: CareerService
     goals: GoalService
     skills: SkillService
+    reviews: ReviewService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -167,4 +169,7 @@ def build_container(
         career=CareerService(uow, clock, tasks),
         goals=goals,
         skills=SkillService(uow, clock, goals),
+        reviews=ReviewService(
+            uow, clock, meetings, goals, run_template, enabled=lambda: ai.name != "none"
+        ),
     )

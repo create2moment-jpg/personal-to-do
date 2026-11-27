@@ -58,7 +58,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "career", label: "Career", icon: TrendingUp, shortcut: "G C" },
       { id: "goals", label: "Goals", icon: Target, shortcut: "G G" },
       { id: "skills", label: "Skills", icon: Brain, shortcut: "G L" },
-      { id: "reviews", label: "Reviews", icon: FileText, phase: "Phase 8" },
+      { id: "reviews", label: "Reviews", icon: FileText, shortcut: "G V" },
       { id: "analytics", label: "Insights", icon: BarChart3, phase: "Phase 8" },
     ],
   },
@@ -84,6 +84,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   c: "career",
   g: "goals",
   l: "skills",
+  v: "reviews",
   s: "settings",
 };
 
