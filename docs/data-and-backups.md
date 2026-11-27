@@ -53,8 +53,14 @@ afterwards.
 
 ## Export
 
-`ppos export` writes every canonical table to a single JSON file — readable
-without this app.
+`ppos export` writes all your data to a single JSON file — readable without
+this app. The tables are discovered from the database schema, so every
+feature (tasks, notes, meetings, sprints, goals, skills, reviews, career
+evidence, Prompt Book, document metadata and extracted facts, settings) is
+included automatically. Only derived data is left out and listed under
+`excluded`: the full-text index and search-by-meaning vectors, both rebuilt by
+the app. Original document files stay in `documents/` (see
+`documents[].storage_path`) and are part of every backup.
 
 ## Upgrading the code
 

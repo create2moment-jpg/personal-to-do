@@ -236,14 +236,29 @@ def _restore_backup(settings: Settings, archive: Path, *, force: bool = False) -
     return moved_aside
 
 
-EXPORT_TABLES = (
-    "projects", "tasks", "task_dependencies", "notes", "note_versions", "links",
-    "daily_plans", "audit_log", "schema_migrations",
-)  # fmt: skip
+# Derived data, rebuilt from the rest: never exported (and binary vectors aren't JSON).
+EXPORT_EXCLUDED_PREFIXES = ("sqlite_", "search_index")
+EXPORT_EXCLUDED = {"embeddings": "search-by-meaning vectors; rebuilt by Assistant → update index"}
+
+
+def export_tables(conn: sqlite3.Connection) -> list[str]:
+    """Every table holding your data — discovered from the schema, so new features are included."""
+    names = [
+        r[0]
+        for r in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name")
+    ]
+    return [
+        n for n in names
+        if not n.startswith(EXPORT_EXCLUDED_PREFIXES) and n not in EXPORT_EXCLUDED
+    ]  # fmt: skip
 
 
 def export_json(settings: Settings, dest: Path | None = None) -> Path:
-    """Portable, human-readable export of all canonical tables."""
+    """Portable, human-readable export of all your data (format 2).
+
+    Original document files are not inlined: they stay in the data folder
+    (``documents[].storage_path``) and are included in backups.
+    """
     root = ensure_data_dir(settings)
     dest = dest or root / "exports" / (
         f"ppos-export-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.json"
@@ -251,13 +266,16 @@ def export_json(settings: Settings, dest: Path | None = None) -> Path:
     conn = connect(settings.db_path)
     try:
         payload: dict[str, Any] = {
-            "format": 1,
+            "format": 2,
             "app_version": __version__,
             "exported_at": datetime.now(timezone.utc).isoformat(),
+            "schema_version": current_version(conn),
+            "excluded": EXPORT_EXCLUDED
+            | {"search_index": "full-text index; rebuilt automatically"},
             "tables": {},
         }
-        for table in EXPORT_TABLES:
-            rows = conn.execute(f"SELECT * FROM {table}").fetchall()
+        for table in export_tables(conn):
+            rows = conn.execute(f'SELECT * FROM "{table}"').fetchall()  # names from sqlite_master
             payload["tables"][table] = [dict(r) for r in rows]
     finally:
         conn.close()

@@ -84,3 +84,19 @@ def test_export_contains_tables(container: Container, settings: Settings) -> Non
     container.tasks.create("exported")
     data = json.loads(export_json(settings).read_text())
     assert data["tables"]["tasks"][0]["title"] == "exported"
+
+
+def test_export_includes_every_feature(container: Container, settings: Settings) -> None:
+    from ppos.demo import seed_demo
+
+    seed_demo(container)
+    data = json.loads(export_json(settings).read_text())
+    assert data["format"] == 2 and data["schema_version"] >= 12
+    tables = data["tables"]
+    for name in ("goals", "skills", "skill_ratings", "reviews", "meetings", "meeting_series",
+                 "career_expectations", "evidence_links", "facts", "documents", "book_nodes",
+                 "sprints", "weekly_plans", "people", "topics"):  # fmt: skip
+        assert name in tables, name
+    assert tables["goals"] and tables["skills"] and tables["facts"]
+    assert "embeddings" not in tables and not any(t.startswith("search_index") for t in tables)
+    assert "embeddings" in data["excluded"]
