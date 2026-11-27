@@ -148,6 +148,12 @@ export function AiSettings() {
           <span className="ai-help">Lower is more predictable; 0.1–0.3 suits rewriting and extraction.</span>
         </label>
 
+        <label className="ai-field wide">
+          <span className="ai-label">Embedding model (search by meaning)</span>
+          <input className="input mono" list="ai-models" value={form.embedding_model} onChange={(e) => set("embedding_model", e.target.value)} placeholder="optional, e.g. nomic-embed-text — empty = keyword search only" spellCheck={false} />
+          <span className="ai-help">Lets the Assistant find related notes even when the words differ. llama.cpp: start the server with --embeddings (or run a second one for an embedding model).</span>
+        </label>
+
         <div className="ai-numbers wide">
           <NumberField label="Max output tokens" value={form.max_tokens} onChange={(v) => set("max_tokens", v)} help="Reasoning models need room to think." />
           <NumberField label="Context limit (tokens)" value={form.context_limit} onChange={(v) => set("context_limit", v)} help="As configured on your server." />

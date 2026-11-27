@@ -572,6 +572,7 @@ export interface LlmConfig {
   max_tokens: number;
   context_limit: number;
   timeout_seconds: number;
+  embedding_model: string;
 }
 
 export interface AiConfigState {
@@ -740,4 +741,46 @@ export interface Trends {
   by_project: [string, number, number][];
   by_topic: [string, number, number][];
   by_person: [string, number, number][];
+}
+
+// ------------------------------------------------------------------ Assistant
+export interface AssistantSource {
+  kind: "note" | "page" | "chunk" | "task";
+  id: string;
+  title: string;
+  text: string;
+  link: string;
+  n: number;
+  via: string[];
+}
+
+export interface AssistantAnswer {
+  question: string;
+  text: string;
+  sources: AssistantSource[];
+  cited: number[];
+  invalid: number[];
+  grounded: boolean;
+  model: string;
+  semantic: boolean;
+}
+
+export interface AssistantStatus {
+  model: string;
+  indexed: number;
+  total: number;
+  running: boolean;
+  error: string | null;
+  ai: boolean;
+}
+
+export interface DayPlanProposal {
+  day: string;
+  top: { id: string; title: string; why: string }[];
+  note: string;
+  dropped: string[];
+  model: string;
+  capacity_minutes: number;
+  meeting_minutes: number;
+  current_top: { id: string; title: string }[];
 }

@@ -36,6 +36,7 @@ with a reason).
 | R-022 | Add meetings from quick capture too | 2026-11-27 | done (`meeting:` / `mtg:` prefix: @day @HH:MM ~duration, repeats daily/weekdays/weekly/monthly/every N/every tue,thu, until/N times, with people, #topic; live preview) | Quick capture (`c`) |
 | B-013 | Periodic reviews: monthly, bi-monthly, quarterly, annual — from own data, optional grounded AI draft | 2026-11-27 | done (numbers snapshot, your four sections, AI bullets must cite records and only use their numbers, finalize/reopen, copy as Markdown) | Reviews (`g v`) |
 | B-014 | Insights: week-by-week trends from own records | 2026-11-27 | done (tasks per week, meetings vs focus, planned work done, estimate accuracy, work by project, meeting time by topic, table view) | Insights (`g i`) |
+| B-015 | Assistant: ask questions answered from own records with citations; plan my day as an approvable proposal | 2026-11-27 | done (answers cite numbered sources, invalid/no citations flagged; plan ids not in your list dropped; nothing changes until you approve) | Assistant (`g j`) |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |
@@ -46,7 +47,7 @@ with a reason).
 | B-010 | Career suggestions that understand synonyms (semantic matching) | 2026-11-24 | idea (from B-009; needs B-008) | — |
 | B-011 | Goals hierarchy linked to career expectations; skills matrix | 2026-11-24 | done (year → quarter → month goals with computed progress and pace, linked to tasks, projects, expectations and skills; skills with rating history, targets, evidence, gap → goal) | Goals (`g g`), Skills (`g l`) |
 | B-012 | Add career evidence by hand (statement + quote from a document, or your own note) so Career works without AI | 2026-11-24 | done (saved as a “My evidence note” in Knowledge, accepted and labelled “Your note”; linkable from Career and Skills) | Career / Skills → Link evidence |
-| B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | planned (Phase 6) | Knowledge |
+| B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | done (local /v1/embeddings, stored on disk, fused with keyword search by reciprocal-rank fusion; optional) | Assistant (`g j`), Settings → Local AI |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |
 
 ## Deferred / declined, with reasons

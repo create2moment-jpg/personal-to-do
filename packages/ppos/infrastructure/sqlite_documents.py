@@ -99,7 +99,8 @@ class SqliteDocumentRepository:
         if not chunk_ids:
             return {}
         q = (
-            "SELECT c.id, c.document_id, c.page_start, c.page_end, c.section, d.title FROM document_chunks c"
+            "SELECT c.id, c.document_id, c.page_start, c.page_end, c.section, c.text, d.title"
+            " FROM document_chunks c"
             f" JOIN documents d ON d.id = c.document_id WHERE c.id IN ({','.join('?' * len(chunk_ids))})"
         )
         return {r["id"]: dict(r) for r in self._c.execute(q, chunk_ids)}

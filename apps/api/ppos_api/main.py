@@ -27,6 +27,7 @@ from ppos.shared.errors import (
 )
 from ppos_api.routes import (
     ai,
+    assistant,
     book,
     career,
     documents,
@@ -114,6 +115,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(goals.router)
     app.include_router(skills.router)
     app.include_router(reviews.router)
+    app.include_router(assistant.router)
     app.include_router(time_routes.router)
 
     dist = settings.web_dist_dir

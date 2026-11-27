@@ -38,8 +38,8 @@ See [design-system.md](design-system.md) for the visual language.
 | 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
 | 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
-| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | started — provider layer (any OpenAI-compatible local server, configured live in Settings → Local AI, R-017), prompt templates and output validation shipped |
-| 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | |
+| 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | mostly done — provider layer (R-017), versioned prompts, output validation, Assistant (B-015); writing studio in Notes and AI capture still open |
+| 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | started — hybrid retrieval (keyword + meaning, B-008), grounded Q&A, plan-my-day proposal; weekly/sprint workflows next |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
 | 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | |
@@ -197,6 +197,21 @@ Full spec: [specs/meetings-and-time.md](specs/meetings-and-time.md).
   feed career evidence (Phase 7, B-009). The quote can never be edited.
 - Chunking now starts a new passage at every heading (chunk:v2) so framework
   levels and review sections are cited separately.
+
+### Phases 5–6 — Assistant with your context (B-008, B-015)
+
+- **Hybrid retrieval:** keyword search (always on; question words are dropped
+  and, if no passage holds every word, terms are ranked separately) fused with
+  search by meaning via reciprocal-rank fusion. Meaning uses your local
+  server's `/v1/embeddings` with an embedding model you choose in Settings →
+  Local AI; vectors are stored in your database, refreshed by content hash.
+- **Ask:** the top passages are numbered and the model must cite them; the
+  page flags answers with missing or non-existent citations and shows every
+  source (note, document page, prompt, task) with how it was found.
+- **Plan my day:** up to three top priorities with reasons from today's open,
+  overdue and due tasks; ids not in your list are dropped; applying it is
+  your explicit approval.
+- Works without AI as a search page; nothing leaves the machine.
 
 ### Phase 8 — Reviews and Insights (B-013, B-014)
 
@@ -385,5 +400,8 @@ product bar above.
 - No local auth token; API must stay on loopback (threat model T4/T5).
 - Search ranks with bm25 only; no recency boost.
 - The `ui` vendor chunk is ~140 KB gzipped; revisit if first load grows.
+- E2E: Playwright's one-step `dragTo` sometimes failed to start an HTML5 drag
+  late in the suite; the drag-onto-project test now uses a stepwise pointer
+  gesture (like the other drag tests) and checks the result through the API.
 - Career suggestions use word overlap only; synonyms ("mentored" vs "coached")
   are missed until semantic search (B-008) is available.

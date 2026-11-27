@@ -49,7 +49,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "notes", label: "Notes", icon: NotebookPen, shortcut: "G N" },
       { id: "book", label: "Prompt Book", icon: BookOpenText, shortcut: "G K" },
       { id: "knowledge", label: "Knowledge", icon: Library, shortcut: "G D" },
-      { id: "ai", label: "Assistant", icon: Sparkles, phase: "Phase 5" },
+      { id: "ai", label: "Assistant", icon: Sparkles, shortcut: "G J" },
     ],
   },
   {
@@ -86,6 +86,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   l: "skills",
   v: "reviews",
   i: "analytics",
+  j: "ai",
   s: "settings",
 };
 

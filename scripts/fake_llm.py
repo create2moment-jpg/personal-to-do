@@ -55,6 +55,38 @@ def extract_facts(user_message: str) -> str:
     )
 
 
+SYNONYMS = {"coach": "mentor", "coached": "mentor", "coaching": "mentor", "mentored": "mentor",
+            "mentoring": "mentor", "retrieval": "search", "searching": "search"}  # fmt: skip
+
+
+def embed(text: str, dim: int = 64) -> list[float]:
+    """Deterministic bag-of-words vector; a few synonyms share a bucket so 'meaning' works."""
+    import hashlib
+
+    vec = [0.0] * dim
+    for word in re.findall(r"[a-z]{3,}", text.lower()):
+        word = SYNONYMS.get(word, word)
+        vec[int(hashlib.sha256(word.encode()).hexdigest(), 16) % dim] += 1.0
+    return vec
+
+
+def ask_answer(user_message: str) -> str:
+    """Answer with the first source's first sentence and cite it; also cite a missing source."""
+    m = re.search(r"^\[1\] \(\w+\) (.+)\n(.+)$", user_message, re.MULTILINE)
+    if not m:
+        return "I couldn't find that in your records."
+    first = re.split(r"(?<=[.!?])\s", m.group(2))[0][:200]
+    return f"From your records: {first} [1]"
+
+
+def plan_answer(user_message: str) -> str:
+    """Pick the first two task ids offered, plus one invented id (must be dropped)."""
+    ids = re.findall(r"^([0-9a-f]{32}) \|", user_message, re.MULTILINE)
+    top = [{"id": i, "why": "due soon and high priority"} for i in ids[:2]]
+    top.append({"id": "not-a-real-task", "why": "invented"})
+    return json.dumps({"top": top, "note": "Front-load the deep work before meetings."})
+
+
 def review_draft(user_message: str) -> str:
     """Cite the first items verbatim; add one bullet that invents a number (must be dropped)."""
     items = re.findall(r"^\[([A-Z]\d+)\] (.+)$", user_message, re.MULTILINE)
@@ -78,6 +110,15 @@ def review_draft(user_message: str) -> str:
 
 
 class Handler(BaseHTTPRequestHandler):
+    def _embeddings(self, payload: dict[str, object]) -> None:
+        inputs = payload.get("input") or []
+        texts = [inputs] if isinstance(inputs, str) else list(inputs)  # type: ignore[arg-type]
+        data = [
+            {"object": "embedding", "index": i, "embedding": embed(str(t))}
+            for i, t in enumerate(texts)
+        ]
+        self._json({"object": "list", "model": payload.get("model", "fake-embed"), "data": data})
+
     def do_GET(self) -> None:
         if self.path.rstrip("/").endswith("/v1/models"):
             self._json({"object": "list", "data": [{"id": "fake-llm", "object": "model"}]})
@@ -86,6 +127,8 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         payload = json.loads(self.rfile.read(int(self.headers.get("Content-Length", "0"))) or b"{}")
+        if self.path.rstrip("/").endswith("/embeddings"):
+            return self._embeddings(payload)
         user = next(
             (m["content"] for m in payload.get("messages", []) if m.get("role") == "user"), ""
         )
@@ -93,6 +136,10 @@ class Handler(BaseHTTPRequestHandler):
             answer = "OK"
         elif "review for" in user and "Each line is one item with its ID" in user:
             answer = review_draft(user)
+        elif user.startswith("Today is ") and "Sources:" in user:
+            answer = ask_answer(user)
+        elif user.startswith("Plan my day"):
+            answer = plan_answer(user)
         elif 'Allowed "kind" values' in user:
             answer = extract_facts(user)
         else:

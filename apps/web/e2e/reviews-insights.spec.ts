@@ -58,3 +58,29 @@ test("insights: weekly trends with tooltips, range switch and a table view", asy
   await page.getByText("All numbers as a table").click();
   await expect(page.locator(".insights-table tbody tr")).toHaveCount(26);
 });
+
+test("assistant: grounded answer with sources, search by meaning, plan my day with approval", async ({ page }) => {
+  await open(page, "ai");
+  await expect(page.locator(".assistant-status")).toContainText("Search by meaning");
+  await page.getByLabel("Ask the assistant").fill("What did I decide about hybrid retrieval?");
+  await page.getByRole("button", { name: "Ask", exact: true }).click();
+  const answer = page.getByRole("article", { name: /Answer: What did I decide/ });
+  await expect(answer).toBeVisible({ timeout: 15_000 });
+  await expect(answer.locator(".grounding")).toContainText("Cites 1 of");
+  await expect(answer.locator(".source").first()).toBeVisible();
+  // open the cited source
+  await answer.locator(".answer-text .cite").first().click();
+  // a note/document/prompt opens its page; a task opens the task panel
+  await expect
+    .poll(async () => (page.url().endsWith("#/ai") ? await page.getByRole("dialog").count() : 1))
+    .toBeGreaterThan(0);
+  await page.keyboard.press("Escape");
+
+  await open(page, "ai");
+  const plan = page.getByRole("complementary", { name: "Plan my day" });
+  await plan.getByRole("button", { name: "Propose a plan" }).click();
+  await expect(plan.locator("ol li")).toHaveCount(2);
+  await expect(plan).toContainText("1 suggestion(s) ignored");
+  await plan.getByRole("button", { name: "Approve" }).click();
+  await expect(page.locator("[data-sonner-toast]", { hasText: "top priorities set" })).toBeVisible();
+});

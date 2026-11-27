@@ -1038,3 +1038,36 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .wd-head .wd-date { margin-left: auto; }
 .wd-add-meeting { width: 1.5rem; height: 1.5rem; margin-left: 0.15rem; align-self: center; opacity: 0.35; }
 .wd-head:hover .wd-add-meeting, .wd-add-meeting:focus-visible { opacity: 1; }
+
+/* ---------- Assistant ---------- */
+.assistant-status { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.assistant-status .chip svg { margin-left: 3px; }
+.assistant-layout { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1rem; align-items: start; }
+@media (max-width: 1000px) { .assistant-layout { grid-template-columns: 1fr; } }
+.ask-box { padding: 0.8rem 0.9rem 0.6rem; margin-bottom: 0.9rem; }
+.ask-input { width: 100%; border: 0; background: transparent; resize: none; font: inherit; font-size: 1.02rem; color: var(--text); outline: none; line-height: 1.5; }
+.ask-actions { display: flex; gap: 0.4rem; align-items: center; justify-content: flex-end; }
+.ask-actions .faint { margin-right: auto; font-size: 0.8rem; display: inline-flex; gap: 5px; align-items: center; }
+.assistant-hints { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.answer-card { padding: 0.9rem 1rem; margin-bottom: 0.9rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.answer-q { font-weight: 620; color: var(--text-2); font-size: 0.92rem; }
+.answer-text { font-size: 1rem; line-height: 1.6; white-space: pre-wrap; }
+.answer-text .cite { cursor: pointer; }
+.cite.bad { color: var(--red); border-color: var(--red); cursor: not-allowed; }
+.grounding { display: flex; align-items: center; gap: 6px; font-size: 0.84rem; flex-wrap: wrap; }
+.grounding.ok { color: var(--green); }
+.grounding.warn { color: var(--orange); }
+.source-list, .search-results { display: flex; flex-direction: column; gap: 0.4rem; }
+.search-results { margin-bottom: 1rem; }
+.source { text-align: left; border: 1px solid var(--border); background: var(--surface); border-radius: var(--radius); padding: 0.5rem 0.7rem; cursor: pointer; display: flex; flex-direction: column; gap: 3px; font: inherit; color: var(--text); transition: border-color 0.12s, opacity 0.12s; }
+.source:hover, .source.focus { border-color: var(--accent); }
+.source.dim { opacity: 0.6; }
+.source-head { display: flex; align-items: center; gap: 0.4rem; font-size: 0.88rem; flex-wrap: wrap; }
+.source-text { font-size: 0.84rem; color: var(--text-2); line-height: 1.45; }
+.plan-card { padding: 1rem; position: sticky; top: 1rem; display: flex; flex-direction: column; gap: 0.6rem; }
+.plan-card h3 { display: flex; gap: 8px; align-items: center; font-size: 1.02rem; font-weight: 620; }
+.plan-card p { margin: 0; font-size: 0.86rem; }
+.plan-proposal ol { margin: 0.3rem 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 0.45rem; }
+.plan-proposal li .faint { font-size: 0.8rem; }
+.plan-note { color: var(--text-2); font-style: italic; }
+.plan-actions { display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.3rem; }

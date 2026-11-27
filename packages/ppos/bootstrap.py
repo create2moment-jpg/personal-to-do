@@ -10,6 +10,7 @@ from ppos.ai.output import clean_improved
 from ppos.ai.prompts import load_template
 from ppos.ai.provider import build_provider
 from ppos.ai.runtime import AIRuntime, env_config
+from ppos.application.assistant import AssistantService
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.career import CareerService
@@ -64,6 +65,7 @@ class Container:
     skills: SkillService
     reviews: ReviewService
     insights: InsightsService
+    assistant: AssistantService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -102,7 +104,7 @@ def build_container(
     ai = AIRuntime(
         uow,
         env_config(settings.llm_provider, settings.llm_base_url, settings.llm_model,
-                   settings.llm_timeout_seconds),
+                   settings.llm_timeout_seconds, settings.llm_embedding_model),
         settings.llm_allow_remote,
         # legacy .env Ollama setups keep the native API until settings are applied in the app
         env_provider=build_provider(
@@ -143,6 +145,13 @@ def build_container(
     meetings.top_up_series()  # open-ended series you created stay filled ahead
 
     goals = GoalService(uow, clock, tasks)
+    days = DayService(
+        uow, clock, settings.default_capacity_minutes, day_meetings,
+        unestimated_minutes=lambda: workspace.get().default_task_minutes,
+    )  # fmt: skip
+    assistant = AssistantService(uow, clock, ai, run_template, job_runner, days, workspace.tz)
+    if ai.embedding_model:
+        assistant.start_index()  # keep search by meaning fresh in the background
 
     return Container(
         settings=settings,
@@ -152,13 +161,7 @@ def build_container(
         projects=ProjectService(uow, clock),
         notes=notes,
         links=LinkService(uow, clock),
-        days=DayService(
-            uow,
-            clock,
-            settings.default_capacity_minutes,
-            day_meetings,
-            unestimated_minutes=lambda: workspace.get().default_task_minutes,
-        ),
+        days=days,
         capture=CaptureService(uow, clock, tasks, notes, meetings, workspace.tz),
         settings_service=workspace,
         meetings=meetings,
@@ -172,6 +175,7 @@ def build_container(
         goals=goals,
         skills=SkillService(uow, clock, goals),
         insights=InsightsService(uow, clock, meetings),
+        assistant=assistant,
         reviews=ReviewService(
             uow, clock, meetings, goals, run_template, enabled=lambda: ai.name != "none"
         ),

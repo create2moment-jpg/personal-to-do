@@ -50,6 +50,7 @@ class LLMConfig:
     max_tokens: int = 4096
     context_limit: int = 32768
     timeout_seconds: float = 120
+    embedding_model: str = ""  # empty: search by meaning is off (keyword search still works)
 
     def validated(self) -> LLMConfig:
         if self.preset not in PRESETS:
@@ -75,6 +76,7 @@ class LLMConfig:
             base_url=normalize_openai_base(self.base_url),
             model=self.model.strip(),
             api_key_env=self.api_key_env.strip(),
+            embedding_model=self.embedding_model.strip(),
         )
 
     @classmethod
@@ -253,12 +255,30 @@ class AIRuntime:
     def reachable(self) -> bool:
         return self._provider.reachable()
 
+    @property
+    def embedding_model(self) -> str:
+        """The model used for search by meaning, or "" when that is off."""
+        if self.name == "none" or not isinstance(self._provider, OpenAICompatibleProvider):
+            return ""
+        return self._config.embedding_model
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        model = self.embedding_model
+        if not model:
+            raise AIUnavailableError(
+                "search by meaning is off — set an embedding model in Settings → Local AI"
+            )
+        assert isinstance(self._provider, OpenAICompatibleProvider)
+        return self._provider.embed(texts, model)
+
 
 def _ms(start: float) -> int:
     return int((time.perf_counter() - start) * 1000)
 
 
-def env_config(provider: str, base_url: str, model: str, timeout: float) -> LLMConfig:
+def env_config(
+    provider: str, base_url: str, model: str, timeout: float, embedding_model: str = ""
+) -> LLMConfig:
     """Translate the legacy PPOS_LLM_* environment variables into app settings."""
     if provider in ("", "none"):
         return LLMConfig(timeout_seconds=timeout)
@@ -267,5 +287,10 @@ def env_config(provider: str, base_url: str, model: str, timeout: float) -> LLMC
     if provider == "ollama":
         url = url.rstrip("/").removesuffix("/v1") + "/v1"
     return LLMConfig(
-        enabled=True, preset=preset, base_url=url, model=model, timeout_seconds=timeout
+        enabled=True,
+        preset=preset,
+        base_url=url,
+        model=model,
+        timeout_seconds=timeout,
+        embedding_model=embedding_model,
     )

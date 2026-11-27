@@ -223,6 +223,15 @@ class OpenAICompatibleProvider(_HttpProvider):
         model = str(data.get("model") or self.model)
         return LLMResult(text, model, int((time.perf_counter() - start) * 1000))
 
+    def embed(self, texts: list[str], model: str) -> list[list[float]]:
+        """Vectors from the server's /embeddings endpoint (llama.cpp needs --embeddings)."""
+        data = self._post("/embeddings", {"model": model, "input": texts})
+        items = sorted(data.get("data") or [], key=lambda d: d.get("index", 0))
+        vectors = [[float(x) for x in d.get("embedding", [])] for d in items]
+        if len(vectors) != len(texts) or not all(vectors):
+            raise AIOutputError("the embeddings endpoint returned no vectors")
+        return vectors
+
     def reachable(self) -> bool:
         return self._get_ok("/models")
 

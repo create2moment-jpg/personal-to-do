@@ -14,6 +14,7 @@ import { ComingSoonView } from "./views/ComingSoonView";
 import { BacklogView, UpcomingView } from "./views/ListViews";
 import { MeetingsView } from "./views/MeetingsView";
 import { PromptBookView } from "./views/PromptBookView";
+import { AssistantView } from "./views/AssistantView";
 import { BoardView } from "./views/BoardView";
 import { CareerView } from "./views/CareerView";
 import { GoalsView } from "./views/GoalsView";
@@ -126,12 +127,13 @@ export function App() {
   else if (view === "skills") page = <SkillsView />;
   else if (view === "reviews") page = <ReviewsView reviewId={arg} />;
   else if (view === "analytics") page = <InsightsView />;
+  else if (view === "ai") page = <AssistantView />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;
   else page = <SettingsView />;
 
-  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics"].includes(view);
+  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai"].includes(view);
 
   return (
     <UiContext.Provider value={ui}>

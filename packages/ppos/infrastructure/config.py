@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     llm_provider: str = "none"  # none | ollama | openai_compatible
     llm_base_url: str = ""
     llm_model: str = ""
+    llm_embedding_model: str = ""  # enables search by meaning (local /v1/embeddings)
     llm_timeout_seconds: float = 120
     llm_temperature: float = 0.3
     llm_max_tokens: int = 1200

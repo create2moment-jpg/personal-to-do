@@ -108,6 +108,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Insights** (`g i`): 8 / 12 / 26-week trends of tasks done, meetings vs
   focus time, planned work done and estimate accuracy, plus work by project
   and meeting time by topic — all from your own records, with a table view.
+- **Assistant** (`g j`): ask about your own notes, documents, tasks and
+  prompts — answers cite numbered sources you can open, and uncited answers
+  are flagged. Search by meaning when you set an embedding model; **Plan my
+  day** proposes three priorities that only apply when you approve.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
 - **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.

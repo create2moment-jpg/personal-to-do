@@ -28,6 +28,7 @@ class ConfigIn(BaseModel):
     max_tokens: int
     context_limit: int
     timeout_seconds: float
+    embedding_model: str = Field(default="", max_length=200)
 
     def to_config(self) -> LLMConfig:
         return LLMConfig(**self.model_dump(include=set(ConfigIn.model_fields)))

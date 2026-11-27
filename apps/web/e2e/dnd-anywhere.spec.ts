@@ -29,14 +29,27 @@ test("backlog task dropped on sidebar Today is planned for today", async ({ page
 test("task dropped on a project card moves into that project", async ({ page, request }) => {
   await open(page, "projects");
   await page.locator(".project-card", { hasText: "Model Evaluation" }).click();
+  // wait until the list shows that project's tasks before picking a card
+  await expect(page.getByRole("heading", { name: "Model Evaluation", level: 3 })).toBeVisible();
+  await expect(page.locator(".list .task-card", { hasText: "Run regression evals" })).toBeVisible();
+  await page.waitForLoadState("networkidle"); // project cards settle (counts refresh) before the drag
   const card = page.locator(".list .task-card").first();
   const title = (await card.locator(".t-title").innerText()).trim();
-  await card.dragTo(page.locator(".project-card", { hasText: "Deep Learning Reading Group" }));
-  await expect(page.locator("[data-sonner-toast]", { hasText: "Moved to project" })).toBeVisible();
+  // a stepwise gesture, like a real pointer (one-step dragTo is unreliable for HTML5 drag)
+  const from = (await card.locator(".t-title").boundingBox())!;
+  const to = (await page.locator(".project-card", { hasText: "Deep Learning Reading Group" }).boundingBox())!;
+  await page.mouse.move(from.x + 10, from.y + from.height / 2);
+  await page.mouse.down();
+  for (let i = 1; i <= 12; i++) {
+    await page.mouse.move(from.x + 10 + ((to.x + to.width / 2 - from.x - 10) * i) / 12, from.y + from.height / 2 + ((to.y + to.height / 2 - from.y - from.height / 2) * i) / 12);
+  }
+  await page.mouse.up();
+  // check the outcome, not the transient toast
   const projects = (await (await request.get("/api/projects")).json()) as { id: string; name: string }[];
   const dl = projects.find((p) => p.name === "Deep Learning Reading Group")!;
-  const tasks = (await (await request.get(`/api/tasks?project_id=${dl.id}`)).json()) as { title: string }[];
-  expect(tasks.map((t) => t.title)).toContain(title);
+  await expect
+    .poll(async () => ((await (await request.get(`/api/tasks?project_id=${dl.id}`)).json()) as { title: string }[]).map((t) => t.title))
+    .toContain(title);
 });
 
 test("note dropped on Prompt Book becomes a page", async ({ page }) => {
