@@ -60,8 +60,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   hours, time per person and per topic. Capacity is computed automatically from
   your working hours (default 08:00–17:00, Europe/Berlin) minus meetings.
 - **Tasks**: priority, estimate vs actual, due date, project/area, tags,
-  subtasks, dependencies (completion blocked until they're done), recurrence
-  rule stored.
+  subtasks, dependencies (completion blocked until they're done), and
+  **repeats** (every day / weekday / week on chosen days / N weeks / month):
+  completing one creates the next. Quick capture: `Water plants every mon`.
 - **Backlog** and **Projects & Areas** views.
 - **Notes**: a rich-text editor (headings, lists, checklists, tables, code)
   that stores plain Markdown, with autosave and version history (restore is

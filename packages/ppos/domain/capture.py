@@ -93,6 +93,10 @@ def parse_capture(text: str, today: date) -> ParsedCapture:
     if kind == CaptureKind.MEETING:
         return _parse_meeting(text, today)
 
+    repeat: Recurrence | None = None
+    if kind == CaptureKind.TASK:
+        text, repeat = _task_repeat(text)
+
     result = ParsedCapture(kind=kind, title="")
     words: list[str] = []
     for token in text.split():
@@ -118,7 +122,33 @@ def parse_capture(text: str, today: date) -> ParsedCapture:
         else:
             words.append(token)
     result.title = " ".join(words).strip()
+    result.recurrence = repeat
     return result
+
+
+def _task_repeat(text: str) -> tuple[str, Recurrence | None]:
+    """Explicit 'every …' phrases only, so a title like 'Write daily report' stays intact."""
+    patterns: list[tuple[str, object]] = [
+        (r"\bevery\s+(\d{1,2})\s+(day|week|month)s?\b", "n"),
+        (r"\bevery\s+weekday\b", Recurrence("weekly", 1, (0, 1, 2, 3, 4))),
+        (rf"\bevery\s+({_DAYS})\b", "days"),
+        (r"\bevery\s+day\b", Recurrence("daily")),
+        (r"\bevery\s+week\b", Recurrence("weekly")),
+        (r"\bevery\s+month\b", Recurrence("monthly")),
+    ]
+    for pattern, what in patterns:
+        m = re.search(pattern, text, re.IGNORECASE)
+        if not m:
+            continue
+        rest = (text[: m.start()] + " " + text[m.end() :]).strip()
+        if what == "n":
+            freq = {"day": "daily", "week": "weekly", "month": "monthly"}[m.group(2).lower()]
+            return rest, Recurrence(freq, int(m.group(1)))
+        if what == "days":
+            return rest, Recurrence("weekly", 1, _weekdays(m.group(1)))
+        assert isinstance(what, Recurrence)
+        return rest, what
+    return text, None
 
 
 def _parse_call(text: str) -> ParsedCapture:
@@ -144,7 +174,10 @@ def _parse_call(text: str) -> ParsedCapture:
     return result
 
 
-_DAY = r"(?:mon|tue|wed|thu|fri|sat|sun)[a-z]*"
+_DAY = (  # real weekday names only ("month" is not "mon")
+    r"(?:mon(?:day)?|tues?(?:day)?|wed(?:nesday)?|thu(?:rs?(?:day)?)?"
+    r"|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b"
+)
 _DAYS = rf"{_DAY}(?:\s*(?:,|\band\b|&)\s*{_DAY})*"
 
 

@@ -13,6 +13,7 @@ from ppos.application.tasks import TaskService
 from ppos.domain.capture import CaptureKind, ParsedCapture, parse_capture
 from ppos.domain.meetings import Meeting, MeetingSeries
 from ppos.domain.notes import Note, NoteKind
+from ppos.domain.repeat import to_rule
 from ppos.domain.tasks import Task
 from ppos.shared.clock import Clock
 from ppos.shared.errors import ValidationError
@@ -123,6 +124,7 @@ class CaptureService:
             priority=parsed.priority,
             estimate_minutes=parsed.estimate_minutes,
             due_date=parsed.due_date,
+            recurrence=to_rule(parsed.recurrence) if parsed.recurrence else None,
             project_id=project_id,
         )
         return CaptureResult(parsed, task=task, warnings=warnings)

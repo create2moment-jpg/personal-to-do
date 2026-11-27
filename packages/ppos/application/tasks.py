@@ -4,12 +4,13 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import asdict
-from datetime import date
+from datetime import date, datetime
 from typing import Any
 
 from ppos.application.ports import TaskQuery, UnitOfWork, UnitOfWorkFactory
 from ppos.domain.notes import EntityType
 from ppos.domain.projects import Project, ProjectStatus
+from ppos.domain.repeat import next_after, normalize_rule
 from ppos.domain.tasks import (
     Priority,
     Task,
@@ -82,6 +83,8 @@ class TaskService:
                 _require_project(uow, fields["project_id"])
             if fields.get("goal_id") and uow.goals.get(fields["goal_id"]) is None:
                 raise NotFoundError("goal", fields["goal_id"])
+            if "recurrence" in fields:
+                fields["recurrence"] = normalize_rule(fields["recurrence"])
             if fields.get("parent_id"):
                 _require_task(uow, fields["parent_id"])
             if scheduled_date is not None and status == TaskStatus.BACKLOG:
@@ -124,6 +127,8 @@ class TaskService:
                     _require_project(uow, value)
                 elif key == "goal_id" and value and uow.goals.get(value) is None:
                     raise NotFoundError("goal", value)
+                elif key == "recurrence":
+                    value = normalize_rule(value)
                 elif key == "parent_id" and value:
                     _validate_parent(uow, task, value)
                 setattr(task, key, value)
@@ -151,9 +156,12 @@ class TaskService:
                 task.schedule(None, now)
             elif scheduled_date is not None:
                 task.schedule(scheduled_date, now)
+            spawn = False
+            was_scheduled = task.scheduled_date  # before completion auto-dates it
             if status is not None:
                 if status == TaskStatus.DONE:
                     self._assert_dependencies_done(uow, task)
+                    spawn = task.recurrence is not None and task.status != TaskStatus.DONE
                 task.transition(status, now)
                 if status != TaskStatus.BACKLOG and task.scheduled_date is None:
                     # Planned/active work without a day lands on today.
@@ -163,6 +171,8 @@ class TaskService:
             else:
                 task.position = uow.tasks.max_position(task.status, task.scheduled_date) + 1
             uow.tasks.update(task)
+            if spawn:
+                self._spawn_next(uow, task, now, was_scheduled)
             uow.audit.record(
                 "task",
                 task.id,
@@ -174,6 +184,44 @@ class TaskService:
             )
             uow.commit()
             return task
+
+    def _spawn_next(
+        self, uow: UnitOfWork, done: Task, now: datetime, scheduled: date | None
+    ) -> Task:
+        """A repeating task was completed: create its next occurrence and hand the rule over."""
+        assert done.recurrence is not None
+        anchor = scheduled or done.due_date or self._clock.today()
+        nxt = next_after(done.recurrence, anchor)
+        shift = nxt - anchor
+        status = TaskStatus.PLANNED if scheduled else TaskStatus.BACKLOG
+        follow = Task(
+            id=new_id(),
+            title=done.title,
+            created_at=now,
+            updated_at=now,
+            description=done.description,
+            notes=done.notes,
+            status=status,
+            priority=done.priority,
+            estimate_minutes=done.estimate_minutes,
+            project_id=done.project_id,
+            area=done.area,
+            tags=list(done.tags),
+            due_date=done.due_date + shift if done.due_date else None,
+            scheduled_date=nxt if scheduled else None,
+            recurrence=done.recurrence,
+            goal_id=done.goal_id,
+            position=uow.tasks.max_position(status, nxt if scheduled else None) + 1,
+        )
+        uow.tasks.add(follow)
+        done.recurrence = (
+            None  # the rule lives on in the next occurrence; re-completing won't duplicate
+        )
+        uow.tasks.update(done)
+        uow.audit.record(
+            "task", follow.id, "repeat", details={"from": done.id, "on": nxt.isoformat()}
+        )
+        return follow
 
     def delete(self, task_id: str) -> None:
         with self._uow() as uow:

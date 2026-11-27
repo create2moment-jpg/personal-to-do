@@ -154,3 +154,20 @@ test("quick capture adds one-time and recurring meetings with a live preview", a
   expect(s.plan.minutes).toBe(15);
   await request.delete(`/api/meeting-series/${encodeURIComponent(s.series_key)}`);
 });
+
+test("repeating task: set a repeat in the task panel; completing it creates the next one", async ({ page, request }) => {
+  const created = await (await request.post("/api/tasks", { data: { title: "E2E repeating report", scheduled_date: new Date().toISOString().slice(0, 10) } })).json();
+  await open(page, "today");
+  await page.locator(".task-card", { hasText: "E2E repeating report" }).first().click();
+  const sheet = page.getByRole("dialog", { name: "Task details" });
+  await sheet.getByLabel("Repeats").selectOption("weekdays");
+  await expect(sheet.locator(".repeat-help")).toContainText("Every weekday");
+  await page.keyboard.press("Escape");
+  const card = page.locator(".task-card", { hasText: "E2E repeating report" }).first();
+  await expect(card.getByLabel("Every weekday")).toBeVisible();
+  await card.getByRole("checkbox", { name: "Mark as done" }).click();
+  await expect
+    .poll(async () => ((await (await request.get("/api/tasks?limit=1000")).json()) as { title: string; status: string; recurrence: string | null }[]).filter((t) => t.title === "E2E repeating report" && t.status !== "done" && t.recurrence === "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR").length)
+    .toBe(1);
+  expect(created.id).toBeTruthy();
+});

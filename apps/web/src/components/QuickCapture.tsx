@@ -112,6 +112,7 @@ function CaptureBody({ initial, onClose }: { initial?: string; onClose: () => vo
         <span><code>~45m</code> <code>~1h30m</code> estimate</span>
         <span><code>@today</code> <code>@fri</code> schedule</span>
         <span><code>due:fri</code> due date</span>
+        <span><code>every mon</code> <code>every weekday</code> repeat</span>
         <span><code>+project</code> project</span>
         <span><code>idea:</code> ideas inbox</span>
         <span><code>note:</code> quick note</span>
@@ -156,6 +157,7 @@ function PreviewChips({ p }: { p: CapturePreview }) {
   else chips.push({ icon: SquareCheck, text: p.scheduled_date ? "Task" : "Task → Backlog", tone: "accent" });
   if (p.priority < 4) chips.push({ icon: Flag, text: `P${p.priority}`, tone: p.priority === 1 ? "red" : "orange" });
   if (p.estimate_minutes) chips.push({ icon: Clock, text: formatMinutes(p.estimate_minutes) });
+  if (p.repeat) chips.push({ icon: Repeat, text: p.repeat, tone: "accent" });
   if (p.scheduled_date) chips.push({ icon: CalendarClock, text: relativeDay(p.scheduled_date), tone: "green" });
   if (p.due_date) chips.push({ icon: AlarmClock, text: `Due ${relativeDay(p.due_date)}` });
   if (p.project_hint) chips.push({ icon: FolderKanban, text: p.project_name ?? `${p.project_hint} (unknown)`, tone: p.project_name ? undefined : "red" });

@@ -38,6 +38,8 @@ with a reason).
 | B-014 | Insights: week-by-week trends from own records | 2026-11-27 | done (tasks per week, meetings vs focus, planned work done, estimate accuracy, work by project, meeting time by topic, table view) | Insights (`g i`) |
 | B-015 | Assistant: ask questions answered from own records with citations; plan my day as an approvable proposal | 2026-11-27 | done (answers cite numbered sources, invalid/no citations flagged; plan ids not in your list dropped; nothing changes until you approve) | Assistant (`g j`) |
 | B-016 | Hardening: local API token, Host/Origin checks, encrypted backups, locked dependencies, installer, installable app | 2026-11-27 | done (Phase 9) | README → Security, Quick start |
+| B-017 | Repeating tasks that actually repeat (the RRULE field did nothing) | 2026-11-27 | done (repeat picker; completing creates the next occurrence; `every mon` in capture) | Task panel → Repeats, quick capture |
+| B-018 | Full data export (only 9 of 38 tables were exported) | 2026-11-27 | done (tables discovered from the schema) | `ppos export` |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

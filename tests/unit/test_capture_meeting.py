@@ -39,3 +39,21 @@ def test_on_day_without_repeat_is_a_one_off_and_slash_people() -> None:
     r = p("meeting: Ana, Ben / Budget check on fri")
     assert r.recurrence is None and r.scheduled_date == date(2026, 11, 27)
     assert r.people == ["Ana", "Ben"] and r.title == "Budget check"
+
+
+def test_task_repeat_phrases() -> None:
+    r = p("Water the plants every mon,thu @mon ~10m")
+    assert r.kind == CaptureKind.TASK and r.title == "Water the plants"
+    assert r.recurrence is not None and r.recurrence.describe() == "Weekly on Mon, Thu"
+    assert p("Status report every weekday").recurrence.describe() == "Every weekday"  # type: ignore[union-attr]
+    assert p("Backup photos every 2 weeks").recurrence.describe() == "Every 2 weeks"  # type: ignore[union-attr]
+    assert p("Pay rent every month due:fri").recurrence.freq == "monthly"  # type: ignore[union-attr]
+    plain = p("Write daily report weekly summary")
+    assert plain.recurrence is None and plain.title == "Write daily report weekly summary"
+
+
+def test_month_is_not_monday() -> None:
+    r = p("meeting: Ops review every month @10:00")
+    assert r.recurrence is not None and r.recurrence.freq == "monthly"
+    r = p("meeting: Sync every tuesday and thursday")
+    assert r.recurrence is not None and r.recurrence.weekdays == (1, 3)

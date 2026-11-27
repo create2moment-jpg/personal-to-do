@@ -1071,3 +1071,10 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .plan-proposal li .faint { font-size: 0.8rem; }
 .plan-note { color: var(--text-2); font-style: italic; }
 .plan-actions { display: flex; justify-content: flex-end; gap: 0.4rem; margin-top: 0.3rem; }
+
+/* ---------- Repeat picker ---------- */
+.repeat-picker { display: flex; flex-direction: column; gap: 0.4rem; }
+.repeat-custom { display: flex; flex-direction: column; gap: 0.4rem; padding: 0.5rem 0.6rem; border-radius: var(--radius); background: var(--bg-sunken); }
+.repeat-custom .input { width: 4rem; height: 1.9rem; }
+.repeat-custom .select { width: auto; height: 1.9rem; }
+.repeat-help { font-size: 0.8rem; }

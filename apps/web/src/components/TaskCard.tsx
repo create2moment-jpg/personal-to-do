@@ -1,9 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { AlarmClock, CalendarClock, Clock, Flag, ListChecks, Star } from "lucide-react";
+import { AlarmClock, CalendarClock, Clock, Flag, ListChecks, Repeat, Star } from "lucide-react";
 import type { CSSProperties, KeyboardEvent } from "react";
 import type { Project, Task } from "../lib/types";
 import { startTaskDrag } from "../lib/drop";
+import { describeRepeat } from "../lib/repeat";
 import { DurationChip } from "./DurationPicker";
 import { cx, formatMinutes, isoDay, relativeDay } from "../lib/util";
 
@@ -90,6 +91,11 @@ export function TaskCard({
             <span title="Estimate">
               <Clock /> {task.actual_minutes > 0 ? `${formatMinutes(task.actual_minutes)} / ` : ""}
               {formatMinutes(task.estimate_minutes)}
+            </span>
+          )}
+          {task.recurrence && (
+            <span title={describeRepeat(task.recurrence)} aria-label={describeRepeat(task.recurrence)}>
+              <Repeat />
             </span>
           )}
           {subtasks && subtasks.total > 0 && (

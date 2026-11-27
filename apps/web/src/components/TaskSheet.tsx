@@ -24,6 +24,7 @@ import { STATUS_LABEL, type Task, type TaskStatus } from "../lib/types";
 import { relativeTime } from "../lib/util";
 import { periodLabel } from "../views/GoalsView";
 import { DurationInput } from "./DurationPicker";
+import { RepeatPicker } from "./RepeatPicker";
 import { Sheet, StatusDot } from "./primitives";
 
 const STATUSES = Object.keys(STATUS_LABEL) as TaskStatus[];
@@ -214,7 +215,12 @@ function TaskSheetBody({ taskId, onClose, onOpenTask }: { taskId: string; onClos
           />
 
           <Label icon={Repeat} text="Repeats" />
-          <input className="input" placeholder="RRULE, e.g. FREQ=WEEKLY;BYDAY=MO" {...field("recurrence")} onBlur={(e) => save({ recurrence: e.target.value || null })} />
+          <RepeatPicker
+            key={`repeat-${task.id}`}
+            value={task.recurrence}
+            anchorDay={task.scheduled_date ? (new Date(`${task.scheduled_date}T12:00:00Z`).getUTCDay() + 6) % 7 : null}
+            onChange={(rule) => save({ recurrence: rule })}
+          />
         </div>
 
         <div className="section-label" style={{ margin: "18px 0 8px" }}>
