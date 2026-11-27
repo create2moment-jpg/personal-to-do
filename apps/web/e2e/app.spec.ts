@@ -100,10 +100,13 @@ test("notes autosave as markdown", async ({ page, request }) => {
   await page.keyboard.type("## Heading\nSome **bold** text");
   await expect(page.locator(".save-indicator")).toContainText("Saved", { timeout: 5000 });
   const id = (await page.evaluate(() => location.hash)).split("/")[2]!;
+  // "Saved" can show for an earlier keystroke; wait until the last one is stored.
+  await expect
+    .poll(async () => (await (await request.get(`/api/notes/${id}`)).json()).body as string, { timeout: 10_000 })
+    .toContain("**bold**");
   const note = await (await request.get(`/api/notes/${id}`)).json();
   expect(note.title).toBe("E2E note");
   expect(note.body).toContain("## Heading");
-  expect(note.body).toContain("**bold**");
 });
 
 test("theme and accent switch from settings", async ({ page }) => {
