@@ -33,7 +33,12 @@ def container(settings: Settings, clock: FixedClock) -> Container:
 
 @pytest.fixture
 def client(settings: Settings, clock: FixedClock) -> Iterator[TestClient]:
-    with TestClient(create_app(settings, clock)) as c:
+    app = create_app(settings, clock)
+    with TestClient(
+        app,
+        base_url="http://127.0.0.1",
+        headers={"Authorization": f"Bearer {app.state.api_token}"},
+    ) as c:
         yield c
 
 

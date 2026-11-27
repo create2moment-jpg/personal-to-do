@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     migrations_dir: Path = DEFAULT_MIGRATIONS_DIR
     web_dist_dir: Path = REPO_ROOT / "apps" / "web" / "dist"
     cors_origins: list[str] = ["http://127.0.0.1:5173", "http://localhost:5173"]
+    # Local access protection (threat model T4/T5). Turn off only for debugging.
+    auth: bool = True
+    api_token: str = ""  # fixed token (automation, tests); else generated in config/api_token
+    allowed_hosts: list[str] = []  # extra host names that may reach the app (e.g. a VPN name)
     log_level: str = "INFO"
     # Local AI (Phase 5 slice). Off unless a provider and model are set.
     llm_provider: str = "none"  # none | ollama | openai_compatible

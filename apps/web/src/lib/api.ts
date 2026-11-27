@@ -86,6 +86,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     } catch {
       /* non-JSON error body */
     }
+    if (res.status === 401) message = "Your session with the local app expired — reload the page.";
     throw new ApiError(res.status, message);
   }
   return res.status === 204 ? (undefined as T) : ((await res.json()) as T);

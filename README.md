@@ -150,6 +150,17 @@ Docker (loopback-only, data bind-mounted from the host):
 PPOS_LOCAL_DATA_DIR=~/PersonalProductivityData docker compose -f deploy/docker-compose.yml up -d --build
 ```
 
+## Security
+
+- The app listens on `127.0.0.1` only. Every API call needs a per-install
+  token (created on first start in `LOCAL_DATA_DIR/config/api_token`, mode
+  0600); the app's own page receives it as a cookie other sites can't read
+  or send. Requests naming another host (DNS rebinding) or changing data from
+  another site's origin are refused.
+- Scripts: `curl -H "Authorization: Bearer $(ppos token)" http://127.0.0.1:8765/api/tasks`.
+- Dev server (`npm run dev`) forwards the token automatically.
+- See [docs/threat-model.md](docs/threat-model.md).
+
 ## Backups
 
 ```bash

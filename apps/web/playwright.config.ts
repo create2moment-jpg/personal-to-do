@@ -10,6 +10,8 @@ export default defineConfig({
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: "http://127.0.0.1:8799",
+    // the e2e server runs with this fixed API token (scripts/e2e-server.sh); pages also get the cookie
+    extraHTTPHeaders: { Authorization: "Bearer e2e-local-token-0123456789abcdefghij" },
     viewport: { width: 1600, height: 1000 },
     trace: "off",
   },

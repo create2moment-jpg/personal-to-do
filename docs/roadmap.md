@@ -42,7 +42,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | started — hybrid retrieval (keyword + meaning, B-008), grounded Q&A, plan-my-day proposal; weekly/sprint workflows next |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
-| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | |
+| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | in progress — 9a local access token + Host/Origin checks ✅; 9b encrypted backups + locked deps; 9c installer + PWA |
 | 10 | Advanced agentic workflows and integrations | |
 
 ### Phase 1 delivered
@@ -397,7 +397,6 @@ product bar above.
   for phones is queued.
 - Insights range is up to 30 days in the UI (API supports a year); monthly /
   quarterly roll-ups arrive with Phase 8 reviews.
-- No local auth token; API must stay on loopback (threat model T4/T5).
 - Search ranks with bm25 only; no recency boost.
 - The `ui` vendor chunk is ~140 KB gzipped; revisit if first load grows.
 - E2E: Playwright's one-step `dragTo` sometimes failed to start an HTML5 drag

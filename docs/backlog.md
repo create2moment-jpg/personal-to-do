@@ -37,6 +37,7 @@ with a reason).
 | B-013 | Periodic reviews: monthly, bi-monthly, quarterly, annual — from own data, optional grounded AI draft | 2026-11-27 | done (numbers snapshot, your four sections, AI bullets must cite records and only use their numbers, finalize/reopen, copy as Markdown) | Reviews (`g v`) |
 | B-014 | Insights: week-by-week trends from own records | 2026-11-27 | done (tasks per week, meetings vs focus, planned work done, estimate accuracy, work by project, meeting time by topic, table view) | Insights (`g i`) |
 | B-015 | Assistant: ask questions answered from own records with citations; plan my day as an approvable proposal | 2026-11-27 | done (answers cite numbered sources, invalid/no citations flagged; plan ids not in your list dropped; nothing changes until you approve) | Assistant (`g j`) |
+| B-016 | Hardening: local API token, Host/Origin checks, encrypted backups, locked dependencies, installer, installable app | 2026-11-27 | in progress (Phase 9) | roadmap Phase 9 |
 | B-001 | Prompt Book: two-page spread view on very wide screens | 2026-11-24 | done (auto ≥ 1900 px, Spread/Single toggle) | Prompt Book |
 | B-002 | Prompt Book: streaming AI output and "explain the changes" | 2026-11-24 | idea (from R-013) | — |
 | B-003 | Optional emoji on projects and weekly objectives | 2026-11-24 | idea (from R-014) | — |

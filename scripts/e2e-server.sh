@@ -18,5 +18,5 @@ fi
 "$python" "$root/scripts/fake_llm.py" "$llm_port" &
 trap 'kill %1 2>/dev/null || true; rm -rf "$data"' EXIT
 "$ppos" --data-dir "$data" demo >/dev/null
-PPOS_LLM_PROVIDER=openai_compatible PPOS_LLM_BASE_URL="http://127.0.0.1:$llm_port/v1" PPOS_LLM_EMBEDDING_MODEL=fake-embed \
+PPOS_API_TOKEN=e2e-local-token-0123456789abcdefghij PPOS_LLM_PROVIDER=openai_compatible PPOS_LLM_BASE_URL="http://127.0.0.1:$llm_port/v1" PPOS_LLM_EMBEDDING_MODEL=fake-embed \
   "$ppos" --data-dir "$data" serve --port "${PPOS_E2E_PORT:-8799}"

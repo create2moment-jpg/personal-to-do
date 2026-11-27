@@ -10,6 +10,7 @@ from pathlib import Path
 
 from ppos import __version__
 from ppos.infrastructure import migrations as mig
+from ppos.infrastructure.api_token import load_or_create_token, token_path
 from ppos.infrastructure.backup import create_backup, export_json, read_manifest, restore_backup
 from ppos.infrastructure.config import REPO_ROOT, Settings, enforce_data_boundary, ensure_data_dir
 from ppos.infrastructure.db import connect
@@ -123,6 +124,22 @@ def cmd_doctor(args: argparse.Namespace) -> int:
             conn.close()
     else:
         print("database:       not created yet (run `ppos serve` or `ppos migrate up`)")
+    if not settings.auth:
+        print("API access:     UNPROTECTED (PPOS_AUTH=false) — use only for debugging")
+    elif settings.api_token:
+        print("API access:     token from PPOS_API_TOKEN")
+    else:
+        path = token_path(settings)
+        mode = oct(path.stat().st_mode & 0o777) if path.exists() else "not created yet"
+        print(f"API access:     token file {path} ({mode})")
+    return 0
+
+
+def cmd_token(args: argparse.Namespace) -> int:
+    """Print the API token for scripts: curl -H "Authorization: Bearer $(ppos token)" …"""
+    settings = _settings(args)
+    enforce_data_boundary(settings)
+    print(load_or_create_token(settings))
     return 0
 
 
@@ -164,6 +181,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("doctor", help="check configuration, data boundary and DB integrity")
     p.set_defaults(func=cmd_doctor)
+
+    p = sub.add_parser("token", help="print the local API token (for scripts)")
+    p.set_defaults(func=cmd_token)
     return parser
 
 

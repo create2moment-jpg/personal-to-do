@@ -129,7 +129,12 @@ def test_store_blocks_path_escape(tmp_path: Path) -> None:
 
 
 def test_api_upload_detail_file_and_search(settings: Settings, clock: FixedClock) -> None:
-    with TestClient(create_app(settings, clock)) as client:
+    app = create_app(settings, clock)
+    with TestClient(
+        app,
+        base_url="http://127.0.0.1",
+        headers={"Authorization": f"Bearer {app.state.api_token}"},
+    ) as client:
         pdf = make_pdf(REVIEW)
         r = client.post("/api/documents?filename=review.pdf&kind=performance_report", content=pdf)
         assert r.status_code == 202

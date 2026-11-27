@@ -25,6 +25,7 @@ from ppos.shared.errors import (
     PposError,
     ValidationError,
 )
+from ppos_api import security
 from ppos_api.routes import (
     ai,
     assistant,
@@ -41,6 +42,7 @@ from ppos_api.routes import (
 )
 from ppos_api.routes import time as time_routes
 from ppos_api.schemas import HealthOut
+from ppos_api.security import load_or_create_token
 
 log = logging.getLogger("ppos.api")
 
@@ -60,12 +62,16 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
 
     app = FastAPI(title="Personal Productivity & AI OS", version=__version__)
     app.state.container = container
+    app.state.api_token = load_or_create_token(settings)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    # Added after CORS so it runs first: unknown hosts and missing tokens never reach a route.
+    security.install(app, settings, app.state.api_token)
 
     @app.exception_handler(PposError)
     async def _ppos_error(_: Request, exc: PposError) -> JSONResponse:
