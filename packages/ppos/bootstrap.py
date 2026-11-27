@@ -43,6 +43,7 @@ from ppos.infrastructure.extract import (
 from ppos.infrastructure.ics import parse_ics
 from ppos.infrastructure.jobs import ThreadJobRunner
 from ppos.infrastructure.migrations import prepare_database
+from ppos.infrastructure.ocr import ocr_pdf, ocr_version
 from ppos.infrastructure.sqlite_repos import SqliteUnitOfWorkFactory
 from ppos.shared.clock import Clock, ZonedClock
 
@@ -168,7 +169,12 @@ def build_container(
         clock,
         DocumentStore(settings.local_data_dir),
         Extractor(
-            sniff=sniff, pages=extract_pages, title=document_title, version=EXTRACTOR_VERSION
+            sniff=sniff,
+            pages=extract_pages,
+            title=document_title,
+            version=EXTRACTOR_VERSION,
+            ocr_version=ocr_version if settings.ocr_enabled else lambda: "",
+            ocr=(lambda data: ocr_pdf(data, settings.ocr_lang)) if settings.ocr_enabled else None,
         ),
         job_runner,
     )

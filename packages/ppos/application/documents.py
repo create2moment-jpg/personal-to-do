@@ -48,6 +48,9 @@ class Extractor:
     pages: Callable[[str, bytes], list[ExtractedPage]]
     title: Callable[[str, bytes], str | None]  # (mime, data) -> title from metadata
     version: str
+    # Optional OCR for scanned PDFs: () -> engine version ("" = not installed), data -> pages
+    ocr_version: Callable[[], str] = lambda: ""
+    ocr: Callable[[bytes], list[ExtractedPage]] | None = None
 
 
 @dataclass
@@ -161,15 +164,26 @@ class DocumentService:
                 raise ValidationError("stored file no longer matches its checksum")
             pages = self._x.pages(doc.mime, data)
             chars = sum(len(p.text.strip()) for p in pages)
+            scanned = doc.mime == "application/pdf" and _too_little_text(chars, len(pages))
+            version, err = self._x.version, None
+            if scanned:
+                engine = self._x.ocr_version() if self._x.ocr is not None else ""
+                if engine and self._x.ocr is not None:
+                    pages = self._x.ocr(data)
+                    chars = sum(len(p.text.strip()) for p in pages)
+                    scanned = _too_little_text(chars, len(pages))
+                    version = f"{self._x.version}+ocr({engine})"
+                    if scanned:
+                        err = "No text layer, and OCR found no readable text on these pages."
+                else:
+                    err = (
+                        "No text layer found — this looks like a scanned PDF. Install "
+                        "Tesseract and Poppler on this machine (e.g. `brew install tesseract "
+                        "poppler` or `apt install tesseract-ocr poppler-utils`), then press "
+                        "Re-index to read it with OCR."
+                    )
             chunks = chunk_pages(pages)
-            scanned = doc.mime == "application/pdf" and chars < 20 * max(len(pages), 1)
             status = DocStatus.NEEDS_OCR if scanned else DocStatus.READY
-            err = (
-                "No text layer found — this looks like a scanned PDF. "
-                "OCR support is on the backlog (B-005)."
-                if scanned
-                else None
-            )
         except Exception as exc:  # any extraction failure is recorded on the document
             log.warning("processing %s failed: %s", doc_id, exc)
             with self._uow() as uow:
@@ -183,16 +197,16 @@ class DocumentService:
         now = self._clock.now()
         with self._uow() as uow:
             d = self._require(uow, doc_id)
-            uow.documents.replace_chunks(doc_id, chunks, self._x.version, now)
+            uow.documents.replace_chunks(doc_id, chunks, version, now)
             d.status, d.error, d.pages, d.chars = status, err, len(pages), chars
-            d.extractor_version, d.processed_at, d.updated_at = self._x.version, now, now
+            d.extractor_version, d.processed_at, d.updated_at = version, now, now
             uow.documents.update(d)
             uow.audit.record(
                 "document",
                 doc_id,
                 "processed",
                 actor="system",
-                details={"chunks": len(chunks), "pages": len(pages)},
+                details={"chunks": len(chunks), "pages": len(pages), "ocr": "+ocr(" in version},
             )
             uow.commit()
 
@@ -228,7 +242,13 @@ class DocumentService:
         """Re-run extraction/chunking (e.g. after the extractor improves)."""
         with self._uow() as uow:
             docs = [self._require(uow, doc_id)] if doc_id else uow.documents.find()
-        todo = [d for d in docs if not only_outdated or d.extractor_version != self._x.version]
+        todo = [
+            d
+            for d in docs
+            if not only_outdated
+            or (d.extractor_version or "").split("+ocr(")[0] != self._x.version
+            or d.status == DocStatus.NEEDS_OCR  # OCR may have been installed since
+        ]
         for d in todo:
             self._enqueue(d.id)
         return len(todo)
@@ -278,3 +298,8 @@ class DocumentService:
 
 def _opt_int(v: object) -> int | None:
     return int(v) if isinstance(v, int) else None
+
+
+def _too_little_text(chars: int, pages: int) -> bool:
+    """A PDF with under ~20 characters per page has no usable text layer."""
+    return chars < 20 * max(pages, 1)

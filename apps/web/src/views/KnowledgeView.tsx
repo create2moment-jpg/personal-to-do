@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, ExternalLink, FileText, Library, Loader2, RefreshCw, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
+import { AlertTriangle, ExternalLink, FileText, Library, Loader2, RefreshCw, ScanText, Search, ShieldCheck, Trash2, Upload } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FactsPanel } from "../components/FactsPanel";
@@ -237,6 +237,11 @@ function DocumentReader({ doc, chunkId }: { doc: DocumentInfo; chunkId?: string 
           <ShieldCheck size={14} /> SHA-256 <code>{doc.sha256.slice(0, 12)}…</code> · extractor <code>{doc.extractor_version ?? "—"}</code>
           {doc.processed_at && ` · indexed ${relativeTime(doc.processed_at)}`}
         </div>
+        {doc.extractor_version?.includes("+ocr(") && doc.status === "ready" && (
+          <div className="ocr-note" role="note">
+            <ScanText size={14} /> Text read from the scanned pages by OCR on this machine — check quotes against the original before relying on them.
+          </div>
+        )}
         {doc.error && (
           <div className="alert-strip" style={{ margin: "12px 0" }}>
             <AlertTriangle /> {doc.error}

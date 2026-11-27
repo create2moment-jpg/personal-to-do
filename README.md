@@ -101,7 +101,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   immediately, no restart.
 - **Knowledge** (`g d`): drop PDFs, Word (.docx), text or Markdown — reviews, level
   frameworks, feedback. Originals stay untouched in your data folder; text is
-  indexed per page so every search hit cites its page and section. Optionally
+  indexed per page so every search hit cites its page and section. Scanned PDFs
+  are read with OCR when Tesseract and Poppler are installed on your machine
+  (`brew install tesseract poppler` / `apt install tesseract-ocr poppler-utils`;
+  `PPOS_OCR_LANG=eng+deu` for more languages) and are labelled as OCR text. Optionally
   **extract facts** with your local model: each fact must quote its source
   verbatim or it is dropped, and nothing counts until you accept it.
 - **Career** (`g c`): your level framework (L4, L5, …) from accepted

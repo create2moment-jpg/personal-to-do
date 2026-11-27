@@ -44,3 +44,46 @@ def make_pdf(pages: list[list[str]], title: str | None = None) -> bytes:
     )
     out += f"trailer\n{trailer}\nstartxref\n{xref}\n%%EOF\n".encode()
     return bytes(out)
+
+
+def make_scanned_pdf(lines: list[str], dpi: int = 150) -> bytes:
+    """An image-only PDF (no text layer), like a scan: renders ``make_pdf`` with
+    pdftoppm and embeds the bitmap. Requires Poppler's pdftoppm."""
+    import subprocess
+    import tempfile
+    import zlib
+    from pathlib import Path
+
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "t.pdf"
+        src.write_bytes(make_pdf([lines]))
+        subprocess.run(
+            ["pdftoppm", "-r", str(dpi), "-gray", "-singlefile", str(src), str(Path(tmp) / "img")],
+            check=True,
+        )
+        raw = (Path(tmp) / "img.pgm").read_bytes()
+    header = raw.split(maxsplit=4)  # P5 width height maxval data
+    width, height, pixels = int(header[1]), int(header[2]), header[4]
+    img = zlib.compress(pixels[: width * height])
+    w_pt, h_pt = width * 72 / dpi, height * 72 / dpi
+    content = f"q {w_pt:.2f} 0 0 {h_pt:.2f} 0 0 cm /Im0 Do Q".encode()
+    objs = [
+        b"<< /Type /Catalog /Pages 2 0 R >>",
+        b"<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+        f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 {w_pt:.2f} {h_pt:.2f}] /Contents 4 0 R"
+        " /Resources << /XObject << /Im0 5 0 R >> >> >>".encode(),
+        b"<< /Length %d >>\nstream\n" % len(content) + content + b"\nendstream",
+        f"<< /Type /XObject /Subtype /Image /Width {width} /Height {height} /ColorSpace"
+        f" /DeviceGray /BitsPerComponent 8 /Filter /FlateDecode /Length {len(img)} >>\nstream\n"
+        .encode() + img + b"\nendstream",
+    ]  # fmt: skip
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = []
+    for i, body in enumerate(objs, start=1):
+        offsets.append(len(out))
+        out += f"{i} 0 obj\n".encode() + body + b"\nendobj\n"
+    xref = len(out)
+    out += f"xref\n0 {len(objs) + 1}\n0000000000 65535 f \n".encode()
+    out += b"".join(f"{o:010d} 00000 n \n".encode() for o in offsets)
+    out += f"trailer\n<< /Size {len(objs) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    return bytes(out)

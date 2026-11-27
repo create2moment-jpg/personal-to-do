@@ -1148,3 +1148,4 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .emoji-foot { display: flex; gap: 6px; }
 .emoji-foot .input { flex: 1; min-width: 0; height: 1.9rem; }
 .project-icon.emoji { background: var(--surface-2); font-size: 1.25rem; border: 1px solid var(--border); }
+.ocr-note { display: flex; gap: 8px; align-items: center; margin: 12px 0; padding: 8px 12px; border-radius: var(--radius); background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border)); font-size: 0.86rem; }

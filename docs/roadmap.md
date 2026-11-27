@@ -37,7 +37,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 3b | Timeboxing on a calendar timeline, recurrence expansion for tasks, installable app (PWA) | PWA ✅, repeating tasks ✅ (B-017), timeboxing ✅ (B-023) |
 | 3c | Task board across all states (R-018), meetings you create incl. recurring series (R-019), any-minute durations and a configurable default for unestimated tasks (R-020) | ✅ done |
 | N1–N4 | Large-monitor layout (24″/32″), Prompt Book with local-AI improvement, delight effects, drag and drop everywhere — see "Next features requested by the owner" | ✅ done |
-| 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007) — OCR and .docx queued (B-005, B-006) |
+| 4 | Knowledge inbox: document ingestion, extraction, provenance, background jobs | ✅ done incl. AI fact extraction (B-007), Word .docx import (B-006) and OCR for scanned PDFs (B-005) ✅ |
 | 5 | Local LLM provider layer, prompt registry, writing studio, AI capture | ✅ done — provider layer (R-017), versioned prompts, output validation, Assistant (B-015), Notes writing assistant (B-021), AI capture (B-022) |
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | ✅ done — hybrid retrieval (B-008), grounded Q&A, plan my day, grounded weekly and sprint review drafts (B-020) |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |

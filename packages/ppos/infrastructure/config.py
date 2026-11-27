@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     llm_max_tokens: int = 1200
     llm_allow_remote: bool = False  # never send private data off-machine by default
     prompts_dir: Path = REPO_ROOT / "prompts"
+    # OCR for scanned PDFs, used only when Tesseract + Poppler are installed locally.
+    ocr_enabled: bool = True
+    ocr_lang: str = "eng"  # Tesseract language(s), e.g. eng+deu
     # Escape hatch for unusual layouts; never enable for real personal data.
     allow_data_dir_in_repo: bool = False
 
