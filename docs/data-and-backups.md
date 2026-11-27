@@ -24,13 +24,19 @@ repository is inside it).
 ```bash
 ppos backup                          # -> LOCAL_DATA_DIR/backups/ppos-<ts>-manual.tar.gz
 ppos backup --dest /mnt/usb/ppos     # somewhere else (recommended: off-machine too)
+ppos backup --encrypt                # passphrase-encrypted: ...tar.gz.enc
 ```
 
 The archive holds a consistent SQLite snapshot (online backup API — safe while
 the app runs), every file except `cache/`, `backups/`, `exports/`, and a
 `manifest.json` with SHA-256 checksums, app version and schema version.
-Archives are `0600`. Encrypt them before copying to cloud storage
-(`age`/`gpg`); built-in encryption is Phase 9.
+Archives are `0600`. **Use `--encrypt` for anything that leaves this machine**
+(USB stick, cloud drive): the archive is encrypted with AES-256-GCM using a key
+derived from your passphrase with scrypt, in authenticated 1 MiB chunks, so a
+wrong passphrase, a changed byte, a cut-off file or reordered chunks are all
+detected. The unencrypted archive is never left on disk. The passphrase is
+asked twice, or read from `PPOS_BACKUP_PASSPHRASE` for scheduled jobs. There
+is no recovery without it — store it in your password manager.
 
 ## Restore
 

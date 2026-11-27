@@ -42,7 +42,7 @@ See [design-system.md](design-system.md) for the visual language.
 | 6 | Context compiler + RAG; daily/weekly/sprint AI workflows | started — hybrid retrieval (keyword + meaning, B-008), grounded Q&A, plan-my-day proposal; weekly/sprint workflows next |
 | 7 | Goals hierarchy, skills, performance frameworks, career evidence | ✅ done — Career view (B-009), Goals and Skills matrix (B-011) |
 | 8 | Insights/analytics, monthly / bi-monthly / quarterly / annual reviews | ✅ done — Reviews (B-013) and Insights (B-014) |
-| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | in progress — 9a local access token + Host/Origin checks ✅; 9b encrypted backups + locked deps; 9c installer + PWA |
+| 9 | Encryption at rest, local auth token, packaging, Postgres adapter, hardening | in progress — 9a local access token + Host/Origin checks ✅; 9b encrypted backups + locked deps ✅; 9c installer + PWA |
 | 10 | Advanced agentic workflows and integrations | |
 
 ### Phase 1 delivered
@@ -387,7 +387,6 @@ product bar above.
 ## Technical debt / known gaps
 
 - Frontend types are hand-mirrored from the API; generate them from OpenAPI.
-- Python dependencies are ranges, not a lockfile.
 - `recurrence` is stored but not expanded (Phase 3).
 - Typing `[ ]` *inside* an existing bullet list produces a literal `[ ]`
   (TipTap input-rule behaviour); start a checklist on a new line or use the

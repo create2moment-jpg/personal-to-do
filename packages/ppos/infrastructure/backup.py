@@ -15,12 +15,20 @@ import shutil
 import sqlite3
 import tarfile
 import tempfile
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Any
 
 from ppos import __version__
+from ppos.infrastructure.backup_crypto import (
+    BackupCryptoError,
+    decrypt_file,
+    encrypt_file,
+    is_encrypted,
+)
 from ppos.infrastructure.config import Settings, ensure_data_dir
 from ppos.infrastructure.db import connect
 from ppos.infrastructure.migrations import current_version
@@ -52,6 +60,24 @@ def _sha256(path: Path) -> str:
 
 
 def create_backup(
+    settings: Settings,
+    label: str = "manual",
+    dest_dir: Path | None = None,
+    passphrase: str | None = None,
+) -> BackupInfo:
+    """Write a verified archive; with a passphrase it is encrypted (AES-256-GCM, scrypt)."""
+    if passphrase is None:
+        return _create_backup(settings, label, dest_dir)
+    plain = _create_backup(settings, label, dest_dir)
+    encrypted = plain.path.with_name(plain.path.name + ".enc")
+    try:
+        encrypt_file(plain.path, encrypted, passphrase)
+    finally:
+        plain.path.unlink(missing_ok=True)  # never leave the unencrypted archive behind
+    return BackupInfo(encrypted, plain.files, plain.schema_version, plain.created_at)
+
+
+def _create_backup(
     settings: Settings, label: str = "manual", dest_dir: Path | None = None
 ) -> BackupInfo:
     root = ensure_data_dir(settings)
@@ -118,7 +144,26 @@ def _safe_members(tar: tarfile.TarFile) -> list[tarfile.TarInfo]:
     return members
 
 
-def read_manifest(archive: Path) -> dict[str, Any]:
+@contextmanager
+def _plain_archive(archive: Path, passphrase: str | None) -> Iterator[Path]:
+    """The archive itself, or a temporary decrypted copy (0600, deleted afterwards)."""
+    if not is_encrypted(archive):
+        yield archive
+        return
+    if not passphrase:
+        raise BackupCryptoError("this backup is encrypted — a passphrase is needed")
+    with tempfile.TemporaryDirectory(prefix="ppos-decrypt-") as tmp:
+        plain = Path(tmp) / "backup.tar.gz"
+        decrypt_file(archive, plain, passphrase)
+        yield plain
+
+
+def read_manifest(archive: Path, passphrase: str | None = None) -> dict[str, Any]:
+    with _plain_archive(archive, passphrase) as plain:
+        return _read_manifest(plain)
+
+
+def _read_manifest(archive: Path) -> dict[str, Any]:
     with tarfile.open(archive, "r:gz") as tar:
         fh = tar.extractfile(MANIFEST)
         if fh is None:
@@ -127,7 +172,14 @@ def read_manifest(archive: Path) -> dict[str, Any]:
         return manifest
 
 
-def restore_backup(settings: Settings, archive: Path, *, force: bool = False) -> Path | None:
+def restore_backup(
+    settings: Settings, archive: Path, *, force: bool = False, passphrase: str | None = None
+) -> Path | None:
+    with _plain_archive(archive, passphrase) as plain:
+        return _restore_backup(settings, plain, force=force)
+
+
+def _restore_backup(settings: Settings, archive: Path, *, force: bool = False) -> Path | None:
     """Restore ``archive`` into LOCAL_DATA_DIR.
 
     Verifies every checksum in a staging directory first. If the data dir

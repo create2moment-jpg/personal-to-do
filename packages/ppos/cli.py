@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import getpass
 import logging
 import os
 import sys
@@ -12,6 +13,7 @@ from ppos import __version__
 from ppos.infrastructure import migrations as mig
 from ppos.infrastructure.api_token import load_or_create_token, token_path
 from ppos.infrastructure.backup import create_backup, export_json, read_manifest, restore_backup
+from ppos.infrastructure.backup_crypto import is_encrypted
 from ppos.infrastructure.config import REPO_ROOT, Settings, enforce_data_boundary, ensure_data_dir
 from ppos.infrastructure.db import connect
 from ppos.shared.errors import PposError
@@ -68,9 +70,22 @@ def cmd_migrate(args: argparse.Namespace) -> int:
     return 0
 
 
+def _passphrase(confirm: bool) -> str:
+    """PPOS_BACKUP_PASSPHRASE, else ask (twice when creating)."""
+    env = os.environ.get("PPOS_BACKUP_PASSPHRASE")
+    if env:
+        return env
+    first = getpass.getpass("Backup passphrase: ")
+    if confirm and getpass.getpass("Repeat passphrase: ") != first:
+        raise SystemExit("passphrases do not match")
+    return first
+
+
 def cmd_backup(args: argparse.Namespace) -> int:
+    passphrase = _passphrase(confirm=True) if args.encrypt else None
     info = create_backup(_settings(args), label=args.label,
-                         dest_dir=Path(args.dest) if args.dest else None)  # fmt: skip
+                         dest_dir=Path(args.dest) if args.dest else None,
+                         passphrase=passphrase)  # fmt: skip
     print(f"backup written: {info.path} ({info.files} files, schema v{info.schema_version})")
     return 0
 
@@ -78,9 +93,11 @@ def cmd_backup(args: argparse.Namespace) -> int:
 def cmd_restore(args: argparse.Namespace) -> int:
     settings = _settings(args)
     enforce_data_boundary(settings)
-    manifest = read_manifest(Path(args.archive))
+    archive = Path(args.archive)
+    passphrase = _passphrase(confirm=False) if is_encrypted(archive) else None
+    manifest = read_manifest(archive, passphrase)
     print(f"restoring backup from {manifest['created_at']} (schema v{manifest['schema_version']})")
-    aside = restore_backup(settings, Path(args.archive), force=args.force)
+    aside = restore_backup(settings, archive, force=args.force, passphrase=passphrase)
     if aside:
         print(f"previous data moved to {aside}")
     print(f"restored into {settings.local_data_dir}")
@@ -165,6 +182,11 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("backup", help="write a verified backup archive")
     p.add_argument("--label", default="manual")
     p.add_argument("--dest", help="directory (default: LOCAL_DATA_DIR/backups)")
+    p.add_argument(
+        "--encrypt",
+        action="store_true",
+        help="encrypt with a passphrase (asked, or PPOS_BACKUP_PASSPHRASE) — needed to restore",
+    )
     p.set_defaults(func=cmd_backup)
 
     p = sub.add_parser("restore", help="restore a backup archive")

@@ -114,7 +114,7 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   day** proposes three priorities that only apply when you approve.
 - **Scales to your monitor**: comfortable text on 24″ and 32″ screens
   (Display size: Auto / S / M / L / XL), optional celebration moments.
-- **CLI**: `ppos serve | migrate | backup | restore | export | demo | doctor`.
+- **CLI**: `ppos serve | migrate | backup [--encrypt] | restore | export | demo | doctor | token`.
 
 ### Importing your Outlook calendar
 
@@ -160,6 +160,16 @@ PPOS_LOCAL_DATA_DIR=~/PersonalProductivityData docker compose -f deploy/docker-c
 - Scripts: `curl -H "Authorization: Bearer $(ppos token)" http://127.0.0.1:8765/api/tasks`.
 - Dev server (`npm run dev`) forwards the token automatically.
 - See [docs/threat-model.md](docs/threat-model.md).
+
+## Dependencies
+
+Python packages are pinned with hashes in `requirements.lock` (runtime) and
+`requirements-dev.lock` (tests and tooling); Docker and CI install with
+`pip install --require-hashes -r requirements.lock && pip install --no-deps -e .`.
+Regenerate after changing `pyproject.toml`:
+`uv pip compile pyproject.toml --python-version 3.10 --generate-hashes --universal -o requirements.lock`
+(add `--extra dev -o requirements-dev.lock` for the dev lock). Web packages are
+locked in `apps/web/package-lock.json`.
 
 ## Backups
 

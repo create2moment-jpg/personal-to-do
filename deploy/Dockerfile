@@ -12,12 +12,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     PPOS_LOCAL_DATA_DIR=/data PPOS_HOST=0.0.0.0 PPOS_PORT=8765
 RUN useradd --create-home --uid 1000 ppos
 WORKDIR /app
-COPY pyproject.toml README.md ./
+COPY pyproject.toml README.md requirements.lock ./
 COPY packages/ packages/
 COPY apps/api/ apps/api/
 COPY migrations/ migrations/
 COPY prompts/ prompts/
-RUN pip install --no-cache-dir -e .
+# Locked, hash-checked dependencies first; then the app itself without resolving anything.
+RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
+ && pip install --no-cache-dir --no-deps -e .
 COPY --from=web /app/apps/web/dist apps/web/dist
 USER ppos
 EXPOSE 8765

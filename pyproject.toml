@@ -18,6 +18,7 @@ dependencies = [
     "recurring-ical-events>=3,<4",
     "tzdata>=2024.1",
     "pypdf>=4,<6",
+    "cryptography>=43",
 ]
 
 [project.optional-dependencies]
