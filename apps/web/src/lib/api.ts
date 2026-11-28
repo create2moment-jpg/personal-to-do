@@ -245,6 +245,12 @@ export const api = {
   updateBoard: (id: string, changes: { title?: string; emoji?: string | null; viewport?: { x: number; y: number; zoom: number } }) => request<BoardMeta>("PATCH", `/api/boards/${id}`, changes),
   deleteBoard: (id: string) => request<void>("DELETE", `/api/boards/${id}`),
   boardChanges: (id: string, upserts: BoardItem[], deletes: string[]) => request<{ version: number }>("POST", `/api/boards/${id}/changes`, { upserts, deletes }),
+  boardImage: async (id: string, file: Blob) => {
+    const res = await fetch(`/api/boards/${id}/images`, { method: "POST", body: file });
+    const data = (await res.json()) as { name?: string; url?: string; detail?: string };
+    if (!res.ok) throw new ApiError(res.status, typeof data.detail === "string" ? data.detail : res.statusText);
+    return data as { name: string; url: string };
+  },
   boardItemToTask: (id: string, itemId: string) => request<{ id: string; ref_id: string }>("POST", `/api/boards/${id}/items/${itemId}/to-task`),
   timeline: (day: string) => request<DayTimeline>("GET", `/api/days/${day}/timeline`),
   timebox: (id: string, day: string, start: string | null) => request<Task>("PUT", `/api/tasks/${id}/timebox`, { day, start }),

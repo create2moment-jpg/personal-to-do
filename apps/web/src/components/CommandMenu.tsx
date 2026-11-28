@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun } from "lucide-react";
+import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun, LayoutDashboard } from "lucide-react";
 import { useEffect, useState } from "react";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
@@ -57,12 +57,12 @@ function MenuBody({ onClose }: { onClose: () => void }) {
                 key={`${h.entity_type}-${h.entity_id}`}
                 value={`${h.title} ${h.entity_id} ${q}`}
                 onSelect={run(() =>
-                  h.entity_type === "task" ? ui.openTask(h.entity_id) : h.entity_type === "page" ? ui.navigate("book", h.entity_id) : ui.navigate("notes", h.entity_id),
+                  h.entity_type === "task" ? ui.openTask(h.entity_id) : h.entity_type === "page" ? ui.navigate("book", h.entity_id) : h.entity_type === "board" ? ui.navigate("boards", h.entity_id) : ui.navigate("notes", h.entity_id),
                 )}
               >
-                {h.entity_type === "task" ? <SquareCheck /> : h.entity_type === "page" ? <BookOpenText /> : <FileText />}
+                {h.entity_type === "task" ? <SquareCheck /> : h.entity_type === "page" ? <BookOpenText /> : h.entity_type === "board" ? <LayoutDashboard /> : <FileText />}
                 <span>{h.title}</span>
-                {h.entity_type === "note" && h.snippet.trim() && <span className="cmd-snippet">{h.snippet.replace(/[[\]]/g, "")}</span>}
+                {(h.entity_type === "note" || h.entity_type === "board") && h.snippet.trim() && <span className="cmd-snippet">{h.snippet.replace(/[[\]]/g, "")}</span>}
                 <span className="cmd-hint">{h.entity_type}</span>
               </Command.Item>
             ))}

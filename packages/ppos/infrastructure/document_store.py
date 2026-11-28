@@ -7,12 +7,13 @@ from pathlib import Path
 
 
 class DocumentStore:
-    def __init__(self, data_dir: Path) -> None:
+    def __init__(self, data_dir: Path, folder: str = "documents") -> None:
         self.root = data_dir
-        self.base = data_dir / "documents"
+        self.folder = folder
+        self.base = data_dir / folder
 
     def save(self, sha256: str, ext: str, data: bytes) -> str:
-        rel = Path("documents") / sha256[:2] / f"{sha256}{ext}"
+        rel = Path(self.folder) / sha256[:2] / f"{sha256}{ext}"
         path = self.root / rel
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
         if not path.exists():

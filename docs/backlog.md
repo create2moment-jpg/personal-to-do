@@ -71,10 +71,10 @@ with a reason).
 | B-029 | Weekly digest note generated on Friday from records (AI optional, cited) | 2026-11-28 | idea (R-028) — partly covered by Workflows → weekly review | — |
 | B-030 | Habits and streaks (opt-in, low-key, shown in the dock) | 2026-11-28 | idea (R-028) | — |
 | B-031 | Markdown vault export / import, Obsidian-compatible (one .md file per note, front matter, [[links]] kept) | 2026-11-28 | done (export: folder per kind, YAML front matter, links unescaped; import: vault .zip or .md, kind from front matter or folder, tags, identical notes skipped, .obsidian ignored, size-capped, nothing written to disk) | Notes → vault menu |
-| B-032 | Boards: freehand pen | 2026-11-28 | planned (R-028) | — |
-| B-033 | Boards: images (paste / drop, stored locally) | 2026-11-28 | planned (R-028) | — |
+| B-032 | Boards: freehand pen | 2026-11-28 | done (P tool, 5 ink colours, strokes scale with resize; migration 0019) | Boards |
+| B-033 | Boards: images (paste / drop, stored locally) | 2026-11-28 | done (button, paste or drop; PNG/JPEG/GIF/WebP checked from the bytes, ≤ 10 MB, content-addressed in the data folder (included in backups), served sandboxed) | Boards |
 | B-034 | Embed a board inside a note | 2026-11-28 | idea (R-028) | — |
-| B-035 | Board text (stickies, shapes, frames) found by global search | 2026-11-28 | planned (R-028) | — |
+| B-035 | Board text (stickies, shapes, frames) found by global search | 2026-11-28 | done (one search entry per board, kept current on every save; ⌘K opens the board) | ⌘K |
 | B-036 | Workflows on a schedule / low-risk auto-apply | 2026-11-28 | idea — needs the owner's decision (ADR-0005 keeps propose-only) | — |
 | B-037 | Verify AI features (incl. vision OCR) against the owner's own llama.cpp server | 2026-11-28 | waiting on the owner's test | — |
 

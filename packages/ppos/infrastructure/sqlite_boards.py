@@ -79,6 +79,23 @@ class SqliteBoardRepository:
 
     def delete(self, board_id: str) -> None:
         self._c.execute("DELETE FROM boards WHERE id = ?", (board_id,))
+        self._c.execute(
+            "DELETE FROM search_index WHERE entity_type = 'board' AND entity_id = ?", (board_id,)
+        )
+
+    def reindex(self, board_id: str) -> None:
+        """Keep the board's words findable in global search (one entry per board)."""
+        self._c.execute(
+            "DELETE FROM search_index WHERE entity_type = 'board' AND entity_id = ?", (board_id,)
+        )
+        self._c.execute(
+            "INSERT INTO search_index (entity_type, entity_id, title, body)"
+            " SELECT 'board', b.id, b.title, COALESCE((SELECT group_concat(i.text, ' ')"
+            " FROM board_items i WHERE i.board_id = b.id"
+            " AND i.kind IN ('sticky', 'text', 'shape', 'frame', 'connector')), '')"
+            " FROM boards b WHERE b.id = ?",
+            (board_id,),
+        )
 
     def items(self, board_id: str) -> list[BoardItem]:
         rows = self._c.execute(

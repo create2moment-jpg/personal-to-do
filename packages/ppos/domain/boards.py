@@ -11,12 +11,33 @@ from typing import Any
 from ppos.domain.book import clean_emoji
 from ppos.shared.errors import ValidationError
 
-ITEM_KINDS = ("sticky", "text", "shape", "frame", "connector", "card")
+ITEM_KINDS = ("sticky", "text", "shape", "frame", "connector", "card", "drawing", "image")
 REF_TYPES = ("task", "note")
 MAX_ITEMS = 5000
 MAX_TEXT = 10_000
 MAX_COORD = 1_000_000.0
 _ID = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
+_POINTS = re.compile(r"^-?\d+(\.\d+)?,-?\d+(\.\d+)?( -?\d+(\.\d+)?,-?\d+(\.\d+)?)*$")
+IMAGE_NAME = re.compile(r"^[0-9a-f]{64}\.(png|jpg|gif|webp)$")
+IMAGE_TYPES = {
+    b"\x89PNG\r\n\x1a\n": ".png",
+    b"\xff\xd8\xff": ".jpg",
+    b"GIF87a": ".gif",
+    b"GIF89a": ".gif",
+}
+MAX_IMAGE = 10 * 1024 * 1024
+
+
+def image_ext(data: bytes) -> str:
+    """Image type from the content (magic bytes), never from a file name."""
+    for magic, ext in IMAGE_TYPES.items():
+        if data.startswith(magic):
+            return ext
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return ".webp"
+    raise ValidationError("images must be PNG, JPEG, GIF or WebP")
+
+
 _COLOR = re.compile(r"^#[0-9a-fA-F]{6}$|^[a-z]{3,12}$")
 
 
@@ -82,6 +103,10 @@ class BoardItem:
                 raise ValidationError("a card refers to a task or a note")
         elif self.ref_type is not None or self.ref_id is not None:
             raise ValidationError("only cards refer to tasks or notes")
+        if self.kind == "drawing" and not _POINTS.match(self.text):
+            raise ValidationError("a drawing is a list of x,y points")
+        if self.kind == "image" and not IMAGE_NAME.match(self.text):
+            raise ValidationError("an image refers to an uploaded file")
         if self.kind == "connector":
             if not self.from_id or not self.to_id or self.from_id == self.to_id:
                 raise ValidationError("an arrow joins two different items")

@@ -70,6 +70,7 @@ class EntityType(str, Enum):
     DAY = "day"
     PAGE = "page"
     CHUNK = "chunk"
+    BOARD = "board"
 
 
 @dataclass(frozen=True)

@@ -23,6 +23,7 @@ DATA_SUBDIRS = (
     "db",
     "notes",
     "documents",
+    "boards",
     "indexes",
     "cache",
     "ai",

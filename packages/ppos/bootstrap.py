@@ -260,7 +260,7 @@ def build_container(
         insights=InsightsService(uow, clock, meetings),
         assistant=assistant,
         reviews=reviews,
-        boards=BoardService(uow, clock, tasks),
+        boards=BoardService(uow, clock, tasks, DocumentStore(settings.local_data_dir, "boards")),
         vault=VaultService(notes),
         workflows=WorkflowService(
             uow,

@@ -1,6 +1,6 @@
 /** Whiteboard model and geometry helpers (no React). */
 
-export type ItemKind = "sticky" | "text" | "shape" | "frame" | "connector" | "card";
+export type ItemKind = "sticky" | "text" | "shape" | "frame" | "connector" | "card" | "drawing" | "image";
 
 export interface BoardItem {
   id: string;
@@ -12,7 +12,7 @@ export interface BoardItem {
   z: number;
   text: string;
   color: string | null;
-  style: { shape?: "rect" | "ellipse" | "diamond"; size?: "s" | "m" | "l"; end?: "arrow" | "none" } & Record<string, unknown>;
+  style: { shape?: "rect" | "ellipse" | "diamond"; size?: "s" | "m" | "l"; end?: "arrow" | "none"; vw?: number; vh?: number; stroke?: number } & Record<string, unknown>;
   ref_type: "task" | "note" | null;
   ref_id: string | null;
   from_id: string | null;
@@ -46,7 +46,7 @@ export const PALETTE: Record<string, string> = {
 };
 export const fill = (c: string | null, fallback = "yellow") => (c && c.startsWith("#") ? c : PALETTE[c ?? fallback] ?? PALETTE[fallback]!);
 
-export const DEFAULT_SIZE: Record<Exclude<ItemKind, "connector">, [number, number]> = {
+export const DEFAULT_SIZE: Record<Exclude<ItemKind, "connector" | "drawing" | "image">, [number, number]> = {
   sticky: [180, 140],
   text: [220, 44],
   shape: [180, 110],
@@ -116,6 +116,13 @@ export function toSvg(items: BoardItem[], refs: Record<string, CardRef>, title: 
     else if (i.kind === "card") {
       const r = refs[`${i.ref_type}:${i.ref_id}`];
       parts.push(`<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" rx="8" fill="#ffffff" stroke="#c9c9d1"/><text x="${i.x + 12}" y="${i.y + 20}" font-size="11" fill="#8b8b93">${i.ref_type === "task" ? `Task · ${esc(r?.status ?? "")}` : "Note"}</text><text x="${i.x + 12}" y="${i.y + 42}" font-size="14" fill="#1d1d22">${esc((r?.title ?? "").slice(0, 40))}</text>`);
+    } else if (i.kind === "drawing") {
+      const sx = i.w / (i.style.vw || i.w || 1);
+      const sy = i.h / (i.style.vh || i.h || 1);
+      const pts = i.text.split(" ").map((p) => p.split(",").map(Number)).map(([x, y]) => `${i.x + x! * sx},${i.y + y! * sy}`).join(" ");
+      parts.push(`<polyline points="${pts}" fill="none" stroke="${i.color ?? "#55555c"}" stroke-width="${i.style.stroke ?? 3}" stroke-linecap="round" stroke-linejoin="round"/>`);
+    } else if (i.kind === "image") {
+      parts.push(`<rect x="${i.x}" y="${i.y}" width="${i.w}" height="${i.h}" fill="#f1f1f4" stroke="#c9c9d1"/><text x="${i.x + i.w / 2}" y="${i.y + i.h / 2}" font-size="12" text-anchor="middle" fill="#8b8b93">image</text>`);
     } else if (i.kind === "connector") {
       const a = i.from_id ? byId.get(i.from_id) : undefined;
       const b = i.to_id ? byId.get(i.to_id) : undefined;
@@ -128,4 +135,16 @@ export function toSvg(items: BoardItem[], refs: Record<string, CardRef>, title: 
   }
   const vb = `${bb.x - pad} ${bb.y - pad - 20} ${bb.w + pad * 2} ${bb.h + pad * 2 + 20}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vb}" width="${bb.w + pad * 2}" height="${bb.h + pad * 2 + 20}" font-family="Inter, system-ui, sans-serif"><title>${esc(title)}</title><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#55555c"/></marker></defs><rect x="${bb.x - pad}" y="${bb.y - pad - 20}" width="100%" height="100%" fill="#ffffff"/>${parts.join("")}</svg>`;
+}
+
+/** Points of a pen stroke (world coordinates) → a drawing item's box and compact path. */
+export function strokeToItem(points: { x: number; y: number }[]) {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  const w = Math.max(1, Math.max(...xs) - x);
+  const h = Math.max(1, Math.max(...ys) - y);
+  const r = (v: number) => Math.round(v * 10) / 10;
+  return { x, y, w, h, text: points.map((p) => `${r(p.x - x)},${r(p.y - y)}`).join(" ") };
 }

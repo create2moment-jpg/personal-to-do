@@ -134,8 +134,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   into a task in place. Colours, text sizes, multi-select (Shift or drag a box),
   resize, duplicate (Ctrl+D), copy/paste, undo/redo, snap to grid, Ctrl+scroll
   to zoom, Space+drag to pan, fit to content, SVG export. Templates:
-  retrospective, SWOT, weekly planning, mind map. Keys: V select, H pan,
-  S sticky, T text, R shape, F frame, L arrow.
+  retrospective, SWOT, weekly planning, mind map. Freehand **pen** (P) and
+  **images** (button, paste or drop — stored locally). Board text shows up in
+  ⌘K search. Keys: V select, H pan, S sticky, T text, R shape, F frame, L arrow,
+  P pen.
 - **Workflows** (`g f`): multi-step helpers that propose a checklist you
   approve — **Plan my week** (fits overdue, due and sprint work into each
   day's free capacity, never after a due date; objectives from your goals),

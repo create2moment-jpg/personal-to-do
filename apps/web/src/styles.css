@@ -1343,3 +1343,12 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .reminder-opts:disabled { opacity: 0.55; }
 .menu-pop .menu-link { padding: 6px 8px; border-radius: 6px; font-size: 0.86rem; color: var(--text); text-decoration: none; }
 .menu-pop .menu-link:hover, .menu-pop .menu-link:focus-visible { background: var(--surface-2); }
+.b-drawing { background: transparent; }
+.b-draw { width: 100%; height: 100%; overflow: visible; }
+.b-draw polyline, .b-pen-draft { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.b-pen-draft { stroke-width: 3; }
+.b-image { background: var(--surface); box-shadow: var(--shadow-sm); }
+.b-img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; user-select: none; }
+.board-stage.tool-pen { cursor: crosshair; }
+.b-swatch.pen { margin: 3px auto; }
+.b-swatch.on { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }

@@ -2,15 +2,32 @@
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol
 
 from ppos.application.ports import UnitOfWork, UnitOfWorkFactory
 from ppos.application.tasks import TaskService
-from ppos.domain.boards import MAX_ITEMS, TEMPLATES, Board, BoardItem
+from ppos.domain.boards import (
+    IMAGE_NAME,
+    MAX_IMAGE,
+    MAX_ITEMS,
+    TEMPLATES,
+    Board,
+    BoardItem,
+    image_ext,
+)
 from ppos.shared.clock import Clock, new_id
 from ppos.shared.errors import NotFoundError, ValidationError
+
+
+class FileStore(Protocol):
+    folder: str
+
+    def save(self, sha256: str, ext: str, data: bytes) -> str: ...
+    def read(self, rel: str) -> bytes: ...
+
 
 ITEM_FIELDS = (
     "kind",
@@ -37,10 +54,44 @@ class BoardView:
 
 
 class BoardService:
-    def __init__(self, uow: UnitOfWorkFactory, clock: Clock, tasks: TaskService) -> None:
+    def __init__(
+        self,
+        uow: UnitOfWorkFactory,
+        clock: Clock,
+        tasks: TaskService,
+        files: FileStore | None = None,
+    ) -> None:
         self._uow = uow
         self._clock = clock
         self._tasks = tasks
+        self._files = files
+
+    def save_image(self, board_id: str, data: bytes) -> str:
+        """Store an image for a board (content-addressed); returns its file name."""
+        if self._files is None:
+            raise ValidationError("image storage is not available")
+        if not data or len(data) > MAX_IMAGE:
+            raise ValidationError("images up to 10 MB are supported")
+        ext = image_ext(data)
+        with self._uow() as uow:
+            self._require(uow, board_id)
+        sha = hashlib.sha256(data).hexdigest()
+        self._files.save(sha, ext, data)
+        return f"{sha}{ext}"
+
+    def image(self, name: str) -> tuple[bytes, str]:
+        if self._files is None or not IMAGE_NAME.match(name):
+            raise NotFoundError("image", name)
+        try:
+            data = self._files.read(f"{self._files_folder}/{name[:2]}/{name}")
+        except (FileNotFoundError, PermissionError) as exc:
+            raise NotFoundError("image", name) from exc
+        mime = {"png": "image/png", "jpg": "image/jpeg", "gif": "image/gif", "webp": "image/webp"}
+        return data, mime[name.rsplit(".", 1)[1]]
+
+    @property
+    def _files_folder(self) -> str:
+        return getattr(self._files, "folder", "boards")
 
     def all(self) -> list[tuple[Board, int]]:
         with self._uow() as uow:
@@ -72,6 +123,7 @@ class BoardService:
                         dict(style),
                     )
                 )
+            uow.boards.reindex(board.id)
             uow.audit.record("board", board.id, "create", details={"template": template})
             uow.commit()
         return board
@@ -117,6 +169,7 @@ class BoardService:
             b.updated_at = self._clock.now()
             Board.__post_init__(b)
             uow.boards.update(b)
+            uow.boards.reindex(b.id)
             uow.commit()
             return b
 
@@ -168,6 +221,7 @@ class BoardService:
             board.version += 1
             board.updated_at = now
             uow.boards.update(board)
+            uow.boards.reindex(board.id)
             uow.commit()
             return board.version
 
@@ -208,6 +262,7 @@ class BoardService:
             b.version += 1
             b.updated_at = now
             uow.boards.update(b)
+            uow.boards.reindex(board_id)
             uow.audit.record("board", board_id, "sticky_to_task", details={"task_id": task.id})
             uow.commit()
         return card

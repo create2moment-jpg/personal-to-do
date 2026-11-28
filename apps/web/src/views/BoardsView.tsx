@@ -15,6 +15,8 @@ import {
   Maximize,
   Minus,
   MousePointer2,
+  PenLine,
+  ImagePlus,
   Plus,
   Redo2,
   SendToBack,
@@ -28,12 +30,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "../components/primitives";
 import { api } from "../lib/api";
-import { type BoardItem, type BoardMeta, type CardRef, DEFAULT_SIZE, PALETTE, bounds, center, edgePoint, fill, inside, newId, snap, toSvg } from "../lib/board";
+import { type BoardItem, type BoardMeta, type CardRef, DEFAULT_SIZE, PALETTE, bounds, center, edgePoint, fill, inside, newId, snap, strokeToItem, toSvg } from "../lib/board";
 import { invalidateTasks } from "../lib/queries";
 import { useUi } from "../lib/ui-store";
 import { cx, debounce, isTypingTarget, relativeTime } from "../lib/util";
 
-type Tool = "select" | "hand" | "sticky" | "text" | "shape" | "frame" | "connector";
+type Tool = "select" | "hand" | "sticky" | "text" | "shape" | "frame" | "connector" | "pen";
 const TOOLS: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "select", label: "Select", key: "V", icon: MousePointer2 },
   { id: "hand", label: "Pan", key: "H", icon: Hand },
@@ -42,6 +44,7 @@ const TOOLS: { id: Tool; label: string; key: string; icon: typeof Square }[] = [
   { id: "shape", label: "Shape", key: "R", icon: Square },
   { id: "frame", label: "Frame", key: "F", icon: Frame },
   { id: "connector", label: "Arrow (drag from one item to another)", key: "L", icon: ArrowUpRight },
+  { id: "pen", label: "Pen (draw freehand)", key: "P", icon: PenLine },
 ];
 
 /** Boards: a list of whiteboards, or one board's canvas. */
@@ -107,7 +110,8 @@ type Drag =
   | { mode: "resize"; id: string; start: { x: number; y: number }; box: { w: number; h: number } }
   | { mode: "pan"; start: { x: number; y: number }; vp: { x: number; y: number } }
   | { mode: "marquee"; start: { x: number; y: number }; now: { x: number; y: number }; additive: boolean }
-  | { mode: "link"; from: string; now: { x: number; y: number } };
+  | { mode: "link"; from: string; now: { x: number; y: number } }
+  | { mode: "pen"; points: { x: number; y: number }[] };
 
 function BoardCanvas({ boardId }: { boardId: string }) {
   const ui = useUi();
@@ -122,7 +126,9 @@ function BoardCanvas({ boardId }: { boardId: string }) {
   const [drag, setDrag] = useState<Drag | null>(null);
   const [gridSnap, setGridSnap] = useState(true);
   const [cardPicker, setCardPicker] = useState(false);
-  const [saveState, setSaveState] = useState<"saved" | "saving" | "error">("saved");
+  const [penColor, setPenColor] = useState("#3b3b45");
+  const imageInput = useRef<HTMLInputElement>(null);
+  const [saveState, setSaveState] = useState<"saved" | "dirty" | "saving" | "error">("saved");
   const stage = useRef<HTMLDivElement>(null);
   const space = useRef(false);
   const history = useRef<{ undo: BoardItem[][]; redo: BoardItem[][] }>({ undo: [], redo: [] });
@@ -158,7 +164,8 @@ function BoardCanvas({ boardId }: { boardId: string }) {
           setSaveState("saving");
           try {
             await api.boardChanges(boardId, upserts, [...del].filter((id) => !byId.has(id)));
-            setSaveState("saved");
+            const more = pending.current.up.size + pending.current.del.size > 0;
+            setSaveState(more ? "dirty" : "saved");
             void qc.invalidateQueries({ queryKey: ["boards"] });
           } catch (e) {
             setSaveState("error");
@@ -174,6 +181,22 @@ function BoardCanvas({ boardId }: { boardId: string }) {
     await inFlight.current;
   }, [flush]);
   useEffect(() => () => flush.flush(), [flush]);
+  // Closing the tab or reloading: send what is pending with a request that outlives the page.
+  useEffect(() => {
+    const onLeave = () => {
+      const { up, del } = pending.current;
+      if (!up.size && !del.size) return;
+      const byId = new Map(itemsRef.current.map((i) => [i.id, i]));
+      const body = JSON.stringify({
+        upserts: [...up].map((id) => byId.get(id)).filter(Boolean),
+        deletes: [...del].filter((id) => !byId.has(id)),
+      });
+      pending.current = { up: new Set(), del: new Set() };
+      void fetch(`/api/boards/${boardId}/changes`, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true });
+    };
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, [boardId]);
   const saveViewport = useMemo(() => debounce((v: { x: number; y: number; zoom: number }) => void api.updateBoard(boardId, { viewport: v }).catch(() => undefined), 1200), [boardId]);
   useEffect(() => saveViewport(vp), [vp, saveViewport]);
 
@@ -195,6 +218,7 @@ function BoardCanvas({ boardId }: { boardId: string }) {
       for (const i of next) if (!filtered.includes(i)) pending.current.del.add(i.id);
       itemsRef.current = filtered;
       setItems(filtered);
+      setSaveState("dirty");
       flush();
     },
     [flush],
@@ -239,7 +263,7 @@ function BoardCanvas({ boardId }: { boardId: string }) {
   };
 
   const topZ = () => Math.max(0, ...items.map((i) => i.z)) + 1;
-  const add = (kind: Exclude<BoardItem["kind"], "connector">, at: { x: number; y: number }, extra: Partial<BoardItem> = {}) => {
+  const add = (kind: Exclude<BoardItem["kind"], "connector" | "drawing" | "image">, at: { x: number; y: number }, extra: Partial<BoardItem> = {}) => {
     const [w, h] = DEFAULT_SIZE[kind];
     const item: BoardItem = {
       id: newId(),
@@ -278,6 +302,10 @@ function BoardCanvas({ boardId }: { boardId: string }) {
     stage.current?.setPointerCapture(e.pointerId);
     if (e.button === 1 || tool === "hand" || space.current) {
       setDrag({ mode: "pan", start: { x: e.clientX, y: e.clientY }, vp: { x: vp.x, y: vp.y } });
+      return;
+    }
+    if (tool === "pen") {
+      setDrag({ mode: "pen", points: [w] });
       return;
     }
     if (handle) {
@@ -322,6 +350,10 @@ function BoardCanvas({ boardId }: { boardId: string }) {
     const w = toWorld(e.clientX, e.clientY);
     if (drag.mode === "pan") setVp({ ...vp, x: drag.vp.x + e.clientX - drag.start.x, y: drag.vp.y + e.clientY - drag.start.y });
     else if (drag.mode === "marquee" || drag.mode === "link") setDrag({ ...drag, now: w });
+    else if (drag.mode === "pen") {
+      const last = drag.points[drag.points.length - 1]!;
+      if (Math.hypot(w.x - last.x, w.y - last.y) * vp.zoom >= 2) setDrag({ mode: "pen", points: [...drag.points, w] });
+    }
     else if (drag.mode === "move") {
       const dx = w.x - drag.start.x;
       const dy = w.y - drag.start.y;
@@ -342,10 +374,12 @@ function BoardCanvas({ boardId }: { boardId: string }) {
     if (!d) return;
     if (d.mode === "move" && d.moved) {
       for (const id of d.origin.keys()) pending.current.up.add(id);
+      setSaveState("dirty");
       flush();
     } else if (d.mode === "resize") {
       history.current.undo.push(itemsRef.current.map((i) => (i.id === d.id ? { ...i, w: d.box.w, h: d.box.h } : i)));
       pending.current.up.add(d.id);
+      setSaveState("dirty");
       flush();
     } else if (d.mode === "marquee") {
       const x = Math.min(d.start.x, d.now.x);
@@ -355,6 +389,11 @@ function BoardCanvas({ boardId }: { boardId: string }) {
         const hit = items.filter((i) => i.kind !== "connector" && i.x >= box.x && i.y >= box.y && i.x + i.w <= box.x + box.w && i.y + i.h <= box.y + box.h).map((i) => i.id);
         setSel(new Set([...(d.additive ? sel : []), ...hit]));
       }
+    } else if (d.mode === "pen") {
+      if (d.points.length < 2) return;
+      const s = strokeToItem(d.points.slice(0, 2000));
+      const item: BoardItem = { id: newId(), kind: "drawing", ...s, z: topZ(), color: penColor, style: { vw: s.w, vh: s.h, stroke: 3 }, ref_type: null, ref_id: null, from_id: null, to_id: null };
+      commit([...items, item]);
     } else if (d.mode === "link") {
       const el = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-item]");
       const to = el?.dataset.item;
@@ -463,6 +502,41 @@ function BoardCanvas({ boardId }: { boardId: string }) {
     }
   };
 
+  /** Upload an image and place it (scaled to at most 480 px) centred on a point. */
+  const placeImage = async (file: Blob, at?: { x: number; y: number }) => {
+    try {
+      const { name, url } = await api.boardImage(boardId, file);
+      const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve({ w: img.naturalWidth || 320, h: img.naturalHeight || 240 });
+        img.onerror = () => resolve({ w: 320, h: 240 });
+        img.src = url;
+      });
+      const k = Math.min(1, 480 / Math.max(dims.w, dims.h));
+      const r = stage.current!.getBoundingClientRect();
+      const c = at ?? toWorld(r.left + r.width / 2, r.top + r.height / 2);
+      const w = Math.round(dims.w * k);
+      const h = Math.round(dims.h * k);
+      const item: BoardItem = { id: newId(), kind: "image", x: c.x - w / 2, y: c.y - h / 2, w, h, z: topZ(), text: name, color: null, style: {}, ref_type: null, ref_id: null, from_id: null, to_id: null };
+      commit([...itemsRef.current, item]);
+      setSel(new Set([item.id]));
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (editing || isTypingTarget(e.target)) return;
+      const file = [...(e.clipboardData?.files ?? [])].find((f) => f.type.startsWith("image/"));
+      if (file) {
+        e.preventDefault();
+        void placeImage(file);
+      }
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  });
+
   if (!meta) return <div className="page faint">Loading board…</div>;
   const byId = new Map(items.map((i) => [i.id, i]));
   const frames = items.filter((i) => i.kind === "frame").sort((a, b) => a.z - b.z);
@@ -487,9 +561,24 @@ function BoardCanvas({ boardId }: { boardId: string }) {
           onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
         />
         <span className={cx("board-save", saveState)} aria-live="polite">
-          {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : "Not saved"}
+          {saveState === "saved" ? "Saved" : saveState === "saving" ? "Saving…" : saveState === "dirty" ? "Unsaved changes…" : "Not saved"}
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 4 }}>
+          <button className="btn sm ghost" onClick={() => imageInput.current?.click()} title="Add an image (or paste / drop one on the board)">
+            <ImagePlus /> Image
+          </button>
+          <input
+            ref={imageInput}
+            type="file"
+            hidden
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            aria-label="Add an image to the board"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = "";
+              if (f) void placeImage(f);
+            }}
+          />
           <button className="btn sm ghost" onClick={() => setCardPicker(true)} title="Add a live card for a task or note">
             <Link2 /> Card
           </button>
@@ -531,6 +620,14 @@ function BoardCanvas({ boardId }: { boardId: string }) {
         onPointerUp={onPointerUp}
         onWheel={onWheel}
         onDoubleClick={onDoubleClick}
+        onDragOver={(e) => e.dataTransfer.types.includes("Files") && e.preventDefault()}
+        onDrop={(e) => {
+          const files = [...e.dataTransfer.files].filter((f) => f.type.startsWith("image/"));
+          if (!files.length) return;
+          e.preventDefault();
+          const at = toWorld(e.clientX, e.clientY);
+          files.slice(0, 10).forEach((f, n) => void placeImage(f, { x: at.x + n * 30, y: at.y + n * 30 }));
+        }}
         aria-label="Board canvas"
         role="application"
       >
@@ -565,6 +662,7 @@ function BoardCanvas({ boardId }: { boardId: string }) {
                 </g>
               );
             })}
+            {drag?.mode === "pen" && <polyline className="b-pen-draft" points={drag.points.map((p) => `${p.x},${p.y}`).join(" ")} style={{ stroke: penColor }} />}
             {drag?.mode === "link" && byId.get(drag.from) && <line className="b-link-draft" x1={center(byId.get(drag.from)!).x} y1={center(byId.get(drag.from)!).y} x2={drag.now.x} y2={drag.now.y} />}
           </svg>
           {links
@@ -587,7 +685,13 @@ function BoardCanvas({ boardId }: { boardId: string }) {
                 className={cx("b-item", `b-${i.kind}`, i.kind === "shape" && `shape-${i.style.shape ?? "rect"}`, `size-${i.style.size ?? "m"}`, sel.has(i.id) && "sel", r?.missing && "missing")}
                 style={{ left: i.x, top: i.y, width: i.w, height: i.h, zIndex: 2, ["--fill" as string]: fill(i.color, i.kind === "shape" ? "white" : "yellow") }}
               >
-                {i.kind === "card" ? (
+                {i.kind === "drawing" ? (
+                  <svg className="b-draw" viewBox={`0 0 ${i.style.vw || i.w} ${i.style.vh || i.h}`} preserveAspectRatio="none" aria-hidden>
+                    <polyline points={i.text.replace(/ /g, " ")} style={{ stroke: i.color ?? "#3b3b45", strokeWidth: i.style.stroke ?? 3 }} vectorEffect="non-scaling-stroke" />
+                  </svg>
+                ) : i.kind === "image" ? (
+                  <img className="b-img" src={`/api/boards/files/${i.text}`} alt="" draggable={false} />
+                ) : i.kind === "card" ? (
                   <div className="b-card-body">
                     <span className="b-card-kind">
                       {i.ref_type === "task" ? <ListTodo size={12} /> : <StickyNote size={12} />} {i.ref_type === "task" ? `Task · ${r?.status?.replace("_", " ") ?? ""}` : "Note"}
@@ -611,7 +715,7 @@ function BoardCanvas({ boardId }: { boardId: string }) {
 
         {selBox && !drag && !editing && (
           <div className="b-toolbar" style={{ left: Math.max(8, selBox.x * vp.zoom + vp.x), top: Math.max(8, selBox.y * vp.zoom + vp.y - 52) }} onPointerDown={(e) => e.stopPropagation()}>
-            {selected.some((i) => i.kind === "sticky" || i.kind === "shape" || i.kind === "frame") &&
+            {selected.some((i) => i.kind === "sticky" || i.kind === "shape" || i.kind === "frame") && !selected.some((i) => i.kind === "drawing") &&
               Object.entries(PALETTE).map(([name, hex]) => (
                 <button key={name} className="b-swatch" style={{ background: hex }} aria-label={`Colour ${name}`} onClick={() => update(sel, { color: name })} />
               ))}
@@ -674,6 +778,10 @@ function BoardCanvas({ boardId }: { boardId: string }) {
               <t.icon />
             </button>
           ))}
+          {tool === "pen" &&
+            ["#3b3b45", "#d93f3f", "#2f7de1", "#2f9e60", "#db7a1f"].map((c) => (
+              <button key={c} className={cx("b-swatch pen", penColor === c && "on")} style={{ background: c }} aria-label={`Pen colour ${c}`} onClick={() => setPenColor(c)} />
+            ))}
           <span className="b-sep h" />
           <button className="btn icon ghost" aria-label="Undo" title="Undo — Ctrl+Z" onClick={undo}>
             <Undo2 />
@@ -700,7 +808,7 @@ function BoardCanvas({ boardId }: { boardId: string }) {
         </div>
         {items.length === 0 && (
           <div className="b-hint" aria-hidden>
-            Double-click anywhere for a sticky note · <b>S</b> sticky · <b>T</b> text · <b>R</b> shape · <b>F</b> frame · <b>L</b> arrow · Ctrl+scroll to zoom · Space+drag to pan
+            Double-click anywhere for a sticky note · <b>S</b> sticky · <b>T</b> text · <b>R</b> shape · <b>F</b> frame · <b>L</b> arrow · <b>P</b> pen · paste or drop images · Ctrl+scroll to zoom · Space+drag to pan
           </div>
         )}
       </div>

@@ -6,8 +6,9 @@ from dataclasses import asdict
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Request, Response, status
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from ppos.domain.boards import TEMPLATES, Board
 from ppos_api.deps import ContainerDep
@@ -49,6 +50,21 @@ class BoardIn(BaseModel):
 @router.post("", response_model=BoardOut, status_code=status.HTTP_201_CREATED)
 def create(body: BoardIn, c: ContainerDep) -> BoardOut:
     return _board(c.boards.create(body.title, body.template, body.emoji))
+
+
+@router.get("/files/{name}")
+def board_image(name: str, c: ContainerDep) -> Response:
+    """An image placed on a board (content-addressed, served as an image only)."""
+    data, mime = c.boards.image(name)
+    return Response(
+        content=data,
+        media_type=mime,
+        headers={
+            "Cache-Control": "private, max-age=31536000, immutable",
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": "sandbox",
+        },
+    )
 
 
 @router.get("/{board_id}")
@@ -96,3 +112,11 @@ def changes(board_id: str, body: ChangesIn, c: ContainerDep) -> dict[str, int]:
 def to_task(board_id: str, item_id: str, c: ContainerDep) -> dict[str, Any]:
     card = c.boards.to_task(board_id, item_id)
     return {"id": card.id, "ref_type": card.ref_type, "ref_id": card.ref_id}
+
+
+@router.post("/{board_id}/images")
+async def upload_image(board_id: str, request: Request, c: ContainerDep) -> dict[str, str]:
+    """Store an image (PNG, JPEG, GIF, WebP; type checked from the bytes) for this board."""
+    data = await request.body()
+    name = await run_in_threadpool(c.boards.save_image, board_id, data)
+    return {"name": name, "url": f"/api/boards/files/{name}"}

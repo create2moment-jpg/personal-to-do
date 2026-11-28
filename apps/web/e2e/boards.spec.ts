@@ -5,7 +5,7 @@ const canvas = (page: Page) => page.getByRole("application", { name: "Board canv
 test("boards: stickies, arrow, shape, frame, undo, to-task, saved across reloads", async ({ page, request }) => {
   await page.setViewportSize({ width: 1500, height: 950 });
   await page.goto("/#/boards");
-  await page.getByRole("button", { name: "Blank board" }).click();
+  await page.locator(".board-templates").getByRole("button", { name: "Blank board" }).click();
   await expect(page.getByLabel("Board title")).toHaveValue("Blank board");
   const stage = canvas(page);
   const box = (await stage.boundingBox())!;
@@ -72,7 +72,45 @@ test("boards: stickies, arrow, shape, frame, undo, to-task, saved across reloads
 
 test("boards: templates give a ready layout", async ({ page }) => {
   await page.goto("/#/boards");
-  await page.getByRole("button", { name: "Retrospective" }).click();
+  await page.locator(".board-templates").getByRole("button", { name: "Retrospective" }).click();
   await expect(page.locator(".b-frame")).toHaveCount(3);
   await expect(page.locator(".b-frame-title", { hasText: "To improve" })).toBeVisible();
+});
+
+const PNG = Buffer.from(
+  "89504e470d0a1a0a0000000d4948445200000001000000010806000000" + "1f15c4890000000d49444154789c63f80f00000101000518d84e0000000049454e44ae426082",
+  "hex",
+);
+
+test("boards: freehand pen, images, and board text in global search", async ({ page }) => {
+  await page.setViewportSize({ width: 1500, height: 950 });
+  await page.goto("/#/boards");
+  await page.locator(".board-templates").getByRole("button", { name: "Blank board" }).click();
+  await page.getByLabel("Board title").fill("Quokka planning");
+  await page.getByLabel("Board title").press("Enter");
+  const box = (await page.getByRole("application", { name: "Board canvas" }).boundingBox())!;
+
+  await page.keyboard.press("p");
+  await page.mouse.move(box.x + 300, box.y + 300);
+  await page.mouse.down();
+  for (let i = 1; i <= 10; i++) await page.mouse.move(box.x + 300 + i * 20, box.y + 300 + (i % 2) * 30);
+  await page.mouse.up();
+  await expect(page.locator(".b-drawing")).toHaveCount(1);
+
+  await page.getByLabel("Add an image to the board").setInputFiles({ name: "dot.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.locator(".b-image img")).toHaveCount(1);
+
+  await page.keyboard.press("Escape");
+  await page.mouse.dblclick(box.x + 700, box.y + 600);
+  await page.keyboard.type("Quokka migration risk");
+  await page.mouse.click(box.x + 1000, box.y + 800);
+  await expect(page.locator(".board-save")).toHaveText("Saved");
+  await page.reload();
+  await expect(page.locator(".b-drawing")).toHaveCount(1);
+  await expect(page.locator(".b-image img")).toHaveCount(1);
+
+  await page.keyboard.press("Control+k");
+  await page.keyboard.type("quokka");
+  await page.locator("[cmdk-item]", { hasText: "Quokka planning" }).first().click();
+  await expect(page).toHaveURL(/#\/boards\//);
 });

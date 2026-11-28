@@ -140,7 +140,7 @@ export interface Today {
 }
 
 export interface SearchHit {
-  entity_type: "task" | "note" | "project" | "day" | "page" | "chunk";
+  entity_type: "task" | "note" | "project" | "day" | "page" | "chunk" | "board";
   entity_id: string;
   title: string;
   snippet: string;

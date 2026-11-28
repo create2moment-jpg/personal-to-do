@@ -270,12 +270,17 @@ function NoteEditor({ noteId }: { noteId: string }) {
   useEffect(() => {
     if (!editor) return;
     const st = (editor.storage as unknown as { wikiLink: WikiLinkStorage }).wikiLink;
-    st.known = new Set(titles.map((t) => titleKey(t.title)));
     st.onOpen = (title) => {
       flushRef.current();
       void openRef.current(title);
     };
-    refreshWikiLinks(editor as never);
+    // Re-colour links only when the set of titles really changed: the list refreshes
+    // after every autosave, and an extra transaction mid-typing can drop keystrokes.
+    const known = new Set(titles.map((t) => titleKey(t.title)));
+    const same = known.size === st.known.size && [...known].every((k) => st.known.has(k));
+    if (same) return;
+    st.known = known;
+    if (!(editor.view as unknown as { composing?: boolean }).composing) refreshWikiLinks(editor as never);
   }, [editor, titles]);
 
   const matches = suggest

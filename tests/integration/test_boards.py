@@ -133,3 +133,62 @@ def test_boards_api(client: TestClient) -> None:
     )
     assert client.delete(f"/api/boards/{bid}").status_code == 204
     assert client.get(f"/api/boards/{bid}").status_code == 404
+
+
+PNG = (
+    b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f"
+    b"\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\x0f\x00\x00\x01\x01\x00\x05\x18\xd8N\x00\x00\x00"
+    b"\x00IEND\xaeB`\x82"
+)
+
+
+def test_drawings_images_and_search(client: TestClient) -> None:
+    bid = client.post("/api/boards", json={"title": "Architecture sketch"}).json()["id"]
+    up = client.post(f"/api/boards/{bid}/images", content=PNG)
+    assert up.status_code == 200
+    name = up.json()["name"]
+    assert name.endswith(".png") and len(name) == 68
+    img = client.get(f"/api/boards/files/{name}")
+    assert img.content == PNG and img.headers["content-type"] == "image/png"
+    assert "sandbox" in img.headers["content-security-policy"]
+    assert (
+        client.post(f"/api/boards/{bid}/images", content=b"<svg onload=alert(1)>").status_code
+        == 422
+    )
+    assert client.get("/api/boards/files/..%2F..%2Fdb%2Fppos.sqlite3").status_code == 404
+    ch = client.post(
+        f"/api/boards/{bid}/changes",
+        json={
+            "upserts": [
+                {"id": "img", "kind": "image", "text": name, "x": 0, "y": 0, "w": 200, "h": 150},
+                {
+                    "id": "pen",
+                    "kind": "drawing",
+                    "text": "0,0 10.5,4 20,12",
+                    "x": 50,
+                    "y": 50,
+                    "w": 20,
+                    "h": 12,
+                    "color": "#333333",
+                },
+                {
+                    "id": "s",
+                    "kind": "sticky",
+                    "text": "Kafka ingestion bottleneck",
+                    "w": 160,
+                    "h": 100,
+                },
+            ]
+        },
+    )
+    assert ch.status_code == 200, ch.text
+    bad = client.post(
+        f"/api/boards/{bid}/changes",
+        json={"upserts": [{"id": "p2", "kind": "drawing", "text": "rm -rf"}]},
+    )
+    assert bad.status_code == 422
+    hits = client.get("/api/search", params={"q": "kafka bottleneck"}).json()
+    assert any(h["entity_type"] == "board" and h["entity_id"] == bid for h in hits)
+    client.delete(f"/api/boards/{bid}")
+    hits = client.get("/api/search", params={"q": "kafka bottleneck"}).json()
+    assert not any(h["entity_type"] == "board" for h in hits)
