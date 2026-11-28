@@ -59,6 +59,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   `timebox ADR 14:00 tomorrow`, `note Retro ideas`, `board Q1 plan`,
   `call Priya 20m`, `add Book flights @fri` — the action is shown before you
   press Enter; tasks are matched by name.
+- **Habits** (opt-in dock gadget — Settings → Gadgets): daily, weekday or
+  weekly habits with a tick for today, a kind streak (today still open never
+  breaks it) and the last seven days at a glance.
 - **Timeboxing** (Today → Timeline): your working hours as a strip with meetings,
   timeboxed tasks and the free time between. Drag a task onto it, click a free
   slot to place one, or set a start time in the task. **Fill my free time**

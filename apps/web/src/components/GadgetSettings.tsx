@@ -48,7 +48,7 @@ export function GadgetSettings({ focus }: { focus?: boolean }) {
           );
         })}
       </ul>
-      <button className="btn sm ghost" onClick={() => save({ order: DEFAULT_ORDER, hidden: [], collapsed: {} })}>
+      <button className="btn sm ghost" onClick={() => save({ order: DEFAULT_ORDER, hidden: ["habits"], collapsed: {} })}>
         Reset to defaults
       </button>
     </section>

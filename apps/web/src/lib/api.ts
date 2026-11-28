@@ -243,6 +243,10 @@ export const api = {
   person: (id: string) => request<PersonDetail>("GET", `/api/people-overview/${id}`),
   updatePerson: (id: string, changes: { role?: string; talking_points?: string }) => request<void>("PATCH", `/api/people-overview/${id}`, changes),
   prepNote: (id: string) => request<{ id: string; title: string }>("POST", `/api/people-overview/${id}/prep-note`),
+  habits: () => request<HabitRow[]>("GET", "/api/habits"),
+  addHabit: (name: string, cadence = "daily") => request<HabitRow>("POST", "/api/habits", { name, cadence }),
+  checkHabit: (id: string, done: boolean) => request<void>("POST", `/api/habits/${id}/check`, { done }),
+  archiveHabit: (id: string) => request<void>("POST", `/api/habits/${id}/archive`),
   checklists: () => request<ChecklistRow[]>("GET", "/api/checklists"),
   checklistStarters: () => request<ChecklistRow[]>("POST", "/api/checklists/starters"),
   saveChecklist: (name: string, lines: string, id?: string) => (id ? request<ChecklistRow>("PUT", `/api/checklists/${id}`, { name, lines }) : request<ChecklistRow>("POST", "/api/checklists", { name, lines })),
@@ -384,4 +388,15 @@ export interface ChecklistRow {
   uses: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface HabitRow {
+  id: string;
+  name: string;
+  emoji: string | null;
+  cadence: "daily" | "weekdays" | "weekly";
+  done_today: boolean;
+  streak: number;
+  rate_30d: number;
+  last_7: boolean[];
 }

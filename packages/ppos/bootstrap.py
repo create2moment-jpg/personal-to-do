@@ -21,6 +21,7 @@ from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
 from ppos.application.goals import GoalService
+from ppos.application.habits import HabitService
 from ppos.application.insights import InsightsService
 from ppos.application.meaning import MeaningMatcher
 from ppos.application.meetings import MeetingService
@@ -88,6 +89,7 @@ class Container:
     vault: VaultService
     people: PeopleService
     checklists: ChecklistService
+    habits: HabitService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -268,6 +270,7 @@ def build_container(
         vault=VaultService(notes),
         people=PeopleService(uow, clock, notes, workspace.tz),
         checklists=ChecklistService(uow, clock, tasks),
+        habits=HabitService(uow, clock),
         workflows=WorkflowService(
             uow,
             clock,

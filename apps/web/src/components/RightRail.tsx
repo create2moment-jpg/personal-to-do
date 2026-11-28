@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pause, Phone, Play, RotateCcw, Search, Settings2, Sparkles, Square, Star, Timer, X } from "lucide-react";
+import { ArrowRight, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Flame, Pause, Phone, Play, RotateCcw, Search, Settings2, Sparkles, Square, Star, Timer, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
@@ -107,6 +107,7 @@ export function RightRail({ view }: { view: ViewId }) {
     calendar: () => <CalendarGadget />,
     upnext: () => <UpNextGadget />,
     priorities: () => <PrioritiesGadget />,
+    habits: () => <HabitsGadget />,
     calls: () => (
       <>
         <CallTimer />
@@ -322,6 +323,82 @@ function PrioritiesGadget() {
           ))}
         </ol>
       )}
+    </div>
+  );
+}
+
+function HabitsGadget() {
+  const qc = useQueryClient();
+  const { data: habits = [] } = useQuery({ queryKey: ["habits"], queryFn: () => api.habits() });
+  const [name, setName] = useState("");
+  const refresh = () => void qc.invalidateQueries({ queryKey: ["habits"] });
+  return (
+    <div className="rail-card habits-card">
+      <div className="section-label">
+        <Flame /> Habits
+      </div>
+      <ul className="habit-list">
+        {habits.map((h) => (
+          <li key={h.id}>
+            <label>
+              <input
+                key={`${h.id}-${h.done_today}`}
+                type="checkbox"
+                className="check"
+                defaultChecked={h.done_today}
+                aria-label={`${h.name} done ${h.cadence === "weekly" ? "this week" : "today"}`}
+                onChange={async (e) => {
+                  const done = e.target.checked; // the box keeps its own state until the server confirms
+                  try {
+                    await api.checkHabit(h.id, done);
+                  } finally {
+                    refresh();
+                  }
+                }}
+              />
+              <span className="habit-name">
+                {h.emoji ? `${h.emoji} ` : ""}
+                {h.name}
+              </span>
+            </label>
+            <span className="habit-dots" aria-hidden title="Last 7 days">
+              {h.last_7.map((d, i) => (
+                <i key={i} className={d ? "on" : ""} />
+              ))}
+            </span>
+            <span className={cx("habit-streak", h.streak > 0 && "hot")} title={`${h.streak} ${h.cadence === "weekly" ? "week" : "day"} streak · ${Math.round(h.rate_30d * 100)}% of the last 30 days`}>
+              {h.streak > 0 ? `🔥${h.streak}` : "–"}
+            </span>
+            <button
+              className="habit-x"
+              aria-label={`Stop tracking ${h.name}`}
+              title="Stop tracking (history is kept)"
+              onClick={async () => {
+                if (!confirm(`Stop tracking “${h.name}”?`)) return;
+                await api.archiveHabit(h.id);
+                refresh();
+              }}
+            >
+              <X size={11} />
+            </button>
+          </li>
+        ))}
+      </ul>
+      <form
+        className="habit-add"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          const v = name.trim();
+          if (!v) return;
+          const weekly = /\s+weekly$/i.test(v);
+          const weekdays = /\s+weekdays$/i.test(v);
+          await api.addHabit(v.replace(/\s+(weekly|weekdays)$/i, ""), weekly ? "weekly" : weekdays ? "weekdays" : "daily");
+          setName("");
+          refresh();
+        }}
+      >
+        <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder={habits.length ? "Add a habit…" : "Add a habit, e.g. Walk 20 min"} aria-label="Add a habit" title='Daily by default; end with "weekly" or "weekdays"' />
+      </form>
     </div>
   );
 }

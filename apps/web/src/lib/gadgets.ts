@@ -1,8 +1,8 @@
-import { CalendarDays, CalendarClock, Clock, ListTodo, Phone, Sparkles, Star, Timer, type LucideIcon } from "lucide-react";
+import { CalendarDays, CalendarClock, Clock, Flame, ListTodo, Phone, Sparkles, Star, Timer, type LucideIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import type { ViewId } from "./ui-store";
 
-export type GadgetId = "clock" | "agenda" | "calendar" | "upnext" | "priorities" | "calls" | "focus" | "assistant";
+export type GadgetId = "clock" | "agenda" | "calendar" | "upnext" | "priorities" | "habits" | "calls" | "focus" | "assistant";
 
 export const GADGETS: Record<GadgetId, { label: string; icon: LucideIcon; hint: string }> = {
   clock: { label: "Clock", icon: Clock, hint: "Time, date and how far through your working day you are" },
@@ -10,12 +10,15 @@ export const GADGETS: Record<GadgetId, { label: string; icon: LucideIcon; hint: 
   calendar: { label: "Calendar", icon: CalendarDays, hint: "Month view with meetings, planned and due work per day" },
   upnext: { label: "Up next", icon: ListTodo, hint: "The task to pick up now" },
   priorities: { label: "Top priorities", icon: Star, hint: "Today's three starred tasks" },
+  habits: { label: "Habits", icon: Flame, hint: "Small daily or weekly habits and their streaks (off until you turn it on)" },
   calls: { label: "Calls", icon: Phone, hint: "Call timer and your recent calls" },
   focus: { label: "Focus timer", icon: Timer, hint: "25 / 50 / 90 minute focus blocks" },
   assistant: { label: "Assistant", icon: Sparkles, hint: "Local AI status and a quick question box" },
 };
 
-export const DEFAULT_ORDER: GadgetId[] = ["clock", "agenda", "calendar", "upnext", "priorities", "calls", "focus", "assistant"];
+export const DEFAULT_ORDER: GadgetId[] = ["clock", "agenda", "calendar", "upnext", "priorities", "habits", "calls", "focus", "assistant"];
+/** Opt-in gadgets: hidden until turned on in Settings → Gadgets (also for existing setups). */
+const DEFAULT_HIDDEN: GadgetId[] = ["habits"];
 
 /** Pages with wide content start with the dock collapsed to a slim strip. */
 const WIDE_VIEWS: ViewId[] = ["notes", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai", "workflows", "settings", "boards", "people"];
@@ -36,13 +39,15 @@ function load(): GadgetPrefs {
       const p = JSON.parse(raw) as Partial<GadgetPrefs>;
       const known = (p.order ?? []).filter((g): g is GadgetId => g in GADGETS);
       // gadgets added in a later version appear at the end
-      const order = [...known, ...DEFAULT_ORDER.filter((g) => !known.includes(g))];
-      return { order, hidden: (p.hidden ?? []).filter((g) => g in GADGETS), collapsed: p.collapsed ?? {} };
+      const added = DEFAULT_ORDER.filter((g) => !known.includes(g));
+      const order = [...known, ...added];
+      const hidden = [...(p.hidden ?? []).filter((g) => g in GADGETS), ...added.filter((g) => DEFAULT_HIDDEN.includes(g))];
+      return { order, hidden, collapsed: p.collapsed ?? {} };
     }
   } catch {
     /* storage unavailable or corrupt: defaults */
   }
-  return { order: DEFAULT_ORDER, hidden: [], collapsed: {} };
+  return { order: DEFAULT_ORDER, hidden: DEFAULT_HIDDEN, collapsed: {} };
 }
 
 /** Per-device preferences (a convenience, not data): shared by the dock and Settings. */
