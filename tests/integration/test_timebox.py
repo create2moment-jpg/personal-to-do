@@ -78,3 +78,22 @@ def test_timebox_api(client: TestClient) -> None:
     assert bad.status_code == 422
     sat = client.get("/api/days/2026-11-28/timeline").json()
     assert sat["window"] is None and sat["free"] == []
+
+
+def test_calendar_month_counts(client: TestClient) -> None:
+    client.patch("/api/settings", json={"timezone": "UTC"})
+    client.post("/api/tasks", json={"title": "Planned", "scheduled_date": "2026-11-26"})
+    client.post("/api/tasks", json={"title": "Due", "due_date": "2026-11-27"})
+    client.post("/api/tasks", json={"title": "Other month", "scheduled_date": "2026-12-02"})
+    client.post(
+        "/api/meetings",
+        json={"title": "Sync", "start_at": "2026-11-26T10:00:00+00:00", "minutes": 30},
+    )
+    marks = {m["day"]: m for m in client.get("/api/calendar/month/2026-11").json()}
+    assert marks["2026-11-26"]["planned"] == 1 and marks["2026-11-26"]["meetings"] == 1
+    assert marks["2026-11-27"]["due"] == 1 and "2026-12-02" not in marks
+    assert client.get("/api/calendar/month/nonsense").status_code == 422
+
+
+def test_calendar_routes_do_not_shadow_each_other(client: TestClient) -> None:
+    assert client.get("/api/calendar/last-import").status_code == 200

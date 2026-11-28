@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, BookOpenText, CheckCircle2, FileText, Loader2, NotebookPen, RefreshCw, Search, ShieldCheck, Sparkles, SquareCheck, Star, Wand2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { api } from "../lib/api";
 import { invalidateTasks } from "../lib/queries";
@@ -26,10 +26,13 @@ function useOpenSource() {
   };
 }
 
-export function AssistantView() {
+export function AssistantView({ initialQuestion }: { initialQuestion?: string } = {}) {
   const qc = useQueryClient();
   const { data: st } = useQuery({ queryKey: ["assistant-status"], queryFn: api.assistantStatus, refetchInterval: (q) => (q.state.data?.running ? 1500 : false) });
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState(initialQuestion ?? "");
+  useEffect(() => {
+    if (initialQuestion) setQ(initialQuestion); // from the Assistant gadget
+  }, [initialQuestion]);
   const [busy, setBusy] = useState(false);
   const [answers, setAnswers] = useState<AssistantAnswer[]>([]);
   const [results, setResults] = useState<{ q: string; sources: AssistantSource[]; semantic: boolean } | null>(null);

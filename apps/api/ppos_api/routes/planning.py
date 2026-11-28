@@ -43,6 +43,15 @@ def _capacity(cap: CapacitySummary) -> CapacityOut:
     )
 
 
+@router.get("/api/calendar/month/{month}")
+def calendar_month(month: str, c: ContainerDep) -> list[dict[str, Any]]:
+    """Per-day counts for the calendar gadget (days with nothing are left out)."""
+    from ppos.application.calendar import month_marks
+
+    marks = month_marks(month, c.tasks, c.meetings, c.settings_service.tz)
+    return [m.__dict__ | {"day": m.day.isoformat()} for m in marks]
+
+
 @router.get("/api/today", response_model=TodayOut)
 def today(c: ContainerDep, day: date | None = None) -> TodayOut:
     view = c.days.today_view(day)

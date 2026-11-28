@@ -229,6 +229,7 @@ export const api = {
   improvePageStream: (id: string, style: string, body: string | undefined, onEvent: (e: ImproveEvent) => void, signal?: AbortSignal) =>
     streamEvents<ImproveEvent>(`/api/book-nodes/${id}/improve/stream`, { style, body }, onEvent, signal),
   explainChanges: (original: string, improved: string) => request<{ notes: string[]; model: string }>("POST", "/api/book/explain-changes", { original, improved }),
+  calendarMonth: (month: string) => request<{ day: string; meetings: number; planned: number; due: number; done: number }[]>("GET", `/api/calendar/month/${month}`),
   timeline: (day: string) => request<DayTimeline>("GET", `/api/days/${day}/timeline`),
   timebox: (id: string, day: string, start: string | null) => request<Task>("PUT", `/api/tasks/${id}/timebox`, { day, start }),
   proposeTimeboxes: (day: string) => request<TimeboxProposal>("POST", `/api/days/${day}/timebox/propose`),

@@ -20,6 +20,7 @@ import { CareerView } from "./views/CareerView";
 import { GoalsView } from "./views/GoalsView";
 import { InsightsView } from "./views/InsightsView";
 import { WorkflowsView } from "./views/WorkflowsView";
+import { useGadgetPrefs } from "./lib/gadgets";
 import { ReviewsView } from "./views/ReviewsView";
 import { SkillsView } from "./views/SkillsView";
 import { KnowledgeView } from "./views/KnowledgeView";
@@ -37,9 +38,15 @@ import { TodayView } from "./views/TodayView";
 const NotesView = lazy(() => import("./views/NotesView").then((m) => ({ default: m.NotesView })));
 
 function routeFromHash(): { view: ViewId; arg?: string } {
-  const [view, arg] = window.location.hash.replace(/^#\/?/, "").split("/");
+  const [view, raw] = window.location.hash.replace(/^#\/?/, "").split("/");
   const found = ALL_NAV.find((n) => n.id === view);
-  return { view: found ? found.id : "today", arg: arg || undefined };
+  let arg = raw || undefined;
+  try {
+    arg = raw ? decodeURIComponent(raw) : undefined; // e.g. a question from the Assistant gadget
+  } catch {
+    /* malformed escape: use it as is */
+  }
+  return { view: found ? found.id : "today", arg };
 }
 
 export function App() {
@@ -55,7 +62,7 @@ export function App() {
   const gPressed = useRef(0);
 
   const navigate = useCallback((v: ViewId, a?: string) => {
-    window.location.hash = a ? `/${v}/${a}` : `/${v}`;
+    window.location.hash = a ? `/${v}/${encodeURIComponent(a)}` : `/${v}`;
   }, []);
 
   const ui = useMemo<UiActions>(
@@ -112,10 +119,11 @@ export function App() {
     return () => window.removeEventListener("keydown", onKey);
   }, [navigate, capture.open, paletteOpen, shortcutsOpen, taskId, callDraft, schedule]);
 
+  const gadgets = useGadgetPrefs();
   const current = ALL_NAV.find((n) => n.id === view)!;
   let page: JSX.Element;
   if (current.phase) page = <ComingSoonView view={view} />;
-  else if (view === "today") page = <TodayView />;
+  else if (view === "today") page = <TodayView initialDay={arg} />;
   else if (view === "board") page = <BoardView />;
   else if (view === "upcoming") page = <UpcomingView />;
   else if (view === "week") page = <WeekView initialTab={arg === "review" ? "review" : "plan"} />;
@@ -128,18 +136,18 @@ export function App() {
   else if (view === "skills") page = <SkillsView />;
   else if (view === "reviews") page = <ReviewsView reviewId={arg} />;
   else if (view === "analytics") page = <InsightsView />;
-  else if (view === "ai") page = <AssistantView />;
+  else if (view === "ai") page = <AssistantView initialQuestion={arg} />;
   else if (view === "workflows") page = <WorkflowsView />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;
-  else page = <SettingsView />;
+  else page = <SettingsView section={arg} />;
 
-  const showRail = !["notes", "settings", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai", "workflows"].includes(view);
+  const slimRail = gadgets.isCollapsed(view);
 
   return (
     <UiContext.Provider value={ui}>
-      <div className={cx("shell", !showRail && "no-rail")}>
+      <div className={cx("shell", slimRail && "slim-rail")}>
         <Sidebar view={view} />
         <main className="main" id="main">
           <AnimatePresence mode="wait" initial={false}>
@@ -148,7 +156,7 @@ export function App() {
             </motion.div>
           </AnimatePresence>
         </main>
-        {showRail && <RightRail />}
+        <RightRail view={view} />
       </div>
 
       <nav className="mobile-bar" aria-label="Mobile navigation">

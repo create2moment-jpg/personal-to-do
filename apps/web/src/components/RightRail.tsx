@@ -1,87 +1,379 @@
+import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { ArrowRight, Pause, Phone, Play, RotateCcw, Sparkles, Square, Star, Timer, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { ArrowRight, CalendarPlus, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pause, Phone, Play, RotateCcw, Search, Settings2, Sparkles, Square, Star, Timer, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useToday } from "../lib/queries";
+import { api } from "../lib/api";
+import { GADGETS, type GadgetId, useGadgetPrefs } from "../lib/gadgets";
+import { useSettings, useToday } from "../lib/queries";
+import type { ViewId } from "../lib/ui-store";
 import { useUi } from "../lib/ui-store";
-import { clockTime, cx, formatMinutes, getWorkspaceTimeZone, isoDay } from "../lib/util";
+import { addDays, clockTime, cx, formatMinutes, getWorkspaceTimeZone, isoDay } from "../lib/util";
 
-export function RightRail() {
-  const ui = useUi();
-  const [now, setNow] = useState(new Date());
-  const { data: today } = useToday(isoDay());
+const CALL_KEY = "ppos.callStartedAt";
 
+/** Minutes since midnight in the workspace time zone. */
+const nowMinutes = (d: Date) => {
+  const [h, m] = clockTime(d).split(":").map(Number);
+  return h! * 60 + m!;
+};
+const toMin = (hhmm: string) => {
+  const [h, m] = hhmm.split(":").map(Number);
+  return h! * 60 + m!;
+};
+
+const NARROW = "(max-width: 1440px)";
+
+/** True on laptop-width screens, where the expanded dock is a drawer over the page. */
+function useNarrow() {
+  const [narrow, setNarrow] = useState(() => window.matchMedia?.(NARROW).matches ?? false);
   useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 10_000);
+    const mq = window.matchMedia?.(NARROW);
+    if (!mq) return;
+    const on = () => setNarrow(mq.matches);
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
+  return narrow;
+}
+
+function useNow(ms = 10_000) {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), ms);
+    return () => clearInterval(t);
+  }, [ms]);
+  return now;
+}
+
+/**
+ * The gadget dock: clock, today's meetings, calendar, up next, priorities, calls,
+ * focus timer and assistant — on every page. Collapses to a slim strip; which
+ * gadgets show and their order are set in Settings → Gadgets.
+ */
+export function RightRail({ view }: { view: ViewId }) {
+  const ui = useUi();
+  const { prefs, save, isCollapsed } = useGadgetPrefs();
+  const narrow = useNarrow();
+  const [drawer, setDrawer] = useState(false); // laptop width: a temporary drawer, never remembered
+  useEffect(() => setDrawer(false), [view]);
+  useEffect(() => {
+    if (!drawer) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setDrawer(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawer]);
+  const collapsed = narrow ? !drawer : isCollapsed(view);
+  const now = useNow();
+  const [inCall, setInCall] = useState(false);
+  useEffect(() => {
+    const check = () => {
+      try {
+        setInCall(!!localStorage.getItem(CALL_KEY));
+      } catch {
+        setInCall(false);
+      }
+    };
+    check();
+    const t = setInterval(check, 2000);
     return () => clearInterval(t);
   }, []);
+  const setCollapsed = (v: boolean) => (narrow ? setDrawer(!v) : save({ ...prefs, collapsed: { ...prefs.collapsed, [view]: v } }));
+  const visible = prefs.order.filter((g) => !prefs.hidden.includes(g));
 
-  const minutes = now.getHours() * 60 + now.getMinutes();
-  const workday = Math.max(0, Math.min(1, (minutes - 8 * 60) / (10 * 60))); // 08:00–18:00
+  if (collapsed) {
+    return (
+      <aside className="rail slim" aria-label="Gadgets (collapsed)">
+        <button className="slim-clock" title="Show gadgets" onClick={() => setCollapsed(false)}>
+          {clockTime(now)}
+        </button>
+        {visible.map((g) => {
+          const G = GADGETS[g];
+          return (
+            <button key={g} className={cx("btn icon ghost slim-btn", g === "calls" && inCall && "live")} aria-label={`Show ${G.label}`} title={G.label} onClick={() => setCollapsed(false)}>
+              <G.icon />
+            </button>
+          );
+        })}
+        <button className="btn icon ghost slim-btn" style={{ marginTop: "auto" }} aria-label="Expand gadgets" title="Expand gadgets" onClick={() => setCollapsed(false)}>
+          <ChevronsLeft />
+        </button>
+      </aside>
+    );
+  }
+  const render: Record<GadgetId, () => JSX.Element | null> = {
+    clock: () => <ClockGadget now={now} />,
+    agenda: () => <AgendaGadget now={now} />,
+    calendar: () => <CalendarGadget />,
+    upnext: () => <UpNextGadget />,
+    priorities: () => <PrioritiesGadget />,
+    calls: () => (
+      <>
+        <CallTimer />
+        <RecentCalls />
+      </>
+    ),
+    focus: () => <FocusTimer />,
+    assistant: () => <AssistantGadget />,
+  };
+  return (
+    <aside className="rail" aria-label="Gadgets">
+      <div className="rail-head">
+        <span className="section-label">Gadgets</span>
+        <button className="btn icon sm ghost" aria-label="Choose gadgets" title="Choose gadgets" onClick={() => ui.navigate("settings", "gadgets")}>
+          <Settings2 />
+        </button>
+        <button className="btn icon sm ghost" aria-label="Collapse gadgets" title="Collapse to a slim strip" onClick={() => setCollapsed(true)}>
+          <ChevronsRight />
+        </button>
+      </div>
+      {visible.map((g) => (
+        <div key={g} className="gadget" data-gadget={g}>
+          {render[g]()}
+        </div>
+      ))}
+      {visible.length === 0 && <div className="faint" style={{ fontSize: "0.86rem" }}>All gadgets are hidden — choose some in Settings → Gadgets.</div>}
+    </aside>
+  );
+}
 
-  const top = today
-    ? today.plan.top_priority_ids.map((id) => today.tasks.find((t) => t.id === id)).filter((t) => t !== undefined)
-    : [];
+function ClockGadget({ now }: { now: Date }) {
+  const { data: settings } = useSettings();
+  const start = toMin(settings?.work_start ?? "08:00");
+  const end = toMin(settings?.work_end ?? "17:00");
+  const m = nowMinutes(now);
+  const progress = Math.max(0, Math.min(1, (m - start) / Math.max(1, end - start)));
+  const left = end - m;
+  return (
+    <div className="rail-card">
+      <div className="clock-time">{clockTime(now)}</div>
+      <div className="clock-date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: getWorkspaceTimeZone() })}</div>
+      <div className="day-progress" title={`Working hours ${settings?.work_start ?? "08:00"}–${settings?.work_end ?? "17:00"}`}>
+        <motion.div initial={{ width: 0 }} animate={{ width: `${progress * 100}%` }} transition={{ duration: 0.8 }} />
+      </div>
+      <div className="faint clock-left">{m < start ? `Workday starts at ${settings?.work_start ?? "08:00"}` : left > 0 ? `${formatMinutes(left)} of the workday left` : "Workday done"}</div>
+    </div>
+  );
+}
+
+function AgendaGadget({ now }: { now: Date }) {
+  const ui = useUi();
+  const { data: today } = useToday(isoDay());
+  const meetings = useMemo(
+    () => (today?.meetings ?? []).filter((m) => !m.all_day && m.effective_status !== "skipped").sort((a, b) => a.start_at.localeCompare(b.start_at)),
+    [today],
+  );
+  const t = now.getTime();
+  const current = meetings.find((m) => new Date(m.start_at).getTime() <= t && new Date(m.end_at).getTime() > t);
+  const next = meetings.find((m) => new Date(m.start_at).getTime() > t);
+  const later = meetings.filter((m) => new Date(m.start_at).getTime() > t && m !== next).slice(0, 4);
+  const mins = (iso: string) => Math.round((new Date(iso).getTime() - t) / 60000);
+  return (
+    <div className="rail-card">
+      <div className="section-label">
+        <CalendarPlus /> Today’s meetings
+        <button className="btn icon sm ghost" style={{ marginLeft: "auto" }} aria-label="Schedule a meeting from the dock" title="Add meeting" onClick={() => ui.openScheduleMeeting({ day: isoDay() })}>
+          <CalendarPlus />
+        </button>
+      </div>
+      {current && (
+        <div className="agenda-now">
+          <span className="chip accent">Now</span> <strong>{current.title}</strong>
+          <div className="faint">ends {clockTime(current.end_at)} · {formatMinutes(Math.max(0, mins(current.end_at)))} left</div>
+        </div>
+      )}
+      {next ? (
+        <div className="agenda-next">
+          <div>
+            <span className="faint">Next</span> <strong>{next.title}</strong>
+          </div>
+          <div className="faint">
+            {clockTime(next.start_at)} · in {formatMinutes(Math.max(1, mins(next.start_at)))}
+            {next.location ? ` · ${next.location}` : ""}
+          </div>
+        </div>
+      ) : (
+        !current && <div className="faint" style={{ fontSize: "0.86rem" }}>{meetings.length ? "No more meetings today." : "No meetings today."}</div>
+      )}
+      {later.length > 0 && (
+        <ul className="agenda-list">
+          {later.map((m) => (
+            <li key={m.id}>
+              <span className="mono">{clockTime(m.start_at)}</span> {m.title}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+const WEEKDAYS = ["M", "T", "W", "T", "F", "S", "S"];
+
+function CalendarGadget() {
+  const ui = useUi();
+  const today = isoDay();
+  const [month, setMonth] = useState(today.slice(0, 7));
+  const { data: marks = [] } = useQuery({ queryKey: ["calendar", month], queryFn: () => api.calendarMonth(month), staleTime: 60_000 });
+  const byDay = useMemo(() => new Map(marks.map((m) => [m.day, m])), [marks]);
+  const [y, mo] = month.split("-").map(Number) as [number, number];
+  const first = `${month}-01`;
+  const lead = (new Date(Date.UTC(y, mo - 1, 1)).getUTCDay() + 6) % 7;
+  const days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  const cells: (string | null)[] = [...Array(lead).fill(null), ...Array.from({ length: days }, (_, i) => addDays(first, i))];
+  const shift = (n: number) => {
+    const d = new Date(Date.UTC(y, mo - 1 + n, 1));
+    setMonth(d.toISOString().slice(0, 7));
+  };
+  const label = new Date(Date.UTC(y, mo - 1, 1)).toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
+  return (
+    <div className="rail-card cal-card">
+      <div className="cal-head">
+        <button className="btn icon sm ghost" aria-label="Previous month" onClick={() => shift(-1)}>
+          <ChevronLeft />
+        </button>
+        <button className="cal-title" onClick={() => setMonth(today.slice(0, 7))} title="Back to this month">
+          {label}
+        </button>
+        <button className="btn icon sm ghost" aria-label="Next month" onClick={() => shift(1)}>
+          <ChevronRight />
+        </button>
+      </div>
+      <div className="cal-grid" role="grid" aria-label={label}>
+        {WEEKDAYS.map((w, i) => (
+          <span key={i} className="cal-dow">
+            {w}
+          </span>
+        ))}
+        {cells.map((d, i) => {
+          if (!d) return <span key={`e${i}`} />;
+          const mk = byDay.get(d);
+          const parts = mk ? [mk.meetings && `${mk.meetings} meeting(s)`, mk.planned && `${mk.planned} planned`, mk.due && `${mk.due} due`, mk.done && `${mk.done} done`].filter(Boolean) : [];
+          return (
+            <button key={d} className={cx("cal-day", d === today && "today", d < today && "past")} title={`${d}${parts.length ? ` · ${parts.join(", ")}` : ""}`} aria-label={`${d}${parts.length ? `: ${parts.join(", ")}` : ""}`} onClick={() => ui.navigate("today", d)}>
+              <span>{Number(d.slice(8))}</span>
+              {mk && (
+                <i className="cal-dots" aria-hidden>
+                  {mk.meetings > 0 && <b className="m" />}
+                  {mk.planned > 0 && <b className="p" />}
+                  {mk.due > 0 && <b className="d" />}
+                </i>
+              )}
+            </button>
+          );
+        })}
+      </div>
+      <div className="cal-legend faint">
+        <b className="m" /> meetings <b className="p" /> planned <b className="d" /> due
+      </div>
+    </div>
+  );
+}
+
+function UpNextGadget() {
+  const ui = useUi();
+  const { data: today } = useToday(isoDay());
   const next =
     today?.tasks.find((t) => t.status === "in_progress" && t.parent_id === null) ??
     today?.tasks.find((t) => t.status === "planned" && t.parent_id === null && today.plan.top_priority_ids.includes(t.id)) ??
     today?.tasks.find((t) => t.status === "planned" && t.parent_id === null);
-
   return (
-    <aside className="rail" aria-label="Utilities">
-      <div className="rail-card">
-        <div className="clock-time">{clockTime(now)}</div>
-        <div className="clock-date">{now.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", timeZone: getWorkspaceTimeZone() })}</div>
-        <div className="day-progress" title="Workday progress (08:00–18:00)">
-          <motion.div initial={{ width: 0 }} animate={{ width: `${workday * 100}%` }} transition={{ duration: 0.8 }} />
-        </div>
+    <div className="rail-card">
+      <div className="section-label">
+        <ArrowRight /> Up next
       </div>
-
-      {next && (
-        <div className="rail-card">
-          <div className="section-label">
-            <ArrowRight /> Up next
-          </div>
+      {next ? (
+        <>
           <button className="btn ghost block" style={{ justifyContent: "flex-start", height: "auto", padding: "4px 0", whiteSpace: "normal", textAlign: "left", color: "var(--text)" }} onClick={() => ui.openTask(next.id)}>
             {next.title}
           </button>
-          {next.estimate_minutes !== null && <div className="faint" style={{ fontSize: "0.8571rem" }}>{formatMinutes(next.estimate_minutes)} estimated</div>}
-        </div>
-      )}
-
-      <div className="rail-card">
-        <div className="section-label">
-          <Star /> Top priorities
-        </div>
-        {top.length === 0 ? (
-          <div className="faint" style={{ fontSize: "0.8929rem" }}>
-            Star up to three tasks on Today to keep them in view.
+          <div className="faint" style={{ fontSize: "0.8571rem" }}>
+            {next.timebox_start ? `at ${next.timebox_start} · ` : ""}
+            {next.estimate_minutes !== null ? `${formatMinutes(next.estimate_minutes)} estimated` : ""}
           </div>
-        ) : (
-          <ol className="priority-list">
-            {top.map((t, i) => (
-              <li key={t.id} className={cx(t.status === "done" && "done")} onClick={() => ui.openTask(t.id)}>
-                <span className="p-num">{t.status === "done" ? "✓" : i + 1}</span>
-                <span className="p-title">{t.title}</span>
-              </li>
-            ))}
-          </ol>
-        )}
+        </>
+      ) : (
+        <div className="faint" style={{ fontSize: "0.86rem" }}>Nothing planned for today.</div>
+      )}
+    </div>
+  );
+}
+
+function PrioritiesGadget() {
+  const ui = useUi();
+  const { data: today } = useToday(isoDay());
+  const top = today ? today.plan.top_priority_ids.map((id) => today.tasks.find((t) => t.id === id)).filter((t) => t !== undefined) : [];
+  return (
+    <div className="rail-card">
+      <div className="section-label">
+        <Star /> Top priorities
       </div>
-
-      <CallTimer />
-
-      <FocusTimer />
-
-      <div className="rail-card ai-card" style={{ marginTop: "auto" }}>
-        <div className="section-label">
-          <Sparkles /> Assistant
+      {top.length === 0 ? (
+        <div className="faint" style={{ fontSize: "0.8929rem" }}>
+          Star up to three tasks on Today to keep them in view.
         </div>
-        <div style={{ fontSize: "0.8929rem", color: "var(--text-2)" }}>
-          A private, on-device AI that drafts plans and reviews from your own records arrives in Phase 5. Everything works without it.
-        </div>
+      ) : (
+        <ol className="priority-list">
+          {top.map((t, i) => (
+            <li key={t.id} className={cx(t.status === "done" && "done")} onClick={() => ui.openTask(t.id)}>
+              <span className="p-num">{t.status === "done" ? "✓" : i + 1}</span>
+              <span className="p-title">{t.title}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+    </div>
+  );
+}
+
+function RecentCalls() {
+  const ui = useUi();
+  const today = isoDay();
+  const { data: meetings = [] } = useQuery({ queryKey: ["meetings", addDays(today, -13), today], queryFn: () => api.meetings(addDays(today, -13), today), staleTime: 60_000 });
+  const calls = meetings.filter((m) => m.kind === "call").sort((a, b) => b.start_at.localeCompare(a.start_at)).slice(0, 4);
+  if (calls.length === 0) return null;
+  return (
+    <div className="rail-card">
+      <div className="section-label">
+        <Phone /> Recent calls
+        <button className="link-btn" style={{ marginLeft: "auto", fontSize: "0.8rem" }} onClick={() => ui.navigate("meetings")}>
+          All
+        </button>
       </div>
-    </aside>
+      <ul className="agenda-list">
+        {calls.map((c) => (
+          <li key={c.id} title={c.note || undefined}>
+            <span className="mono">{new Date(c.start_at).toLocaleDateString(undefined, { weekday: "short", timeZone: getWorkspaceTimeZone() })}</span> {c.title}
+            <span className="faint"> · {formatMinutes(c.duration_minutes)}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function AssistantGadget() {
+  const ui = useUi();
+  const { data: st } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus, staleTime: 60_000 });
+  const [q, setQ] = useState("");
+  const on = !!st?.enabled;
+  return (
+    <div className="rail-card ai-card">
+      <div className="section-label">
+        <Sparkles /> Assistant <span className={cx("chip", on ? "green" : "")} style={{ marginLeft: "auto", height: "1.1rem", fontSize: "0.7rem" }}>{on ? "local AI on" : "AI off"}</span>
+      </div>
+      <form
+        className="ask-mini"
+        onSubmit={(e) => {
+          e.preventDefault();
+          if (q.trim().length >= 3) ui.navigate("ai", q.trim());
+          setQ("");
+        }}
+      >
+        <Search size={14} />
+        <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder={on ? "Ask about your work…" : "Search your records…"} aria-label="Ask the assistant" />
+      </form>
+    </div>
   );
 }
 
@@ -156,10 +448,9 @@ function FocusTimer() {
   );
 }
 
-const CALL_KEY = "ppos.callStartedAt";
 
 /** "In a call" stopwatch: stopping it opens Log call pre-filled. */
-function CallTimer() {
+export function CallTimer() {
   const ui = useUi();
   const [startedAt, setStartedAt] = useState<number | null>(() => {
     try {

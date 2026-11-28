@@ -30,7 +30,7 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { DayTimeline } from "../components/DayTimeline";
 import { MeetingRow } from "../components/meetings";
@@ -56,9 +56,12 @@ const COLUMN_EMPTY: Record<string, string> = {
 
 const boardCoordinates = columnCoordinates(() => ["backlog", ...COLUMNS]);
 
-export function TodayView() {
+export function TodayView({ initialDay }: { initialDay?: string } = {}) {
   const ui = useUi();
-  const [day, setDay] = useState(isoDay());
+  const [day, setDay] = useState(initialDay && /^\d{4}-\d{2}-\d{2}$/.test(initialDay) ? initialDay : isoDay());
+  useEffect(() => {
+    if (initialDay && /^\d{4}-\d{2}-\d{2}$/.test(initialDay)) setDay(initialDay); // opened from the calendar
+  }, [initialDay]);
   const isToday = day === isoDay();
   const { data, isLoading } = useToday(day);
   const { data: backlog = [] } = useTasks({ status: "backlog", top_level: true });

@@ -25,7 +25,7 @@ export function EmojiPicker({ value, onChange, label = "Emoji" }: { value: strin
   };
   return (
     <span className="emoji-picker" ref={root}>
-      <button type="button" className={cx("emoji-btn", !value && "empty")} aria-label={value ? `${label}: ${value} — change` : `Add ${label.toLowerCase()}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+      <button type="button" className={cx("emoji-btn", !value && "is-unset")} aria-label={value ? `${label}: ${value} — change` : `Add ${label.toLowerCase()}`} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
         {value || <SmilePlus size={15} />}
       </button>
       {open && (

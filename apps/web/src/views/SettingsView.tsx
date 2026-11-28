@@ -10,9 +10,10 @@ import { DurationInput } from "../components/DurationPicker";
 import { Keys } from "../components/primitives";
 import { useHealth, useSettings } from "../lib/queries";
 import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
+import { GadgetSettings } from "../components/GadgetSettings";
 import { useUi } from "../lib/ui-store";
 
-export function SettingsView() {
+export function SettingsView({ section }: { section?: string } = {}) {
   const [appearance, set] = useAppearance();
   const { data: health } = useHealth();
   const ui = useUi();
@@ -155,6 +156,8 @@ export function SettingsView() {
           </div>
         </div>
       </section>
+
+      <GadgetSettings focus={section === "gadgets"} />
 
       <WorkSettings />
       <AiSettings />

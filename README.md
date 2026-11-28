@@ -42,6 +42,12 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   when you overcommit, drag/drop board (Planned → In progress → Blocked → Done),
   top-3 priorities, overdue and due-but-unscheduled lists, roll unfinished work to
   tomorrow, end-of-day review, daily journal.
+- **Gadget dock** on every page: clock with working-day progress, today's
+  meetings (next one with a countdown), a month calendar (meetings, planned and
+  due work per day — click a day to open it), up next, top priorities, call
+  timer and recent calls, focus timer, and a quick Ask box. Collapse it to a slim
+  strip (each page remembers); on laptop-width screens it opens as a drawer.
+  Choose and order gadgets in Settings → Gadgets.
 - **Timeboxing** (Today → Timeline): your working hours as a strip with meetings,
   timeboxed tasks and the free time between. Drag a task onto it, click a free
   slot to place one, or set a start time in the task. **Fill my free time**
