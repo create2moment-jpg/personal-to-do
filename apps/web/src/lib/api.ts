@@ -238,6 +238,11 @@ export const api = {
     streamEvents<ImproveEvent>(`/api/book-nodes/${id}/improve/stream`, { style, body }, onEvent, signal),
   explainChanges: (original: string, improved: string) => request<{ notes: string[]; model: string }>("POST", "/api/book/explain-changes", { original, improved }),
   calendarMonth: (month: string) => request<{ day: string; meetings: number; planned: number; due: number; done: number }[]>("GET", `/api/calendar/month/${month}`),
+  peopleOverview: () => request<PersonRow[]>("GET", "/api/people-overview"),
+  addPerson: (name: string, role = "") => request<PersonRow>("POST", "/api/people-overview", { name, role }),
+  person: (id: string) => request<PersonDetail>("GET", `/api/people-overview/${id}`),
+  updatePerson: (id: string, changes: { role?: string; talking_points?: string }) => request<void>("PATCH", `/api/people-overview/${id}`, changes),
+  prepNote: (id: string) => request<{ id: string; title: string }>("POST", `/api/people-overview/${id}/prep-note`),
   boards: () => request<BoardMeta[]>("GET", "/api/boards"),
   boardTemplates: () => request<Record<string, string>>("GET", "/api/boards/templates"),
   createBoard: (data: { title?: string; template?: string }) => request<BoardMeta>("POST", "/api/boards", data),
@@ -346,3 +351,23 @@ export const api = {
   updateProject: (id: string, changes: Partial<Project>) => request<Project>("PATCH", `/api/projects/${id}`, changes),
   search: (q: string) => request<SearchHit[]>("GET", `/api/search${qs({ q })}`),
 };
+
+export interface PersonRow {
+  id: string;
+  name: string;
+  role: string;
+  meetings_90d: number;
+  minutes_90d: number;
+  last_met: string | null;
+  next_meeting: string | null;
+  follow_ups: number;
+}
+
+export interface PersonDetail extends Omit<PersonRow, "follow_ups"> {
+  talking_points: string;
+  minutes_30d: number;
+  avg_rating: number | null;
+  meetings: { id: string; title: string; kind: string; start_at: string; day: string; minutes: number; rating: number | null; note: string; upcoming: boolean; skipped: boolean }[];
+  follow_ups: { id: string; title: string; status: string; due_date: string | null }[];
+  notes: { id: string; title: string; linked: boolean; snippet: string; updated_at: string }[];
+}

@@ -21,6 +21,7 @@ import { GoalsView } from "./views/GoalsView";
 import { InsightsView } from "./views/InsightsView";
 import { WorkflowsView } from "./views/WorkflowsView";
 import { BoardsView } from "./views/BoardsView";
+import { PeopleView } from "./views/PeopleView";
 import { useGadgetPrefs } from "./lib/gadgets";
 import { ReminderRunner } from "./components/Reminders";
 import { ReviewsView } from "./views/ReviewsView";
@@ -141,6 +142,7 @@ export function App() {
   else if (view === "ai") page = <AssistantView initialQuestion={arg} />;
   else if (view === "workflows") page = <WorkflowsView />;
   else if (view === "boards") page = <BoardsView boardId={arg} />;
+  else if (view === "people") page = <PeopleView personId={arg} />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;

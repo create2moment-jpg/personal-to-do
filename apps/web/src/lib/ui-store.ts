@@ -20,6 +20,7 @@ export type ViewId =
   | "ai"
   | "workflows"
   | "boards"
+  | "people"
   | "analytics"
   | "settings";
 
@@ -30,7 +31,7 @@ export interface UiActions {
   openCapture: (initial?: string) => void;
   openPalette: () => void;
   openShortcuts: () => void;
-  openLogCall: (draft?: { start?: string; minutes?: number }) => void;
+  openLogCall: (draft?: { start?: string; minutes?: number; people?: string[] }) => void;
   /** Add a meeting yourself (once or recurring), or edit a series you created. */
   openScheduleMeeting: (opts?: ScheduleOptions) => void;
 }

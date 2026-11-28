@@ -19,6 +19,7 @@ import {
   Target,
   TrendingUp,
   Workflow,
+  Users,
   LayoutDashboard,
 } from "lucide-react";
 import type { ViewId } from "./ui-store";
@@ -43,6 +44,7 @@ export const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
       { id: "backlog", label: "Backlog", icon: Inbox, shortcut: "G B" },
       { id: "projects", label: "Projects", icon: FolderKanban, shortcut: "G P" },
       { id: "meetings", label: "Meetings & time", icon: Clock3, shortcut: "G M" },
+      { id: "people", label: "People", icon: Users, shortcut: "G E" },
     ],
   },
   {
@@ -93,6 +95,7 @@ export const GOTO_KEYS: Record<string, ViewId> = {
   j: "ai",
   f: "workflows",
   o: "boards",
+  e: "people",
   s: "settings",
 };
 

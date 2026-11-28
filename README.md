@@ -68,6 +68,11 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   weekly objectives (with an optional emoji), sprint backlog to drag from, and a guided weekly review.
 - **Sprint**: goal, committed and stretch work, burndown, scope changes,
   completion with roll-over and a sprint review.
+- **People** (`g e`): a page per person — time together (30/90 days), last and
+  next meeting, your meetings and calls with them (and what you noted), open
+  follow-ups (tasks that name them), notes that mention or `[[link]]` them, a
+  role and talking points for next time. **Prep 1:1** writes a note with your
+  talking points, follow-ups and last time's notes; **Log call** is prefilled.
 - **Meetings & time**: import your Outlook calendar (read-only `.ics`), skip a
   recurring meeting with one click, **add your own meetings** (once, or
   daily / weekdays / weekly on chosen days / monthly, any duration), log calls (`call: Priya / ADR review ~30m

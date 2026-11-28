@@ -120,6 +120,7 @@ export function MeetingRow({ m, compact }: { m: Meeting; compact?: boolean }) {
 export interface CallDraft {
   start?: string; // ISO instant
   minutes?: number;
+  people?: string[]; // prefilled, e.g. from a person's page
 }
 
 /** Log a call or ad-hoc meeting: who, what, when, how long — keyboard friendly. */
@@ -136,7 +137,7 @@ function LogCallBody({ draft, onClose }: { draft?: CallDraft; onClose: () => voi
   const { data: people = [] } = usePeople();
   const { data: topics = [] } = useTopics();
   const startDate = draft?.start ? new Date(draft.start) : new Date(Date.now() - 30 * 60_000);
-  const [who, setWho] = useState<string[]>([]);
+  const [who, setWho] = useState<string[]>(draft?.people ?? []);
   const [whoInput, setWhoInput] = useState("");
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");

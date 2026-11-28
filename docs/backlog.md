@@ -66,7 +66,7 @@ with a reason).
 | B-024 | Reminders: desktop notification before a meeting, when a timebox starts, for work due today (opt-in, app open) | 2026-11-28 | done (Settings → Reminders: 1–15 min before attended meetings, timebox starts, due-today summary at the start of the workday; desktop notification in the background, toast in front; each fires once; nothing sent after a long sleep) | Settings → Reminders |
 | B-025 | Command bar that *does* things: "move X to tomorrow", "start focus 50", "log call with Priya 20m" | 2026-11-28 | idea (R-028) | — |
 | B-026 | Reusable checklists / task templates (release checklist, 1:1 prep, onboarding) | 2026-11-28 | idea (R-028) | — |
-| B-027 | People view: each person with shared meetings, calls, notes that mention them, open follow-ups, 1:1 talking points | 2026-11-28 | planned (R-028) | — |
+| B-027 | People view: each person with shared meetings, calls, notes that mention them, open follow-ups, 1:1 talking points | 2026-11-28 | done (time together 30/90 days, last/next meeting, value rating, meetings and calls with notes, follow-ups = open tasks naming them, notes that mention or [[link]] them, role and talking points, Prep 1:1 note, Log call prefilled; migration 0020) | People (`g e`) |
 | B-028 | Phone-friendly quick capture on the home network (token-protected) | 2026-11-28 | idea (R-028) — needs a decision on LAN exposure (threat model T4) | — |
 | B-029 | Weekly digest note generated on Friday from records (AI optional, cited) | 2026-11-28 | idea (R-028) — partly covered by Workflows → weekly review | — |
 | B-030 | Habits and streaks (opt-in, low-key, shown in the dock) | 2026-11-28 | idea (R-028) | — |

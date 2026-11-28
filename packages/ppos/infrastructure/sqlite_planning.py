@@ -231,6 +231,24 @@ class SqlitePeopleRepository(_NamedRepository):
     def delete(self, person_id: str) -> None:
         self._c.execute("DELETE FROM people WHERE id = ?", (person_id,))
 
+    def get(self, person_id: str) -> Person | None:
+        r = self._c.execute("SELECT * FROM people WHERE id = ?", (person_id,)).fetchone()
+        return Person(r["id"], r["name"], _req(r["created_at"])) if r else None
+
+    def profile(self, person_id: str) -> tuple[str, str]:
+        r = self._c.execute(
+            "SELECT role, talking_points FROM person_profiles WHERE person_id = ?", (person_id,)
+        ).fetchone()
+        return (r["role"], r["talking_points"]) if r else ("", "")
+
+    def set_profile(self, person_id: str, role: str, talking_points: str, at: str) -> None:
+        self._c.execute(
+            "INSERT INTO person_profiles (person_id, role, talking_points, updated_at)"
+            " VALUES (?,?,?,?) ON CONFLICT (person_id) DO UPDATE SET role = excluded.role,"
+            " talking_points = excluded.talking_points, updated_at = excluded.updated_at",
+            (person_id, role, talking_points, at),
+        )
+
 
 class SqliteTopicRepository(_NamedRepository):
     table = "topics"

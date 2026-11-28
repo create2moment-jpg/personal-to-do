@@ -24,6 +24,7 @@ from ppos.application.insights import InsightsService
 from ppos.application.meaning import MeaningMatcher
 from ppos.application.meetings import MeetingService
 from ppos.application.notes import LinkService, NoteService
+from ppos.application.people import PeopleService
 from ppos.application.planning import SprintService, WeekService
 from ppos.application.ports import SearchHit
 from ppos.application.reviews import ReviewService
@@ -84,6 +85,7 @@ class Container:
     workflows: WorkflowService
     boards: BoardService
     vault: VaultService
+    people: PeopleService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -262,6 +264,7 @@ def build_container(
         reviews=reviews,
         boards=BoardService(uow, clock, tasks, DocumentStore(settings.local_data_dir, "boards")),
         vault=VaultService(notes),
+        people=PeopleService(uow, clock, notes, workspace.tz),
         workflows=WorkflowService(
             uow,
             clock,
