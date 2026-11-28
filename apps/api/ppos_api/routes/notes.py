@@ -3,8 +3,9 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from fastapi import APIRouter, Query, Response, status
+from fastapi import APIRouter, Query, Request, Response, status
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 from ppos.application.ports import NoteQuery
 from ppos.domain.notes import EntityType, NoteKind
@@ -41,6 +42,26 @@ def list_notes(
 def create_note(body: NoteCreate, c: ContainerDep) -> NoteOut:
     data = body.model_dump()
     return NoteOut.model_validate(c.notes.create(data.pop("title"), data.pop("body"), **data))
+
+
+@router.get("/api/notes/export.zip")
+def export_vault(c: ContainerDep) -> Response:
+    """All notes as an Obsidian-compatible Markdown vault (zip)."""
+    return Response(
+        content=c.vault.export_zip(),
+        media_type="application/zip",
+        headers={"Content-Disposition": 'attachment; filename="personal-os-notes.zip"'},
+    )
+
+
+@router.post("/api/notes/import")
+async def import_vault(
+    request: Request, c: ContainerDep, filename: str = "notes.zip"
+) -> dict[str, Any]:
+    """Import an Obsidian vault (.zip) or a single .md file; identical notes are skipped."""
+    data = await request.body()
+    r = await run_in_threadpool(c.vault.import_files, filename, data)  # keep the server responsive
+    return {"created": r.created, "skipped": r.skipped, "errors": r.errors}
 
 
 @router.get("/api/notes/titles")

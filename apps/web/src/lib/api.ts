@@ -267,6 +267,12 @@ export const api = {
   deleteDocument: (id: string) => request<void>("DELETE", `/api/documents/${id}`),
   reindexDocument: (id: string) => request<{ queued: number }>("POST", `/api/documents/${id}/reindex`),
   searchDocuments: (q: string) => request<DocHit[]>("GET", `/api/documents/search${qs({ q })}`),
+  importNotes: async (file: File) => {
+    const res = await fetch(`/api/notes/import${qs({ filename: file.name })}`, { method: "POST", body: file });
+    const data = (await res.json()) as { created?: string[]; skipped?: string[]; errors?: string[]; detail?: string };
+    if (!res.ok) throw new ApiError(res.status, typeof data.detail === "string" ? data.detail : res.statusText);
+    return data as { created: string[]; skipped: string[]; errors: string[] };
+  },
   uploadDocument: async (file: File, kind: string) => {
     const res = await fetch(`/api/documents${qs({ filename: file.name, kind })}`, { method: "POST", body: file });
     const data = (await res.json()) as { document?: DocumentInfo; duplicate?: boolean; detail?: string };

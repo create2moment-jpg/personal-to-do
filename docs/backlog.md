@@ -70,7 +70,7 @@ with a reason).
 | B-028 | Phone-friendly quick capture on the home network (token-protected) | 2026-11-28 | idea (R-028) — needs a decision on LAN exposure (threat model T4) | — |
 | B-029 | Weekly digest note generated on Friday from records (AI optional, cited) | 2026-11-28 | idea (R-028) — partly covered by Workflows → weekly review | — |
 | B-030 | Habits and streaks (opt-in, low-key, shown in the dock) | 2026-11-28 | idea (R-028) | — |
-| B-031 | Markdown vault export / import, Obsidian-compatible (one .md file per note, front matter, [[links]] kept) | 2026-11-28 | planned (R-028) | — |
+| B-031 | Markdown vault export / import, Obsidian-compatible (one .md file per note, front matter, [[links]] kept) | 2026-11-28 | done (export: folder per kind, YAML front matter, links unescaped; import: vault .zip or .md, kind from front matter or folder, tags, identical notes skipped, .obsidian ignored, size-capped, nothing written to disk) | Notes → vault menu |
 | B-032 | Boards: freehand pen | 2026-11-28 | planned (R-028) | — |
 | B-033 | Boards: images (paste / drop, stored locally) | 2026-11-28 | planned (R-028) | — |
 | B-034 | Embed a board inside a note | 2026-11-28 | idea (R-028) | — |

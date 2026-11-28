@@ -1341,3 +1341,5 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .reminder-opts label { display: flex; align-items: center; gap: 8px; }
 .reminder-opts .select { width: auto; height: 1.9rem; }
 .reminder-opts:disabled { opacity: 0.55; }
+.menu-pop .menu-link { padding: 6px 8px; border-radius: 6px; font-size: 0.86rem; color: var(--text); text-decoration: none; }
+.menu-pop .menu-link:hover, .menu-pop .menu-link:focus-visible { background: var(--surface-2); }

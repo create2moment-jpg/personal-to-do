@@ -91,6 +91,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   and a local graph. Renaming a note updates every `[[link]]` to it (as new,
   undoable versions). **Graph** shows all notes and links. **Templates**: set a
   note's kind to Template and use `{{date}}`, `{{weekday}}`, `{{title}}`.
+  **Markdown vault:** export every note as an Obsidian-compatible zip (one
+  `.md` per note, front matter, `[[links]]` intact), or import a vault / `.md`
+  files — identical notes are skipped.
   **Improve** rewrites the selection or the whole note with your local model
   (clearer, shorter, structured, grammar, professional) — you review a diff,
   and accepting keeps the previous text in History.

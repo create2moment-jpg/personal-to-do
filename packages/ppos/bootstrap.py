@@ -31,6 +31,7 @@ from ppos.application.settings import SettingsService
 from ppos.application.skills import SkillService
 from ppos.application.tasks import ProjectService, TaskService
 from ppos.application.timebox import TimelineService
+from ppos.application.vault import VaultService
 from ppos.application.workflows import WorkflowService
 from ppos.domain.documents import ExtractedPage
 from ppos.domain.meetings import DayTime, Meeting, MeetingSeries, day_time
@@ -82,6 +83,7 @@ class Container:
     assistant: AssistantService
     workflows: WorkflowService
     boards: BoardService
+    vault: VaultService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -259,6 +261,7 @@ def build_container(
         assistant=assistant,
         reviews=reviews,
         boards=BoardService(uow, clock, tasks),
+        vault=VaultService(notes),
         workflows=WorkflowService(
             uow,
             clock,

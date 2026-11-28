@@ -40,6 +40,7 @@ import {
   FolderKanban,
   GraduationCap,
   LayoutTemplate,
+  FolderSync,
   Network,
   type LucideIcon,
 } from "lucide-react";
@@ -112,6 +113,7 @@ export function NotesView({ noteId }: { noteId?: string }) {
                 <Network /> Graph
               </button>
               <TemplateMenu />
+              <VaultMenu />
               <button className="btn sm primary" onClick={create}>
                 <Plus /> New
               </button>
@@ -588,6 +590,51 @@ function TemplateMenu() {
               No templates yet. Set a note’s kind to <b>Template</b>; use {"{{date}}"}, {"{{weekday}}"}, {"{{title}}"} inside.
             </div>
           )}
+        </div>
+      )}
+    </span>
+  );
+}
+
+/** Export all notes as an Obsidian-compatible vault, or import one (.zip or .md). */
+function VaultMenu() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const file = useRef<HTMLInputElement>(null);
+  return (
+    <span style={{ position: "relative" }}>
+      <button className="btn sm ghost" aria-expanded={open} aria-label="Markdown vault" title="Export or import Markdown (Obsidian vault)" onClick={() => setOpen((o) => !o)}>
+        <FolderSync />
+      </button>
+      <input
+        ref={file}
+        type="file"
+        hidden
+        accept=".zip,.md,application/zip,text/markdown"
+        aria-label="Import Markdown notes"
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          try {
+            const r = await api.importNotes(f);
+            for (const k of ["notes", "note-titles", "note-graph", "note-connections"]) void qc.invalidateQueries({ queryKey: [k] });
+            toast.success(`Imported ${r.created.length} note${r.created.length === 1 ? "" : "s"}`, {
+              description: [r.skipped.length ? `${r.skipped.length} already here (skipped)` : "", r.errors.length ? `${r.errors.length} could not be read` : ""].filter(Boolean).join(" · ") || undefined,
+            });
+          } catch (err) {
+            toast.error((err as Error).message);
+          }
+        }}
+      />
+      {open && (
+        <div className="menu-pop" role="menu" aria-label="Markdown vault" onMouseLeave={() => setOpen(false)}>
+          <a role="menuitem" className="menu-link" href="/api/notes/export.zip" download onClick={() => setOpen(false)}>
+            Export all notes (.zip, opens in Obsidian)
+          </a>
+          <button role="menuitem" onClick={() => { setOpen(false); file.current?.click(); }}>
+            Import a vault (.zip) or .md file…
+          </button>
         </div>
       )}
     </span>
