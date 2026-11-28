@@ -1,6 +1,10 @@
 import { Command } from "cmdk";
-import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun, LayoutDashboard } from "lucide-react";
+import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun, LayoutDashboard, Zap } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { type Action, parseCommand } from "../lib/commands";
+import { invalidateTasks } from "../lib/queries";
 import { api } from "../lib/api";
 import { ALL_NAV } from "../lib/nav";
 import { DARK_PALETTES, type DarkPalette, loadAppearance, setAppearance } from "../lib/theme";
@@ -35,6 +39,39 @@ function MenuBody({ onClose }: { onClose: () => void }) {
     return () => clearTimeout(t);
   }, [q]);
 
+  const qc = useQueryClient();
+  const { data: tasks = [] } = useQuery({ queryKey: ["tasks", "command-menu"], queryFn: () => api.tasks({ top_level: true, limit: 1000 }), staleTime: 15_000 });
+  const action = parseCommand(q, tasks, new Date());
+  const doAction = async (a: Action) => {
+    try {
+      if (a.kind === "done") {
+        await api.moveTask(a.task.id, { status: "done" });
+        invalidateTasks(qc);
+        toast.success(`Done: ${a.task.title}`);
+      } else if (a.kind === "move") {
+        await api.moveTask(a.task.id, { scheduled_date: a.day });
+        invalidateTasks(qc);
+        toast.success(`Moved “${a.task.title}” to ${a.day}`);
+      } else if (a.kind === "timebox") {
+        await api.timebox(a.task.id, a.day, a.start);
+        invalidateTasks(qc);
+        toast.success(`“${a.task.title}” at ${a.start} on ${a.day}`);
+      } else if (a.kind === "note") {
+        const n = await api.createNote({ title: a.title, kind: "general" });
+        void qc.invalidateQueries({ queryKey: ["notes"] });
+        ui.navigate("notes", n.id);
+      } else if (a.kind === "board") {
+        const b = await api.createBoard({ title: a.title });
+        ui.navigate("boards", b.id);
+      } else {
+        // capture-style lines are previewed in quick capture before anything is saved
+        ui.openCapture(a.kind === "call" ? a.line.replace(/\b(\d+)\s?(m|min|h)\b/g, (_m, n, u) => `~${n}${u === "h" ? "h" : "m"}`) : a.line);
+      }
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   const run = (fn: () => void) => () => {
     onClose();
     // let the dialog close before opening the next surface
@@ -45,10 +82,19 @@ function MenuBody({ onClose }: { onClose: () => void }) {
     <Command label="Command menu" shouldFilter loop>
       <div style={{ position: "relative" }}>
         <Search className="cmdk-search-icon" />
-        <Command.Input value={q} onValueChange={setQ} placeholder="Search tasks and notes, or type a command…" autoFocus />
+        <Command.Input value={q} onValueChange={setQ} placeholder="Search, or do: done …, move … to tomorrow, timebox … 14:00, note …, board …, call …" autoFocus />
       </div>
       <Command.List>
         <Command.Empty>No results for “{q}”.</Command.Empty>
+
+        {action && (
+          <Command.Group heading="Do">
+            <Command.Item value={`do ${q}`} onSelect={run(() => void doAction(action))} className="cmd-do">
+              <Zap /> <span>{action.label}</span>
+              <span className="cmd-hint">Enter</span>
+            </Command.Item>
+          </Command.Group>
+        )}
 
         {hits.length > 0 && (
           <Command.Group heading="Results">

@@ -51,6 +51,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Reminders** (Settings → Reminders, off by default): a nudge before meetings
   you attend, when a timebox starts, and what is due today at the start of your
   workday — desktop notifications while the app is open.
+- **⌘K does things**: `done Write ADR`, `move review to monday`,
+  `timebox ADR 14:00 tomorrow`, `note Retro ideas`, `board Q1 plan`,
+  `call Priya 20m`, `add Book flights @fri` — the action is shown before you
+  press Enter; tasks are matched by name.
 - **Timeboxing** (Today → Timeline): your working hours as a strip with meetings,
   timeboxed tasks and the free time between. Drag a task onto it, click a free
   slot to place one, or set a start time in the task. **Fill my free time**
