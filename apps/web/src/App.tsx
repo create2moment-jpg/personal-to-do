@@ -31,6 +31,7 @@ import { SprintView } from "./views/SprintView";
 import { WeekView } from "./views/WeekView";
 import { LogCallDialog, type CallDraft } from "./components/meetings";
 import { ScheduleMeetingDialog } from "./components/ScheduleMeeting";
+import { ChecklistsDialog } from "./components/Checklists";
 import { useSettings } from "./lib/queries";
 import { setWorkspaceTimeZone } from "./lib/util";
 import { ProjectsView } from "./views/ProjectsView";
@@ -60,6 +61,7 @@ export function App() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [callDraft, setCallDraft] = useState<CallDraft | null>(null);
   const [schedule, setSchedule] = useState<ScheduleOptions | null>(null);
+  const [checklistsOpen, setChecklistsOpen] = useState(false);
   const { data: settings } = useSettings();
   if (settings) setWorkspaceTimeZone(settings.timezone);
   const gPressed = useRef(0);
@@ -77,6 +79,7 @@ export function App() {
       openShortcuts: () => setShortcutsOpen(true),
       openLogCall: (draft) => setCallDraft(draft ?? {}),
       openScheduleMeeting: (opts) => setSchedule(opts ?? {}),
+      openChecklists: () => setChecklistsOpen(true),
     }),
     [navigate],
   );
@@ -190,6 +193,7 @@ export function App() {
       <ShortcutsDialog open={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
       <LogCallDialog open={callDraft !== null} draft={callDraft ?? undefined} onClose={() => setCallDraft(null)} />
       <ScheduleMeetingDialog open={schedule !== null} options={schedule ?? {}} onClose={() => setSchedule(null)} />
+      <ChecklistsDialog open={checklistsOpen} onClose={() => setChecklistsOpen(false)} />
       <TaskSheet taskId={taskId} onClose={() => setTaskId(null)} onOpenTask={setTaskId} />
     </UiContext.Provider>
   );

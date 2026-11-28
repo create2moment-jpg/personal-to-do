@@ -16,6 +16,7 @@ from ppos.application.boards import BoardService
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.career import CareerService
+from ppos.application.checklists import ChecklistService
 from ppos.application.daily import DayService
 from ppos.application.documents import DocumentService, Extractor, JobRunner
 from ppos.application.facts import FactService
@@ -86,6 +87,7 @@ class Container:
     boards: BoardService
     vault: VaultService
     people: PeopleService
+    checklists: ChecklistService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -265,6 +267,7 @@ def build_container(
         boards=BoardService(uow, clock, tasks, DocumentStore(settings.local_data_dir, "boards")),
         vault=VaultService(notes),
         people=PeopleService(uow, clock, notes, workspace.tz),
+        checklists=ChecklistService(uow, clock, tasks),
         workflows=WorkflowService(
             uow,
             clock,

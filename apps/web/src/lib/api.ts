@@ -243,6 +243,11 @@ export const api = {
   person: (id: string) => request<PersonDetail>("GET", `/api/people-overview/${id}`),
   updatePerson: (id: string, changes: { role?: string; talking_points?: string }) => request<void>("PATCH", `/api/people-overview/${id}`, changes),
   prepNote: (id: string) => request<{ id: string; title: string }>("POST", `/api/people-overview/${id}/prep-note`),
+  checklists: () => request<ChecklistRow[]>("GET", "/api/checklists"),
+  checklistStarters: () => request<ChecklistRow[]>("POST", "/api/checklists/starters"),
+  saveChecklist: (name: string, lines: string, id?: string) => (id ? request<ChecklistRow>("PUT", `/api/checklists/${id}`, { name, lines }) : request<ChecklistRow>("POST", "/api/checklists", { name, lines })),
+  deleteChecklist: (id: string) => request<void>("DELETE", `/api/checklists/${id}`),
+  applyChecklist: (id: string, day: string | null, title = "") => request<Task>("POST", `/api/checklists/${id}/apply`, { day, title }),
   boards: () => request<BoardMeta[]>("GET", "/api/boards"),
   boardTemplates: () => request<Record<string, string>>("GET", "/api/boards/templates"),
   createBoard: (data: { title?: string; template?: string }) => request<BoardMeta>("POST", "/api/boards", data),
@@ -370,4 +375,13 @@ export interface PersonDetail extends Omit<PersonRow, "follow_ups"> {
   meetings: { id: string; title: string; kind: string; start_at: string; day: string; minutes: number; rating: number | null; note: string; upcoming: boolean; skipped: boolean }[];
   follow_ups: { id: string; title: string; status: string; due_date: string | null }[];
   notes: { id: string; title: string; linked: boolean; snippet: string; updated_at: string }[];
+}
+
+export interface ChecklistRow {
+  id: string;
+  name: string;
+  lines: string[];
+  uses: number;
+  created_at: string;
+  updated_at: string;
 }

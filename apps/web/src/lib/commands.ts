@@ -13,7 +13,8 @@ export type Action =
   | { kind: "note"; title: string; label: string }
   | { kind: "board"; title: string; label: string }
   | { kind: "call"; line: string; label: string }
-  | { kind: "capture"; line: string; label: string };
+  | { kind: "capture"; line: string; label: string }
+  | { kind: "checklist"; id: string; name: string; label: string };
 
 const WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
@@ -53,9 +54,14 @@ export function findTask(name: string, tasks: TaskRef[]): TaskRef | null {
 
 const q = (t: TaskRef) => `“${t.title}”`;
 
-export function parseCommand(input: string, tasks: TaskRef[], today: Date): Action | null {
+export function parseCommand(input: string, tasks: TaskRef[], today: Date, checklists: { id: string; name: string }[] = []): Action | null {
   const s = input.trim();
   let m: RegExpExecArray | null;
+  if ((m = /^(?:checklist|run)\s+(.+)$/i.exec(s))) {
+    const n = m[1]!.trim().toLowerCase();
+    const c = checklists.find((x) => x.name.toLowerCase() === n) ?? checklists.find((x) => x.name.toLowerCase().includes(n));
+    return c ? { kind: "checklist", id: c.id, name: c.name, label: `Add “${c.name}” for today` } : null;
+  }
   if ((m = /^(?:done|finish|complete)\s+(.+)$/i.exec(s))) {
     const t = findTask(m[1]!, tasks);
     return t ? { kind: "done", task: t, label: `Mark ${q(t)} done` } : null;

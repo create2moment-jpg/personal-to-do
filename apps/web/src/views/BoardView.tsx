@@ -13,7 +13,7 @@ import {
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { Search } from "lucide-react";
+import { ListChecks, Search } from "lucide-react";
 import { type ReactNode, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SortableTaskCard, TaskCard } from "../components/TaskCard";
@@ -136,6 +136,9 @@ export function BoardView() {
           <div className="page-sub">All your work by state — drag a card to move it. Click a card’s time to change it.</div>
         </div>
         <div className="board-tools">
+          <button className="btn sm" onClick={() => ui.openChecklists()} title="Reusable checklists">
+            <ListChecks /> Checklists
+          </button>
           <div className="search-input">
             <Search />
             <input className="input" placeholder="Filter tasks" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Filter tasks" />

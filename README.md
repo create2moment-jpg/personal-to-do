@@ -51,6 +51,10 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
 - **Reminders** (Settings → Reminders, off by default): a nudge before meetings
   you attend, when a timebox starts, and what is due today at the start of your
   workday — desktop notifications while the app is open.
+- **Checklists** (Task board → Checklists, or ⌘K `checklist release`): reusable
+  lists of steps in quick-capture syntax (`~30m !1 #tag`); apply one for today,
+  tomorrow or the backlog to get a task with a subtask per step. Starters:
+  release, 1:1 prep, onboarding, weekly shutdown.
 - **⌘K does things**: `done Write ADR`, `move review to monday`,
   `timebox ADR 14:00 tomorrow`, `note Retro ideas`, `board Q1 plan`,
   `call Priya 20m`, `add Book flights @fri` — the action is shown before you

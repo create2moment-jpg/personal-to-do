@@ -20,6 +20,7 @@ from ppos.infrastructure.db import connect
 from ppos.infrastructure.sqlite_boards import SqliteBoardRepository
 from ppos.infrastructure.sqlite_book import SqliteBookRepository
 from ppos.infrastructure.sqlite_career import SqliteCareerRepository
+from ppos.infrastructure.sqlite_checklists import SqliteChecklistRepository
 from ppos.infrastructure.sqlite_documents import SqliteDocumentRepository
 from ppos.infrastructure.sqlite_embeddings import SqliteEmbeddingStore
 from ppos.infrastructure.sqlite_facts import SqliteFactRepository
@@ -555,6 +556,7 @@ class SqliteUnitOfWork:
         self.embeddings = SqliteEmbeddingStore(conn)
         self.workflows = SqliteWorkflowRunRepository(conn)
         self.boards = SqliteBoardRepository(conn)
+        self.checklists = SqliteChecklistRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

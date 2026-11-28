@@ -1,5 +1,5 @@
 import { Command } from "cmdk";
-import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun, LayoutDashboard, Zap } from "lucide-react";
+import { BookOpenText, CalendarPlus, FileText, Library, Keyboard, Monitor, Moon, NotebookPen, Phone, Plus, Repeat, Search, SquareCheck, Sun, LayoutDashboard, Zap, ListChecks } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -41,7 +41,8 @@ function MenuBody({ onClose }: { onClose: () => void }) {
 
   const qc = useQueryClient();
   const { data: tasks = [] } = useQuery({ queryKey: ["tasks", "command-menu"], queryFn: () => api.tasks({ top_level: true, limit: 1000 }), staleTime: 15_000 });
-  const action = parseCommand(q, tasks, new Date());
+  const { data: checklists = [] } = useQuery({ queryKey: ["checklists"], queryFn: api.checklists, staleTime: 60_000 });
+  const action = parseCommand(q, tasks, new Date(), checklists);
   const doAction = async (a: Action) => {
     try {
       if (a.kind === "done") {
@@ -60,6 +61,10 @@ function MenuBody({ onClose }: { onClose: () => void }) {
         const n = await api.createNote({ title: a.title, kind: "general" });
         void qc.invalidateQueries({ queryKey: ["notes"] });
         ui.navigate("notes", n.id);
+      } else if (a.kind === "checklist") {
+        const t = await api.applyChecklist(a.id, new Date().toISOString().slice(0, 10));
+        invalidateTasks(qc);
+        toast.success(`“${t.title}” added`, { action: { label: "Open", onClick: () => ui.openTask(t.id) } });
       } else if (a.kind === "board") {
         const b = await api.createBoard({ title: a.title });
         ui.navigate("boards", b.id);
@@ -137,6 +142,9 @@ function MenuBody({ onClose }: { onClose: () => void }) {
           </Command.Item>
           <Command.Item value="new recurring meeting series repeat weekly daily" onSelect={run(() => ui.openScheduleMeeting({ recurring: true }))}>
             <Repeat /> New recurring meeting
+          </Command.Item>
+          <Command.Item value="checklists templates release onboarding" onSelect={run(() => ui.openChecklists())}>
+            <ListChecks /> Checklists…
           </Command.Item>
           <Command.Item value="log a call" onSelect={run(() => ui.openLogCall())}>
             <Phone /> Log a call

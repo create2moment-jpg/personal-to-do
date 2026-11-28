@@ -34,6 +34,7 @@ export interface UiActions {
   openLogCall: (draft?: { start?: string; minutes?: number; people?: string[] }) => void;
   /** Add a meeting yourself (once or recurring), or edit a series you created. */
   openScheduleMeeting: (opts?: ScheduleOptions) => void;
+  openChecklists: () => void;
 }
 
 export interface ScheduleOptions {

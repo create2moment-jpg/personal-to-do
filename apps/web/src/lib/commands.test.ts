@@ -36,3 +36,11 @@ describe("commands", () => {
     expect(parseCommand("hybrid retrieval", tasks, FRI)).toBeNull(); // plain search
   });
 });
+
+describe("checklist command", () => {
+  it("finds a checklist by name", () => {
+    const lists = [{ id: "c1", name: "Release checklist" }];
+    expect(parseCommand("checklist release", [], new Date(2026, 10, 27), lists)).toMatchObject({ kind: "checklist", id: "c1" });
+    expect(parseCommand("checklist nothing", [], new Date(2026, 10, 27), lists)).toBeNull();
+  });
+});

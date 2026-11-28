@@ -33,6 +33,7 @@ from ppos_api.routes import (
     boards,
     book,
     career,
+    checklists,
     documents,
     goals,
     notes,
@@ -121,6 +122,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(workflows.router)
     app.include_router(boards.router)
     app.include_router(people.router)
+    app.include_router(checklists.router)
     app.include_router(notes.router)
     app.include_router(planning.router)
     app.include_router(sprints.router)
