@@ -30,6 +30,7 @@ from ppos_api import security
 from ppos_api.routes import (
     ai,
     assistant,
+    boards,
     book,
     career,
     documents,
@@ -117,6 +118,7 @@ def create_app(settings: Settings | None = None, clock: Clock | None = None) -> 
     app.include_router(tasks.router)
     app.include_router(timebox.router)
     app.include_router(workflows.router)
+    app.include_router(boards.router)
     app.include_router(notes.router)
     app.include_router(planning.router)
     app.include_router(sprints.router)

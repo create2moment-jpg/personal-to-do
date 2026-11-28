@@ -121,6 +121,15 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   labelled so you check quotes against the original. Optionally
   **extract facts** with your local model: each fact must quote its source
   verbatim or it is dropped, and nothing counts until you accept it.
+- **Boards** (`g o`), Miro-style whiteboards: an infinite canvas with sticky
+  notes, text, shapes (rectangle, ellipse, diamond), frames that carry their
+  contents, and arrows that stay attached (with labels). Live **cards** show
+  your real tasks and notes (double-click to open); **To task** turns a sticky
+  into a task in place. Colours, text sizes, multi-select (Shift or drag a box),
+  resize, duplicate (Ctrl+D), copy/paste, undo/redo, snap to grid, Ctrl+scroll
+  to zoom, Space+drag to pan, fit to content, SVG export. Templates:
+  retrospective, SWOT, weekly planning, mind map. Keys: V select, H pan,
+  S sticky, T text, R shape, F frame, L arrow.
 - **Workflows** (`g f`): multi-step helpers that propose a checklist you
   approve — **Plan my week** (fits overdue, due and sprint work into each
   day's free capacity, never after a due date; objectives from your goals),

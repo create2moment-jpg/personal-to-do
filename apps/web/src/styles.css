@@ -1265,3 +1265,75 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .g-node.dim { opacity: 0.18; }
 .graph-empty { position: absolute; inset: auto 0 16px; text-align: center; font-size: 0.86rem; }
 .graph-page { max-width: none; }
+
+/* ---------------------------------------------------------------- boards (Miro-style) */
+.board-templates { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 10px; }
+.board-template { all: unset; cursor: pointer; display: flex; gap: 10px; align-items: center; padding: 14px 16px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); font-weight: 500; }
+.board-template:hover, .board-template:focus-visible { border-color: var(--accent); }
+.board-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 12px; }
+.board-tile { all: unset; cursor: pointer; display: grid; gap: 6px; padding: 16px; border-radius: var(--radius-lg); background: var(--surface); border: 1px solid var(--border); min-height: 4.5rem; }
+.board-tile:hover, .board-tile:focus-visible { border-color: var(--accent); }
+.board-tile .faint { font-size: 0.82rem; }
+.board-shell { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+.board-top { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.board-title { all: unset; font-weight: 600; font-size: 1.05rem; min-width: 8rem; padding: 4px 6px; border-radius: 6px; }
+.board-title:hover, .board-title:focus { background: var(--surface-2); }
+.board-save { font-size: 0.78rem; color: var(--text-3); }
+.board-save.error { color: var(--red); }
+.board-stage { position: relative; flex: 1; overflow: hidden; background-color: var(--bg-sunken); background-image: radial-gradient(circle, color-mix(in srgb, var(--text-3) 45%, transparent) 1px, transparent 1.2px); touch-action: none; user-select: none; outline: none; }
+.board-stage.tool-hand, .board-stage.panning { cursor: grab; }
+.board-stage.tool-sticky, .board-stage.tool-text, .board-stage.tool-shape, .board-stage.tool-frame { cursor: crosshair; }
+.board-stage.tool-connector .b-item { cursor: alias; }
+.board-world { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.b-item { position: absolute; box-sizing: border-box; display: flex; cursor: default; }
+.b-item.sel, .b-frame.sel { outline: 2px solid var(--accent); outline-offset: 2px; }
+.b-sticky { background: var(--fill); color: #1d1d22; padding: 12px; box-shadow: 0 1px 2px rgb(0 0 0 / 12%), 0 6px 14px -6px rgb(0 0 0 / 22%); border-radius: 3px; }
+.b-text { white-space: pre-wrap; word-break: break-word; overflow: hidden; width: 100%; line-height: 1.35; }
+.b-item.size-s .b-text, .b-item.size-s .b-editor { font-size: 12px; }
+.b-item.size-m .b-text, .b-item.size-m .b-editor { font-size: 15px; }
+.b-item.size-l .b-text, .b-item.size-l .b-editor { font-size: 22px; font-weight: 600; }
+.b-text-kind, .b-item.b-text { color: var(--text); }
+.b-item.b-text .b-text { font-size: 17px; }
+.b-shape { background: var(--fill); color: #1d1d22; border: 1.5px solid #55555c; border-radius: 8px; align-items: center; justify-content: center; text-align: center; padding: 8px; }
+.b-shape .b-text { text-align: center; }
+.b-shape.shape-ellipse { border-radius: 50%; }
+.b-shape.shape-diamond { border: none; background: transparent; }
+.b-shape.shape-diamond::before { content: ""; position: absolute; inset: 0; background: var(--fill); border: 1.5px solid #55555c; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); z-index: -1; }
+.b-frame { position: absolute; box-sizing: border-box; background: color-mix(in srgb, var(--fill, var(--tint)) 35%, var(--surface)); background: color-mix(in srgb, var(--tint) 28%, var(--surface)); border: 1px solid color-mix(in srgb, var(--tint) 70%, var(--border)); border-radius: 12px; z-index: 1; }
+.b-frame-title { position: absolute; top: -26px; left: 4px; font-size: 14px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.b-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); padding: 10px 12px; }
+.b-card.missing { opacity: 0.55; border-style: dashed; }
+.b-card-body { display: grid; gap: 4px; align-content: start; overflow: hidden; width: 100%; }
+.b-card-kind { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; color: var(--text-3); text-transform: capitalize; }
+.b-card-body strong { font-size: 14px; line-height: 1.3; }
+.b-card-body strong.done { text-decoration: line-through; color: var(--text-3); }
+.b-card-excerpt { font-size: 12px; color: var(--text-2); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.b-resize { position: absolute; right: -6px; bottom: -6px; width: 12px; height: 12px; background: var(--surface); border: 2px solid var(--accent); border-radius: 3px; cursor: nwse-resize; }
+.b-links { position: absolute; left: 0; top: 0; width: 1px; height: 1px; overflow: visible; z-index: 3; pointer-events: none; }
+.b-links .b-link { pointer-events: auto; }
+.b-links marker path { fill: var(--text-2); }
+.b-link line { stroke: var(--text-2); stroke-width: 2; }
+.b-link line.hit { stroke: transparent; stroke-width: 14; cursor: pointer; pointer-events: stroke; }
+.b-link.sel line:not(.hit) { stroke: var(--accent); stroke-width: 3; }
+.b-link text { font-size: 12px; fill: var(--text-2); paint-order: stroke; stroke: var(--bg-sunken); stroke-width: 4px; }
+.b-link-draft { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 4; }
+.b-link-edit { position: absolute; width: 160px; z-index: 5; }
+.b-editor { all: unset; width: 100%; height: 100%; white-space: pre-wrap; word-break: break-word; resize: none; color: inherit; font: inherit; line-height: 1.35; cursor: text; }
+.b-editor.single { background: var(--surface); border: 1px solid var(--accent); border-radius: 6px; padding: 4px 6px; height: auto; min-height: 1.6em; color: var(--text); }
+.b-marquee { position: absolute; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); z-index: 6; }
+.b-toolbar { position: absolute; z-index: 20; display: flex; align-items: center; gap: 2px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-lg); }
+.b-swatch { all: unset; cursor: pointer; width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgb(0 0 0 / 18%); margin: 0 1px; }
+.b-swatch:focus-visible { outline: 2px solid var(--accent); }
+.b-sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.b-sep.h { width: 24px; height: 1px; margin: 4px auto; }
+.b-tools { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); z-index: 20; display: flex; flex-direction: column; gap: 2px; padding: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow-lg); }
+.b-tools .btn.on { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.b-zoom { position: absolute; right: 12px; bottom: 12px; z-index: 20; display: flex; align-items: center; gap: 2px; padding: 4px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--shadow-sm); }
+.b-zoom-pct { min-width: 3rem; text-align: center; font-size: 0.8rem; font-variant-numeric: tabular-nums; }
+.b-snap { display: inline-flex; gap: 4px; align-items: center; font-size: 0.78rem; color: var(--text-2); margin-right: 6px; }
+.b-hint { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); color: var(--text-3); font-size: 0.9rem; text-align: center; max-width: 34rem; pointer-events: none; line-height: 1.6; }
+.b-picker-backdrop { position: fixed; inset: 0; z-index: 70; background: rgb(0 0 0 / 18%); display: grid; place-items: start center; padding-top: 12vh; }
+.b-picker { width: min(28rem, 92vw); max-height: 70vh; overflow: auto; padding: 12px; display: grid; gap: 4px; }
+.b-picker > button { all: unset; cursor: pointer; display: flex; gap: 8px; align-items: center; padding: 6px 8px; border-radius: 6px; font-size: 0.9rem; }
+.b-picker > button:hover, .b-picker > button:focus-visible { background: var(--surface-2); }
+.b-picker .section-label { margin-top: 8px; }

@@ -20,6 +20,7 @@ import { CareerView } from "./views/CareerView";
 import { GoalsView } from "./views/GoalsView";
 import { InsightsView } from "./views/InsightsView";
 import { WorkflowsView } from "./views/WorkflowsView";
+import { BoardsView } from "./views/BoardsView";
 import { useGadgetPrefs } from "./lib/gadgets";
 import { ReviewsView } from "./views/ReviewsView";
 import { SkillsView } from "./views/SkillsView";
@@ -138,6 +139,7 @@ export function App() {
   else if (view === "analytics") page = <InsightsView />;
   else if (view === "ai") page = <AssistantView initialQuestion={arg} />;
   else if (view === "workflows") page = <WorkflowsView />;
+  else if (view === "boards") page = <BoardsView boardId={arg} />;
   else if (view === "backlog") page = <BacklogView />;
   else if (view === "projects") page = <ProjectsView />;
   else if (view === "notes") page = <NotesView noteId={arg} />;

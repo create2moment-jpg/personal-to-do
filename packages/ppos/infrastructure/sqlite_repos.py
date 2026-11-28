@@ -17,6 +17,7 @@ from ppos.domain.notes import EntityType, Link, Note, NoteKind, NoteVersion
 from ppos.domain.projects import Project, ProjectStatus
 from ppos.domain.tasks import Priority, Task, TaskStatus
 from ppos.infrastructure.db import connect
+from ppos.infrastructure.sqlite_boards import SqliteBoardRepository
 from ppos.infrastructure.sqlite_book import SqliteBookRepository
 from ppos.infrastructure.sqlite_career import SqliteCareerRepository
 from ppos.infrastructure.sqlite_documents import SqliteDocumentRepository
@@ -553,6 +554,7 @@ class SqliteUnitOfWork:
         self.reviews = SqliteReviewRepository(conn)
         self.embeddings = SqliteEmbeddingStore(conn)
         self.workflows = SqliteWorkflowRunRepository(conn)
+        self.boards = SqliteBoardRepository(conn)
 
     def commit(self) -> None:
         if self.conn.in_transaction:

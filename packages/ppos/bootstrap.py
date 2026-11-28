@@ -12,6 +12,7 @@ from ppos.ai.prompts import load_template
 from ppos.ai.provider import build_provider
 from ppos.ai.runtime import AIRuntime, env_config
 from ppos.application.assistant import AssistantService
+from ppos.application.boards import BoardService
 from ppos.application.book import BookService
 from ppos.application.capture import CaptureService
 from ppos.application.career import CareerService
@@ -80,6 +81,7 @@ class Container:
     insights: InsightsService
     assistant: AssistantService
     workflows: WorkflowService
+    boards: BoardService
 
     def search(self, query: str, limit: int = 20) -> list[SearchHit]:
         with self.uow() as uow:
@@ -256,6 +258,7 @@ def build_container(
         insights=InsightsService(uow, clock, meetings),
         assistant=assistant,
         reviews=reviews,
+        boards=BoardService(uow, clock, tasks),
         workflows=WorkflowService(
             uow,
             clock,

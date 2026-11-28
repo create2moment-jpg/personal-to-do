@@ -18,7 +18,7 @@ export const GADGETS: Record<GadgetId, { label: string; icon: LucideIcon; hint: 
 export const DEFAULT_ORDER: GadgetId[] = ["clock", "agenda", "calendar", "upnext", "priorities", "calls", "focus", "assistant"];
 
 /** Pages with wide content start with the dock collapsed to a slim strip. */
-const WIDE_VIEWS: ViewId[] = ["notes", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai", "workflows", "settings"];
+const WIDE_VIEWS: ViewId[] = ["notes", "week", "book", "knowledge", "career", "board", "goals", "skills", "reviews", "analytics", "ai", "workflows", "settings", "boards"];
 
 export interface GadgetPrefs {
   order: GadgetId[];

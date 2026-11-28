@@ -67,6 +67,7 @@ import type {
   TaskStatus,
   Today,
 } from "./types";
+import type { BoardItem, BoardMeta, CardRef } from "./board";
 
 export class ApiError extends Error {
   constructor(
@@ -237,6 +238,14 @@ export const api = {
     streamEvents<ImproveEvent>(`/api/book-nodes/${id}/improve/stream`, { style, body }, onEvent, signal),
   explainChanges: (original: string, improved: string) => request<{ notes: string[]; model: string }>("POST", "/api/book/explain-changes", { original, improved }),
   calendarMonth: (month: string) => request<{ day: string; meetings: number; planned: number; due: number; done: number }[]>("GET", `/api/calendar/month/${month}`),
+  boards: () => request<BoardMeta[]>("GET", "/api/boards"),
+  boardTemplates: () => request<Record<string, string>>("GET", "/api/boards/templates"),
+  createBoard: (data: { title?: string; template?: string }) => request<BoardMeta>("POST", "/api/boards", data),
+  board: (id: string) => request<{ board: BoardMeta; items: BoardItem[]; refs: Record<string, CardRef> }>("GET", `/api/boards/${id}`),
+  updateBoard: (id: string, changes: { title?: string; emoji?: string | null; viewport?: { x: number; y: number; zoom: number } }) => request<BoardMeta>("PATCH", `/api/boards/${id}`, changes),
+  deleteBoard: (id: string) => request<void>("DELETE", `/api/boards/${id}`),
+  boardChanges: (id: string, upserts: BoardItem[], deletes: string[]) => request<{ version: number }>("POST", `/api/boards/${id}/changes`, { upserts, deletes }),
+  boardItemToTask: (id: string, itemId: string) => request<{ id: string; ref_id: string }>("POST", `/api/boards/${id}/items/${itemId}/to-task`),
   timeline: (day: string) => request<DayTimeline>("GET", `/api/days/${day}/timeline`),
   timebox: (id: string, day: string, start: string | null) => request<Task>("PUT", `/api/tasks/${id}/timebox`, { day, start }),
   proposeTimeboxes: (day: string) => request<TimeboxProposal>("POST", `/api/days/${day}/timebox/propose`),
