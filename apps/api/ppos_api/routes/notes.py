@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 from fastapi import APIRouter, Query, Response, status
+from pydantic import BaseModel, Field
 
 from ppos.application.ports import NoteQuery
 from ppos.domain.notes import EntityType, NoteKind
@@ -39,6 +41,46 @@ def list_notes(
 def create_note(body: NoteCreate, c: ContainerDep) -> NoteOut:
     data = body.model_dump()
     return NoteOut.model_validate(c.notes.create(data.pop("title"), data.pop("body"), **data))
+
+
+@router.get("/api/notes/titles")
+def note_titles(c: ContainerDep) -> list[dict[str, str]]:
+    """Every note's id and title, for [[link]] autocomplete and resolving."""
+    return c.notes.titles()
+
+
+@router.get("/api/notes/graph")
+def note_graph(c: ContainerDep, note: str | None = None, depth: int = 1) -> dict[str, Any]:
+    """The [[link]] graph: all notes, or ``depth`` steps around one note."""
+    return c.notes.graph(note, depth)
+
+
+class FromTemplateIn(BaseModel):
+    template_id: str
+    title: str = Field(default="", max_length=300)
+
+
+@router.post(
+    "/api/notes/from-template", response_model=NoteOut, status_code=status.HTTP_201_CREATED
+)
+def from_template(body: FromTemplateIn, c: ContainerDep) -> NoteOut:
+    return NoteOut.model_validate(c.notes.from_template(body.template_id, body.title))
+
+
+@router.get("/api/notes/{note_id}/connections")
+def connections(note_id: str, c: ContainerDep) -> dict[str, Any]:
+    """Outgoing links, backlinks, unlinked mentions and the outline of a note."""
+    return c.notes.connections(note_id)
+
+
+class LinkMentionIn(BaseModel):
+    source_id: str
+
+
+@router.post("/api/notes/{note_id}/link-mention", response_model=NoteOut)
+def link_mention(note_id: str, body: LinkMentionIn, c: ContainerDep) -> NoteOut:
+    """Turn an unlinked mention of this note in another note into a [[link]]."""
+    return NoteOut.model_validate(c.notes.link_mention(note_id, body.source_id))
 
 
 @router.get("/api/notes/{note_id}", response_model=NoteOut)

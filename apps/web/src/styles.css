@@ -1222,3 +1222,46 @@ h1, h2, h3, h4 { margin: 0; letter-spacing: -0.02em; }
 .gadget-prefs label { display: flex; align-items: center; gap: 8px; flex: 1; font-size: 0.88rem; cursor: pointer; }
 .emoji-picker { align-self: center; }
 .emoji-btn { flex: none; }
+
+/* ---------------------------------------------------------------- linked notes (Obsidian-style) */
+.ProseMirror .wikilink { color: var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); border-radius: 4px; padding: 0 1px; cursor: pointer; text-decoration: none; }
+.ProseMirror .wikilink:hover { text-decoration: underline; }
+.ProseMirror .wikilink.ghost { color: var(--text-3); background: transparent; border-bottom: 1px dashed var(--text-3); border-radius: 0; }
+.wiki-suggest { position: fixed; z-index: 60; min-width: 15rem; max-width: 22rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 4px; display: grid; }
+.wiki-suggest button { all: unset; cursor: pointer; padding: 6px 8px; border-radius: 6px; font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wiki-suggest button.on, .wiki-suggest button:hover { background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.wiki-suggest button.new { color: var(--accent); }
+.wiki-suggest .faint { padding: 6px 8px; font-size: 0.82rem; }
+.connections { margin-top: 2.5rem; border-top: 1px solid var(--border); padding-top: 0.9rem; }
+.conn-tabs { display: flex; flex-wrap: wrap; gap: 2px; margin-bottom: 10px; }
+.conn-tab { all: unset; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 5px 9px; border-radius: 6px; font-size: 0.82rem; color: var(--text-2); }
+.conn-tab:hover, .conn-tab:focus-visible { background: var(--surface-2); }
+.conn-tab.on { background: var(--surface-2); color: var(--text); font-weight: 600; }
+.conn-n { font-size: 0.72rem; background: var(--bg-sunken); border-radius: 999px; padding: 0 6px; color: var(--text-3); }
+.conn-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.conn-snip { font-size: 0.84rem; color: var(--text-2); margin-top: 3px; padding-left: 10px; border-left: 2px solid var(--border); }
+.conn-outline { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 0.88rem; }
+.link-btn.ghost-link { color: var(--text-3); text-decoration: underline dashed; }
+.connections .faint { font-size: 0.86rem; }
+.menu-pop { position: absolute; right: 0; top: calc(100% + 4px); z-index: 50; min-width: 12rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 4px; display: grid; }
+.menu-pop button { all: unset; cursor: pointer; padding: 6px 8px; border-radius: 6px; font-size: 0.86rem; }
+.menu-pop button:hover, .menu-pop button:focus-visible { background: var(--surface-2); }
+.graph { position: relative; }
+.graph-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 8px; }
+.graph-opt { display: inline-flex; gap: 6px; align-items: center; font-size: 0.84rem; color: var(--text-2); }
+.graph-svg { width: 100%; display: block; background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-lg); cursor: grab; touch-action: none; user-select: none; }
+.graph.compact .graph-svg { border-radius: var(--radius); }
+.g-edge { stroke: var(--text-3); stroke-opacity: 0.45; stroke-width: 1; }
+.g-edge.dim { stroke-opacity: 0.08; }
+.g-node { cursor: pointer; }
+.g-node circle { fill: var(--accent); stroke: var(--surface); stroke-width: 1.5; }
+.g-node.k-journal circle { fill: var(--orange); }
+.g-node.k-meeting circle { fill: var(--green); }
+.g-node.k-template circle { fill: var(--text-3); }
+.g-node.ghost circle { fill: var(--surface); stroke: var(--text-3); stroke-dasharray: 2 2; }
+.g-node.focus circle { stroke: var(--text); stroke-width: 2.5; }
+.g-node.found circle { stroke: var(--red); stroke-width: 2.5; }
+.g-node text { font-size: 10px; fill: var(--text-2); pointer-events: none; }
+.g-node.dim { opacity: 0.18; }
+.graph-empty { position: absolute; inset: auto 0 16px; text-align: center; font-size: 0.86rem; }
+.graph-page { max-width: none; }

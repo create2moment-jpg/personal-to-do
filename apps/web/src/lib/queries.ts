@@ -139,6 +139,8 @@ export function useUpdateNote(id: string) {
       qc.setQueryData(keys.note(id), note);
       void qc.invalidateQueries({ queryKey: ["notes"] });
       void qc.invalidateQueries({ queryKey: keys.versions(id) });
+      for (const k of ["note-titles", "note-connections", "note-graph"]) void qc.invalidateQueries({ queryKey: [k] });
+      if (note.links_updated) toast.success(`Updated links in ${note.links_updated} note${note.links_updated === 1 ? "" : "s"}`, { description: "Every [[link]] to the old title now points here." });
     },
   });
 }

@@ -21,6 +21,7 @@ class NoteKind(str, Enum):
     IDEA = "idea"
     LEARNING = "learning"
     CAREER_EVIDENCE = "career_evidence"
+    TEMPLATE = "template"  # a reusable starting point ({{date}}, {{title}} …)
 
 
 @dataclass
@@ -36,6 +37,7 @@ class Note:
     tags: list[str] = field(default_factory=list)
     version: int = 1
     last_snapshot_at: datetime | None = None
+    links_updated: int = 0  # set by a rename: other notes whose [[links]] were updated (not stored)
 
     def __post_init__(self) -> None:
         self.title = " ".join(self.title.split()) or "Untitled"

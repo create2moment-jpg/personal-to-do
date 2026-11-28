@@ -108,6 +108,7 @@ def build_container(
     clock = clock or ZonedClock(workspace.tz)
     tasks = TaskService(uow, clock)
     notes = NoteService(uow, clock, timedelta(seconds=settings.note_snapshot_interval_seconds))
+    notes.ensure_link_index()  # once, for notes written before [[links]] were indexed
     meetings = MeetingService(uow, clock, workspace, parse_ics)
     sprints = SprintService(uow, clock, workspace)
 

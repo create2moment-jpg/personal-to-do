@@ -46,7 +46,8 @@ export type NoteKind =
   | "project"
   | "idea"
   | "learning"
-  | "career_evidence";
+  | "career_evidence"
+  | "template";
 
 export const NOTE_KINDS: NoteKind[] = [
   "general",
@@ -57,6 +58,7 @@ export const NOTE_KINDS: NoteKind[] = [
   "idea",
   "learning",
   "career_evidence",
+  "template",
 ];
 
 export interface NoteSummary {
@@ -71,6 +73,8 @@ export interface NoteSummary {
 
 export interface Note extends NoteSummary {
   body: string;
+  /** After a rename: how many other notes had their [[links]] updated. */
+  links_updated?: number;
   project_id: string | null;
   created_at: string;
 }
@@ -837,4 +841,16 @@ export interface WorkflowRun {
   notes: string[];
   status: "proposed" | "applied" | "dismissed";
   applied_at: string | null;
+}
+
+export interface NoteConnections {
+  outgoing: { title: string; note_id: string | null; heading: string | null; alias: string | null }[];
+  backlinks: { note_id: string; title: string; snippets: string[] }[];
+  unlinked: { note_id: string; title: string; count: number; snippets: string[] }[];
+  outline: { level: number; text: string }[];
+}
+
+export interface NoteGraphData {
+  nodes: { id: string; title: string; kind: string; ghost: boolean; degree: number }[];
+  edges: { source: string; target: string }[];
 }

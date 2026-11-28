@@ -10,6 +10,9 @@ import TaskList from "@tiptap/extension-task-list";
 import Typography from "@tiptap/extension-typography";
 import { type Editor, EditorContent, useEditor } from "@tiptap/react";
 import { NoteAssist } from "../components/NoteAssist";
+import { NoteConnections } from "../components/NoteConnections";
+import { NoteGraph } from "../components/NoteGraph";
+import { refreshWikiLinks, titleKey, WikiLink, type WikiLinkStorage } from "../components/wikilink";
 import StarterKit from "@tiptap/starter-kit";
 import { motion } from "framer-motion";
 import {
@@ -36,6 +39,8 @@ import {
   X,
   FolderKanban,
   GraduationCap,
+  LayoutTemplate,
+  Network,
   type LucideIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -58,7 +63,25 @@ export const KIND_META: Record<NoteKind, { label: string; icon: LucideIcon }> = 
   idea: { label: "Idea", icon: Lightbulb },
   learning: { label: "Learning", icon: GraduationCap },
   career_evidence: { label: "Career evidence", icon: Briefcase },
+  template: { label: "Template", icon: LayoutTemplate },
 };
+
+const GRAPH = "~graph";
+
+/** Open a note by title — or create it, like clicking an unresolved [[link]] in Obsidian. */
+function useOpenByTitle() {
+  const ui = useUi();
+  const qc = useQueryClient();
+  return async (title: string) => {
+    const titles = qc.getQueryData<{ id: string; title: string }[]>(["note-titles"]) ?? (await api.noteTitles());
+    const hit = titles.find((t) => titleKey(t.title) === titleKey(title));
+    if (hit) return ui.navigate("notes", hit.id);
+    const n = await api.createNote({ title, kind: "general" });
+    for (const k of ["notes", "note-titles", "note-graph", "note-connections"]) void qc.invalidateQueries({ queryKey: [k] });
+    toast.success(`Created “${title}”`);
+    ui.navigate("notes", n.id);
+  };
+}
 
 export function NotesView({ noteId }: { noteId?: string }) {
   const ui = useUi();
@@ -66,6 +89,7 @@ export function NotesView({ noteId }: { noteId?: string }) {
   const [kind, setKind] = useState<NoteKind | undefined>();
   const [filter, setFilter] = useState("");
   const { data: notes = [] } = useNotes(kind);
+  const openByTitle = useOpenByTitle();
 
   const shown = notes.filter((n) => !filter || n.title.toLowerCase().includes(filter.toLowerCase()));
 
@@ -83,9 +107,15 @@ export function NotesView({ noteId }: { noteId?: string }) {
             <h1 className="page-title" style={{ fontSize: "1.4286rem" }}>
               Notes
             </h1>
-            <button className="btn sm primary" onClick={create}>
-              <Plus /> New
-            </button>
+            <div style={{ display: "flex", gap: 4 }}>
+              <button className={cx("btn sm", noteId === GRAPH ? "primary" : "ghost")} onClick={() => ui.navigate("notes", GRAPH)} title="Graph of linked notes">
+                <Network /> Graph
+              </button>
+              <TemplateMenu />
+              <button className="btn sm primary" onClick={create}>
+                <Plus /> New
+              </button>
+            </div>
           </div>
           <div className="search-input" style={{ maxWidth: "none" }}>
             <Search />
@@ -96,7 +126,7 @@ export function NotesView({ noteId }: { noteId?: string }) {
           <button className="filter-chip" aria-pressed={!kind} onClick={() => setKind(undefined)}>
             All
           </button>
-          {(["idea", "journal", "meeting", "technical", "learning", "career_evidence"] as NoteKind[]).map((k) => {
+          {(["idea", "journal", "meeting", "technical", "learning", "career_evidence", "template"] as NoteKind[]).map((k) => {
             const M = KIND_META[k];
             return (
               <button key={k} className="filter-chip" aria-pressed={kind === k} onClick={() => setKind(kind === k ? undefined : k)}>
@@ -128,7 +158,15 @@ export function NotesView({ noteId }: { noteId?: string }) {
         </div>
       </aside>
       <div className="editor-wrap">
-        {noteId ? (
+        {noteId === GRAPH ? (
+          <div className="doc graph-page">
+            <h1 className="page-title" style={{ fontSize: "1.4rem", marginBottom: 6 }}>
+              Graph
+            </h1>
+            <p className="faint" style={{ marginTop: 0 }}>Every note and the [[links]] between them. Hover to highlight neighbours; click to open; drag to pin, double-click to release.</p>
+            <NoteGraph height={620} onOpen={(id, ghost) => (id ? ui.navigate("notes", id) : ghost && void openByTitle(ghost))} />
+          </div>
+        ) : noteId ? (
           <NoteEditor key={noteId} noteId={noteId} />
         ) : (
           <div style={{ height: "100%", display: "grid", placeItems: "center" }}>
@@ -182,6 +220,14 @@ function NoteEditor({ noteId }: { noteId: string }) {
   }, [autosave]);
 
   const { data: aiStatus } = useQuery({ queryKey: ["ai-status"], queryFn: api.aiStatus, staleTime: 60_000 });
+  const { data: titlesData } = useQuery({ queryKey: ["note-titles"], queryFn: api.noteTitles, staleTime: 30_000 });
+  const titles = useMemo(() => titlesData ?? [], [titlesData]);
+  const openByTitle = useOpenByTitle();
+  const openRef = useRef(openByTitle);
+  openRef.current = openByTitle;
+  const flushRef = useRef(() => autosave.flush());
+  flushRef.current = () => autosave.flush();
+  const [suggest, setSuggest] = useState<{ query: string; from: number; to: number; left: number; top: number; index: number } | null>(null);
   const editor = useEditor(
     {
       extensions: [
@@ -196,6 +242,7 @@ function NoteEditor({ noteId }: { noteId: string }) {
         TableHeader,
         TableCell,
         Markdown.configure({ html: false, transformPastedText: true, linkify: true }),
+        WikiLink,
       ],
       content: note?.body ?? "",
       editable: true,
@@ -204,9 +251,61 @@ function NoteEditor({ noteId }: { noteId: string }) {
         setState("dirty");
         autosave();
       },
+      onSelectionUpdate: ({ editor: ed }) => {
+        // [[ autocomplete: the text typed since the last "[[" on this line
+        const { $from, empty } = ed.state.selection;
+        const before = empty ? $from.parent.textBetween(0, $from.parentOffset, undefined, "\ufffc") : "";
+        const m = /\[\[([^[\]|#\n]{0,60})$/.exec(before);
+        if (!m) return setSuggest((s) => (s === null ? s : null));
+        const c = ed.view.coordsAtPos($from.pos);
+        setSuggest((s) => ({ query: m[1]!, from: $from.pos - m[1]!.length, to: $from.pos, left: c.left, top: c.bottom + 4, index: s && s.query === m[1] ? s.index : 0 }));
+      },
     },
     [note?.id],
   );
+
+  // keep [[link]] colours (existing vs. not created yet) and clicks in sync with the note list
+  useEffect(() => {
+    if (!editor) return;
+    const st = (editor.storage as unknown as { wikiLink: WikiLinkStorage }).wikiLink;
+    st.known = new Set(titles.map((t) => titleKey(t.title)));
+    st.onOpen = (title) => {
+      flushRef.current();
+      void openRef.current(title);
+    };
+    refreshWikiLinks(editor as never);
+  }, [editor, titles]);
+
+  const matches = suggest
+    ? titles
+        .filter((t) => t.id !== noteId && t.title.toLowerCase().includes(suggest.query.toLowerCase()))
+        .slice(0, 8)
+    : [];
+  const pick = (title: string) => {
+    if (!editor || !suggest) return;
+    editor.chain().focus().insertContentAt({ from: suggest.from, to: suggest.to }, `${title}]]`).run();
+    setSuggest(null);
+  };
+  useEffect(() => {
+    if (!editor || !suggest) return;
+    const options = [...matches.map((m) => m.title), ...(suggest.query.trim() && !matches.some((m) => titleKey(m.title) === titleKey(suggest.query)) ? [suggest.query.trim()] : [])];
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return setSuggest(null);
+      if (!options.length) return;
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        e.stopPropagation();
+        setSuggest({ ...suggest, index: (suggest.index + (e.key === "ArrowDown" ? 1 : options.length - 1)) % options.length });
+      } else if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        e.stopPropagation();
+        pick(options[Math.min(suggest.index, options.length - 1)]!);
+      }
+    };
+    const dom = editor.view.dom;
+    dom.addEventListener("keydown", onKey, true);
+    return () => dom.removeEventListener("keydown", onKey, true);
+  });
 
   useEffect(() => {
     if (note && title === null) setTitle(note.title === "Untitled" ? "" : note.title);
@@ -310,6 +409,30 @@ function NoteEditor({ noteId }: { noteId: string }) {
           </span>
         </div>
         <EditorContent editor={editor} />
+        {suggest && (
+          <div className="wiki-suggest" role="listbox" aria-label="Link to a note" style={{ left: suggest.left, top: suggest.top }}>
+            {matches.map((t, i) => (
+              <button key={t.id} role="option" aria-selected={i === suggest.index} className={cx(i === suggest.index && "on")} onMouseDown={(e) => { e.preventDefault(); pick(t.title); }}>
+                {t.title}
+              </button>
+            ))}
+            {suggest.query.trim() && !matches.some((m) => titleKey(m.title) === titleKey(suggest.query)) && (
+              <button role="option" aria-selected={suggest.index === matches.length} className={cx("new", suggest.index === matches.length && "on")} onMouseDown={(e) => { e.preventDefault(); pick(suggest.query.trim()); }}>
+                + Link to new note “{suggest.query.trim()}”
+              </button>
+            )}
+            {!suggest.query.trim() && matches.length === 0 && <div className="faint">Type a note title…</div>}
+          </div>
+        )}
+        <NoteConnections
+          noteId={note.id}
+          onOpenNote={(id) => {
+            autosave.flush();
+            ui.navigate("notes", id);
+          }}
+          onOpenTitle={(t) => void openByTitle(t)}
+          onJumpHeading={(i) => editor?.view.dom.querySelectorAll("h1, h2, h3, h4, h5, h6")[i]?.scrollIntoView({ behavior: "smooth", block: "center" })}
+        />
       </motion.article>
       <HistorySheet
         open={historyOpen}
@@ -428,5 +551,45 @@ function HistorySheet({
         </div>
       </div>
     </Sheet>
+  );
+}
+
+/** New note from a template (notes of kind “Template”; {{date}}, {{time}}, {{weekday}}, {{title}} are filled in). */
+function TemplateMenu() {
+  const ui = useUi();
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const { data: templates = [] } = useNotes("template");
+  return (
+    <span style={{ position: "relative" }}>
+      <button className="btn sm ghost" aria-expanded={open} title="New note from a template" onClick={() => setOpen((o) => !o)}>
+        <LayoutTemplate />
+      </button>
+      {open && (
+        <div className="menu-pop" role="menu" aria-label="Templates" onMouseLeave={() => setOpen(false)}>
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              role="menuitem"
+              onClick={async () => {
+                setOpen(false);
+                const name = prompt("Title for the new note", `${t.title.replace(/\s*template$/i, "")} ${new Date().toISOString().slice(0, 10)}`.trim());
+                if (name === null) return;
+                const n = await api.noteFromTemplate(t.id, name);
+                void qc.invalidateQueries({ queryKey: ["notes"] });
+                ui.navigate("notes", n.id);
+              }}
+            >
+              {t.title}
+            </button>
+          ))}
+          {templates.length === 0 && (
+            <div className="faint" style={{ padding: "6px 8px", fontSize: "0.82rem", maxWidth: 230 }}>
+              No templates yet. Set a note’s kind to <b>Template</b>; use {"{{date}}"}, {"{{weekday}}"}, {"{{title}}"} inside.
+            </div>
+          )}
+        </div>
+      )}
+    </span>
   );
 }

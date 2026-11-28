@@ -81,6 +81,13 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   that stores plain Markdown, with autosave and version history (restore is
   non-destructive), kinds incl. journal, meeting, technical, learning,
   career evidence and an **ideas inbox**; links between notes, tasks and projects.
+  **Linked notes, Obsidian-style:** type `[[` to link a note (autocomplete; also
+  `[[Note|label]]` and `[[Note#Heading]]`); click a link to open it — or create
+  it if it does not exist yet. Under each note: **backlinks** with context,
+  **unlinked mentions** you can link in one click, outgoing links, the outline
+  and a local graph. Renaming a note updates every `[[link]]` to it (as new,
+  undoable versions). **Graph** shows all notes and links. **Templates**: set a
+  note's kind to Template and use `{{date}}`, `{{weekday}}`, `{{title}}`.
   **Improve** rewrites the selection or the whole note with your local model
   (clearer, shorter, structured, grammar, professional) — you review a diff,
   and accepting keeps the previous text in History.

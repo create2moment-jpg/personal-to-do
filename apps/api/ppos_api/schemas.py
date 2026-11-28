@@ -124,6 +124,7 @@ class NoteOut(Out):
     version: int
     created_at: datetime
     updated_at: datetime
+    links_updated: int = 0  # after a rename: other notes whose [[links]] were updated
 
 
 class NoteSummaryOut(Out):

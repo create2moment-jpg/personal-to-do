@@ -262,6 +262,44 @@ class SqliteNoteRepository:
     def __init__(self, conn: sqlite3.Connection) -> None:
         self._c = conn
 
+    def replace_links(
+        self, source_id: str, links: list[tuple[str, str, str | None, str | None, int]]
+    ) -> None:
+        self._c.execute("DELETE FROM note_links WHERE source_id = ?", (source_id,))
+        self._c.executemany(
+            "INSERT INTO note_links (source_id, target_key, target, heading, alias, position)"
+            " VALUES (?,?,?,?,?,?)",
+            [(source_id, *link) for link in links],
+        )
+
+    def links_from(self, source_id: str) -> list[tuple[str, str, str | None, str | None]]:
+        rows = self._c.execute(
+            "SELECT target_key, target, heading, alias FROM note_links WHERE source_id = ?"
+            " ORDER BY position",
+            (source_id,),
+        )
+        return [(r[0], r[1], r[2], r[3]) for r in rows]
+
+    def sources_linking(self, target_key: str) -> list[str]:
+        rows = self._c.execute(
+            "SELECT DISTINCT source_id FROM note_links WHERE target_key = ?", (target_key,)
+        )
+        return [r[0] for r in rows]
+
+    def all_links(self) -> list[tuple[str, str]]:
+        return [
+            (r[0], r[1]) for r in self._c.execute("SELECT source_id, target_key FROM note_links")
+        ]
+
+    def link_count(self) -> int:
+        return int(self._c.execute("SELECT count(*) FROM note_links").fetchone()[0])
+
+    def titles(self) -> list[tuple[str, str, str, str]]:
+        rows = self._c.execute(
+            "SELECT id, title, kind, updated_at FROM notes ORDER BY updated_at DESC"
+        )
+        return [(r[0], r[1], r[2], r[3]) for r in rows]
+
     @staticmethod
     def _from(row: sqlite3.Row) -> Note:
         created, updated = _dt(row["created_at"]), _dt(row["updated_at"])
