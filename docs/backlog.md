@@ -63,7 +63,7 @@ with a reason).
 | B-012 | Add career evidence by hand (statement + quote from a document, or your own note) so Career works without AI | 2026-11-24 | done (saved as a “My evidence note” in Knowledge, accepted and labelled “Your note”; linkable from Career and Skills) | Career / Skills → Link evidence |
 | B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | done (local /v1/embeddings, stored on disk, fused with keyword search by reciprocal-rank fusion; optional) | Assistant (`g j`), Settings → Local AI |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |
-| B-024 | Reminders: desktop notification before a meeting, when a timebox starts, for work due today (opt-in, app open) | 2026-11-28 | planned (R-028) | — |
+| B-024 | Reminders: desktop notification before a meeting, when a timebox starts, for work due today (opt-in, app open) | 2026-11-28 | done (Settings → Reminders: 1–15 min before attended meetings, timebox starts, due-today summary at the start of the workday; desktop notification in the background, toast in front; each fires once; nothing sent after a long sleep) | Settings → Reminders |
 | B-025 | Command bar that *does* things: "move X to tomorrow", "start focus 50", "log call with Priya 20m" | 2026-11-28 | idea (R-028) | — |
 | B-026 | Reusable checklists / task templates (release checklist, 1:1 prep, onboarding) | 2026-11-28 | idea (R-028) | — |
 | B-027 | People view: each person with shared meetings, calls, notes that mention them, open follow-ups, 1:1 talking points | 2026-11-28 | planned (R-028) | — |

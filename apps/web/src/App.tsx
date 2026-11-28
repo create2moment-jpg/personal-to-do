@@ -22,6 +22,7 @@ import { InsightsView } from "./views/InsightsView";
 import { WorkflowsView } from "./views/WorkflowsView";
 import { BoardsView } from "./views/BoardsView";
 import { useGadgetPrefs } from "./lib/gadgets";
+import { ReminderRunner } from "./components/Reminders";
 import { ReviewsView } from "./views/ReviewsView";
 import { SkillsView } from "./views/SkillsView";
 import { KnowledgeView } from "./views/KnowledgeView";
@@ -159,6 +160,7 @@ export function App() {
           </AnimatePresence>
         </main>
         <RightRail view={view} />
+        <ReminderRunner />
       </div>
 
       <nav className="mobile-bar" aria-label="Mobile navigation">

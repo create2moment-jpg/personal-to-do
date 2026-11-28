@@ -11,6 +11,7 @@ import { Keys } from "../components/primitives";
 import { useHealth, useSettings } from "../lib/queries";
 import { ACCENTS, type Accent, DARK_PALETTES, type DarkPalette, useAppearance } from "../lib/theme";
 import { GadgetSettings } from "../components/GadgetSettings";
+import { ReminderSettings } from "../components/Reminders";
 import { useUi } from "../lib/ui-store";
 
 export function SettingsView({ section }: { section?: string } = {}) {
@@ -158,6 +159,8 @@ export function SettingsView({ section }: { section?: string } = {}) {
       </section>
 
       <GadgetSettings focus={section === "gadgets"} />
+
+      <ReminderSettings />
 
       <WorkSettings />
       <AiSettings />

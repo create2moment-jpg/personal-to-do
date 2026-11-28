@@ -48,6 +48,9 @@ press `c` and type `Prep review #demo !1 ~45m @tomorrow`, press `⌘K`, open Not
   timer and recent calls, focus timer, and a quick Ask box. Collapse it to a slim
   strip (each page remembers); on laptop-width screens it opens as a drawer.
   Choose and order gadgets in Settings → Gadgets.
+- **Reminders** (Settings → Reminders, off by default): a nudge before meetings
+  you attend, when a timebox starts, and what is due today at the start of your
+  workday — desktop notifications while the app is open.
 - **Timeboxing** (Today → Timeline): your working hours as a strip with meetings,
   timeboxed tasks and the free time between. Drag a task onto it, click a free
   slot to place one, or set a start time in the task. **Fill my free time**
