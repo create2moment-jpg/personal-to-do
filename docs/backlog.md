@@ -38,6 +38,7 @@ with a reason).
 | R-024 | Phase 10: agentic workflows (defaults chosen: propose-only, on demand; Monday plan, Friday review prep, promotion evidence pack) | 2026-11-27 | done (ADR-0005; checklist of allow-listed actions, each explained from your records; apply what you keep; every run stored and audited; works with AI off) | Workflows (`g f`) |
 | R-025 | Calendar, time, call log and other gadgets on every page | 2026-11-28 | done (gadget dock on all pages, slim strip / laptop drawer; clock, meetings + countdown, month calendar, up next, priorities, calls + recent calls, focus, Ask; Settings → Gadgets to show/hide/reorder). Also fixed: the dock was hidden on screens ≤ 1440 px (most laptops) | Every page, Settings → Gadgets |
 | R-026 | Obsidian features in Notes | 2026-11-28 | done ([[wikilinks]] with autocomplete, aliases, headings; ghost links create notes; backlinks with context; unlinked mentions → link; rename updates links as versions; outline; local and global graph; templates; migration 0017) | Notes |
+| R-028 | "Add whatever adds value; keep the backlog so it is not lost" | 2026-11-28 | in progress (B-024…B-037 recorded) | this file |
 | R-027 | Miro-style whiteboards | 2026-11-28 | done (infinite canvas: stickies, text, shapes, frames, attached arrows with labels, live task/note cards, sticky → task, multi-select, resize, undo/redo, copy/paste, snap, zoom/pan, SVG export, 4 templates; batched transactional saves, migration 0018) | Boards (`g o`) |
 | B-013 | Periodic reviews: monthly, bi-monthly, quarterly, annual — from own data, optional grounded AI draft | 2026-11-27 | done (numbers snapshot, your four sections, AI bullets must cite records and only use their numbers, finalize/reopen, copy as Markdown) | Reviews (`g v`) |
 | B-014 | Insights: week-by-week trends from own records | 2026-11-27 | done (tasks per week, meetings vs focus, planned work done, estimate accuracy, work by project, meeting time by topic, table view) | Insights (`g i`) |
@@ -62,6 +63,20 @@ with a reason).
 | B-012 | Add career evidence by hand (statement + quote from a document, or your own note) so Career works without AI | 2026-11-24 | done (saved as a “My evidence note” in Knowledge, accepted and labelled “Your note”; linkable from Career and Skills) | Career / Skills → Link evidence |
 | B-008 | Semantic (vector) search alongside keyword search | 2026-11-24 | done (local /v1/embeddings, stored on disk, fused with keyword search by reciprocal-rank fusion; optional) | Assistant (`g j`), Settings → Local AI |
 | B-004 | Drag tasks onto projects, sprint and Upcoming days; notes into the Prompt Book | 2026-11-24 | done | sidebar Today / Backlog / Sprint / Prompt Book, project cards, Upcoming days |
+| B-024 | Reminders: desktop notification before a meeting, when a timebox starts, for work due today (opt-in, app open) | 2026-11-28 | planned (R-028) | — |
+| B-025 | Command bar that *does* things: "move X to tomorrow", "start focus 50", "log call with Priya 20m" | 2026-11-28 | idea (R-028) | — |
+| B-026 | Reusable checklists / task templates (release checklist, 1:1 prep, onboarding) | 2026-11-28 | idea (R-028) | — |
+| B-027 | People view: each person with shared meetings, calls, notes that mention them, open follow-ups, 1:1 talking points | 2026-11-28 | planned (R-028) | — |
+| B-028 | Phone-friendly quick capture on the home network (token-protected) | 2026-11-28 | idea (R-028) — needs a decision on LAN exposure (threat model T4) | — |
+| B-029 | Weekly digest note generated on Friday from records (AI optional, cited) | 2026-11-28 | idea (R-028) — partly covered by Workflows → weekly review | — |
+| B-030 | Habits and streaks (opt-in, low-key, shown in the dock) | 2026-11-28 | idea (R-028) | — |
+| B-031 | Markdown vault export / import, Obsidian-compatible (one .md file per note, front matter, [[links]] kept) | 2026-11-28 | planned (R-028) | — |
+| B-032 | Boards: freehand pen | 2026-11-28 | planned (R-028) | — |
+| B-033 | Boards: images (paste / drop, stored locally) | 2026-11-28 | planned (R-028) | — |
+| B-034 | Embed a board inside a note | 2026-11-28 | idea (R-028) | — |
+| B-035 | Board text (stickies, shapes, frames) found by global search | 2026-11-28 | planned (R-028) | — |
+| B-036 | Workflows on a schedule / low-risk auto-apply | 2026-11-28 | idea — needs the owner's decision (ADR-0005 keeps propose-only) | — |
+| B-037 | Verify AI features (incl. vision OCR) against the owner's own llama.cpp server | 2026-11-28 | waiting on the owner's test | — |
 
 ## Deferred / declined, with reasons
 
